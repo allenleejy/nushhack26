@@ -24,3 +24,9 @@ shots/
 Thumbs.db
 
 Claude outputs/
+# More Android Studio and Gradle output
+.navigation/
+output.json
+*.hprof
+app/release/
+app/debug/

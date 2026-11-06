@@ -267,9 +267,10 @@ footer { margin-top: 64px; border-top: 1px solid var(--line); padding-block: 26p
       <a href="#p6">6 · Our solution</a>
       <a href="#p7">7 · Try it</a>
       <a href="#p8">8 · Why it's correct</a>
-      <a href="#p9">9 · Why it's new and useful</a>
-      <a href="#p10">10 · Limits</a>
-      <a href="#p11">11 · Demo and judging</a>
+      <a href="#p9">9 · Attacks</a>
+      <a href="#p10">10 · Why it's new and useful</a>
+      <a href="#p11">11 · Limits</a>
+      <a href="#p12">12 · Demo and judging</a>
     </nav>
   </div>
 </header>
@@ -454,12 +455,34 @@ footer { margin-top: 64px; border-top: 1px solid var(--line); padding-block: 26p
 
     <h3>How one handover works</h3>
     <ol class="steps">
-      <li><div><strong>Offer.</strong> The giver picks the camera and the receiver from the team list. Their phone signs an offer and shows it as a QR code. The code includes the camera's recent history, so the receiver can check it.</div></li>
+      <li><div><strong>Offer.</strong> The giver picks the camera and the receiver from the team list, and confirms with a fingerprint. Their phone signs an offer and shows it as a QR code. The code includes the camera's recent history, so the receiver can check it. The offer names the receiver, carries a one-time number, and expires after about 60 seconds.</div></li>
       <li><div><strong>Check, offline.</strong> The receiver's phone scans the offer and checks every signature against the team's public keys, which it saved at the last sync. It confirms the giver really is the current holder.</div></li>
       <li><div><strong>Tie it to the object.</strong> The receiver scans the camera's tag or tamper-evident seal. If the number doesn't match, the handover can't go ahead.</div></li>
-      <li><div><strong>Accept.</strong> The receiver's phone signs the acceptance and shows it as a QR code. <strong>Liability moves the moment the receiver signs.</strong></div></li>
-      <li><div><strong>Confirm.</strong> The giver scans the acceptance. Both phones now hold the same record, signed by both, ready to sync.</div></li>
+      <li><div><strong>Accept.</strong> The receiver confirms with a fingerprint, and their phone signs the acceptance and shows it as a QR code. <strong>Liability moves the moment the receiver signs.</strong></div></li>
+      <li><div><strong>Confirm.</strong> The giver scans the acceptance. Both phones now hold the same record, signed by both, ready to sync. Both screens show the same 6-digit match code, and the two people check aloud that the codes match.</div></li>
     </ol>
+
+    <h3>How the handover travels</h3>
+    <p>The QR code is only the envelope; the signature is the seal on it. Anyone can photograph the envelope, but nobody can forge the seal without the signing key, which never leaves the giver's phone. That's why the swap can use whichever way a site allows, and the signed record is the same each way. Singapore already trusts QR codes for serious work, such as Singpass logins and SGQR payments.</p>
+    <div class="table-wrap wide-table">
+      <table>
+        <thead><tr><th>Method</th><th>How it works</th><th>Strengths and limits</th><th>When</th></tr></thead>
+        <tbody>
+          <tr><td><strong>QR code</strong></td><td>One phone shows a code, and the other's camera scans it</td><td>Sends no radio signal, so it works where radios aren't wanted. It needs a camera.</td><td>Hackathon build</td></tr>
+          <tr><td><strong>Bluetooth or Wi-Fi</strong></td><td>The phones connect directly with no internet, over an encrypted link (Google Nearby Connections)</td><td>Easy "tap to hand over". It works across a room, so the seal scan and match code show the people are together.</td><td>Stretch goal</td></tr>
+          <tr><td><strong>NFC tap</strong></td><td>One phone acts as a contactless card, and the other reads it</td><td>Only works within about 4 cm, so it proves the people are together. No camera needed.</td><td>Next steps</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>What the signing step looks like</h3>
+    <div class="grid">
+      <div class="card"><span class="label">Who and what</span><p>A card shows both people, their roles, the item, and the source and seal numbers. The QR code sits inside it, never on its own.</p></div>
+      <div class="card"><span class="label">A fingerprint signs</span><p>The signing key only works after a fingerprint or PIN, so the person agrees to every handover, not just the phone.</p></div>
+      <div class="card"><span class="label">A 6-digit match code</span><p>Both screens show the same code, worked out from the signed record, and both people check it aloud. It's the same idea as pairing a Bluetooth device.</p></div>
+      <div class="card"><span class="label">A countdown</span><p>"Valid for 0:58". A photographed or relayed offer goes stale within a minute.</p></div>
+      <div class="card"><span class="label">A verified state</span><p>"Signed by both · checked offline · 2 of 2 signatures valid", with a short key fingerprint for anyone who wants to inspect it.</p></div>
+    </div>
 
     <h3>The chain for one working day</h3>
     <div class="diagram" role="img" aria-label="Diagram: camera C-12 passes from the store (Siti) to Ravi at 07:30, to Wei Ming at 13:00, and back to the store at 19:40. Each handover is a record signed by both people. The middle handovers happen offline.">
@@ -580,6 +603,40 @@ footer { margin-top: 64px; border-top: 1px solid var(--line); padding-block: 26p
 <section id="p9">
   <div class="part-head">
     <span class="part-tag">Part 9</span>
+    <h2>Attacks, and what stops each one</h2>
+  </div>
+  <div class="stack">
+    <p class="pull">We don't claim nothing can go wrong. We claim nothing can go wrong silently, and when it does, the record shows exactly who did it.</p>
+    <div class="table-wrap wide-table">
+      <table>
+        <thead><tr><th>Attack</th><th>What stops it</th><th>In the hackathon build</th></tr></thead>
+        <tbody>
+          <tr><td>Someone photographs a handover QR and replays it later</td><td>The offer names one receiver, one item and one previous record. It carries a one-time number and expires in about 60 seconds. Only the named receiver's key can accept it, and a replayed acceptance is just a harmless duplicate.</td><td class="yes">Yes</td></tr>
+          <tr><td>Someone photographs the item's printed tag and "scans" the photo</td><td>The seal number is checked, ideally with a witness. In production, NFC tags that make a new code on every tap close the gap.</td><td>Seal check only</td></tr>
+          <tr><td>A tampered phone keeps a copy of the token and hands the item over twice</td><td>This can't be stopped offline. At sync, the fork is proven by the giver's own signatures.</td><td class="yes">Yes, in the demo</td></tr>
+          <tr><td>Someone signs on your phone, or steals it</td><td>Every signature needs a fingerprint or PIN. A lost phone is revoked, and its records are refused from its next sync.</td><td class="yes">Fingerprint: yes</td></tr>
+          <tr><td>A fake phone poses as a team member</td><td>Every signature is checked against the team's public keys, saved at the last sync. Unknown keys are rejected.</td><td class="yes">Yes</td></tr>
+          <tr><td>Keys are pulled off a rooted phone</td><td>Keys stay in secure hardware where the phone has it. The server checks at enrolment that the key is hardware-backed (Android key attestation).</td><td>Production</td></tr>
+          <tr><td>Someone relays the offer QR to a receiver who isn't there</td><td>The receiver must scan the item's seal, and the offer expires within seconds. An NFC tap would need the phones within about 4 cm.</td><td class="yes">Seal and expiry: yes</td></tr>
+          <tr><td>Someone listens in on a Bluetooth or Wi-Fi handover</td><td>The records aren't secret, but nobody can change them, because the signatures guarantee that. The link is encrypted anyway.</td><td>Stretch goal</td></tr>
+          <tr><td>A phone's clock is set back or forward</td><td>The order comes from the chain. The server records when each record arrives and flags large gaps.</td><td class="yes">Yes</td></tr>
+          <tr><td>Two people agree to lie</td><td>This can't be stopped. Every step is still signed, attributed to a person, and impossible to deny later.</td><td>A stated limit</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>Three attacks we'll run live</h3>
+    <ol class="steps">
+      <li><div><strong>The replay.</strong> Jun scans a photo of the QR that Ravi showed Wei Ming. His phone refuses it: the offer names Wei Ming, it has expired, and its one-time number has been used. You can try this in the simulator in Part 7.</div></li>
+      <li><div><strong>The double handover.</strong> Ravi's tampered phone hands C-12 to Jun from an old copy of the token. At sync, a red alert names Ravi, backed by his own signatures.</div></li>
+      <li><div><strong>The wrong finger.</strong> Someone picks up Ravi's phone and tries to sign a handover. The fingerprint is refused, so nothing gets signed.</div></li>
+    </ol>
+  </div>
+</section>
+
+<!-- PART 10 -->
+<section id="p10">
+  <div class="part-head">
+    <span class="part-tag">Part 10</span>
     <h2>Why it's new, and why it's useful</h2>
   </div>
   <div class="stack">
@@ -610,10 +667,10 @@ footer { margin-top: 64px; border-top: 1px solid var(--line); padding-block: 26p
   </div>
 </section>
 
-<!-- PART 10 -->
-<section id="p10">
+<!-- PART 11 -->
+<section id="p11">
   <div class="part-head">
-    <span class="part-tag">Part 10</span>
+    <span class="part-tag">Part 11</span>
     <h2>What we're not claiming</h2>
   </div>
   <ul class="stack" style="padding-left:1.2em">
@@ -626,10 +683,10 @@ footer { margin-top: 64px; border-top: 1px solid var(--line); padding-block: 26p
   </ul>
 </section>
 
-<!-- PART 11 -->
-<section id="p11">
+<!-- PART 12 -->
+<section id="p12">
   <div class="part-head">
-    <span class="part-tag">Part 11</span>
+    <span class="part-tag">Part 12</span>
     <h2>The 3-minute demo, and how it scores</h2>
   </div>
   <div class="stack">
@@ -637,7 +694,7 @@ footer { margin-top: 64px; border-top: 1px solid var(--line); padding-block: 26p
       <li><div><strong>Hook (20 s).</strong> "Singapore's Court of Appeal threw out convictions because two officers' records of one handover didn't match. Now picture that item is a radioactive source."</div></li>
       <li><div><strong>Sign-out (30 s).</strong> Siti issues C-12 to Ravi: one seal scan and two QR codes. Then every phone goes into airplane mode.</div></li>
       <li><div><strong>Handover in the yard (40 s).</strong> Ravi hands C-12 to Wei Ming. The seal is scanned, and the screen states that the item is a sealed source. Ravi shows the signed receipt.</div></li>
-      <li><div><strong>The cheat (30 s).</strong> A tampered phone tries to hand C-12 over a second time, from an old copy of the token.</div></li>
+      <li><div><strong>The attacks (30 s).</strong> A tampered phone tries to hand C-12 over a second time, from an old copy of the token. Then someone scans a photo of an earlier handover QR, and it's refused.</div></li>
       <li><div><strong>Overdue (20 s).</strong> The clock passes 19:00, and Wei Ming's phone raises the alarm with no network.</div></li>
       <li><div><strong>Reconnect (40 s).</strong> Airplane mode goes off. The supervisor's screen rebuilds the chain and shows a red fork alert naming who cheated. The records the law requires are produced automatically.</div></li>
     </ol>
@@ -823,6 +880,14 @@ footer { margin-top: 64px; border-top: 1px solid var(--line); padding-block: 26p
       });
       elC.appendChild(b);
     });
+    var rp = document.createElement("button");
+    rp.type = "button"; rp.id = "sim-replay"; rp.textContent = "Attack: replay a photo of Ravi's 13:00 QR";
+    rp.disabled = S.step < 3;
+    rp.addEventListener("click", function () {
+      say("13:25", "Jun scans a photo of the offer QR that Ravi showed Wei Ming at 13:00. Jun's phone refuses it, for three reasons: the offer names Wei Ming as the receiver, it expired at about 13:01, and its one-time number has already been used. Even if Jun's phone were tampered with and signed it anyway, the server would reject an acceptance signed by anyone other than the named receiver. Nothing changes in the chain.");
+    });
+    elC.appendChild(rp);
+
     var r = document.createElement("button");
     r.type = "button"; r.id = "sim-reset"; r.className = "reset"; r.textContent = "Start again";
     r.addEventListener("click", reset);
