@@ -203,6 +203,12 @@ fun refusedSentence(alert: AlertEntity, roster: Roster, handovers: List<Handover
         reason.startsWith("not a fork alert") -> "Refused: a decision on $itemCode for an alert that isn't an open fork"
         reason.startsWith("unknown camera") -> "Refused: a record$phone for a camera that isn't in the register"
         reason.startsWith("unknown person") -> "Refused: a $itemCode record$phone naming someone who isn't on the roster"
+        reason.startsWith("device revoked") -> {
+            val signers = listOfNotNull(field("from_device_id") ?: record?.fromDeviceId, field("to_device_id") ?: record?.toDeviceId)
+                .mapNotNull(roster::device)
+            val withdrawn = signers.firstOrNull { it.revokedAtMs != null } ?: signers.firstOrNull()
+            "Refused: a $itemCode record signed by ${withdrawn?.let { roster.nameOf(it.personId) } ?: from ?: "someone"}'s withdrawn phone"
+        }
         reason.startsWith("malformed record") -> "Refused: a $itemCode record$phone that couldn't be read"
         else -> "Refused: $itemCode$phone · $reason"
     }

@@ -49,6 +49,9 @@ interface DeviceKeys {
      * Call it within 10 seconds of a successful SignPrompt, or it throws.
      */
     fun sign(text: String): String
+
+    /** Deletes the key, so a new enrolment makes a fresh one (docs/sync.md A.12). */
+    fun deleteKey() {}
 }
 
 class NoSecureLockException : Exception("Set a fingerprint or PIN on this phone to sign handovers.")
@@ -120,14 +123,25 @@ class KeystoreDeviceKeys(private val context: Context) : DeviceKeys {
         encode(sign())
     }
 
+    override fun deleteKey() {
+        store().deleteEntry(ALIAS)
+        if (BuildConfig.DEBUG) deleteSoftwareKeyFile(context)
+    }
+
     private companion object {
         const val ALIAS = "countersign-device-key"
     }
 }
 
+private const val SOFTWARE_KEY_FILE = "countersign-test-key"
+
+private fun deleteSoftwareKeyFile(context: Context) {
+    AtomicFile(File(context.noBackupFilesDir, SOFTWARE_KEY_FILE)).delete()
+}
+
 /** Only for debug phones with no lock; excluded from Android backup. */
 class SoftwareDeviceKeys(private val context: Context) : DeviceKeys {
-    private val file get() = AtomicFile(File(context.noBackupFilesDir, "countersign-test-key"))
+    private val file get() = AtomicFile(File(context.noBackupFilesDir, SOFTWARE_KEY_FILE))
 
     private fun requireTestPhone() {
         check(BuildConfig.DEBUG && !context.hasSecureLock()) { "Software keys are only for debug phones without a secure lock" }
@@ -176,6 +190,8 @@ class SoftwareDeviceKeys(private val context: Context) : DeviceKeys {
         }
         return checkNotNull(keyInfo())
     }
+
+    override fun deleteKey() = deleteSoftwareKeyFile(context)
 
     override fun sign(text: String): String = Signature.getInstance("SHA256withECDSA").run {
         initSign(checkNotNull(read()) { "Create this phone's signing key first" }.private)

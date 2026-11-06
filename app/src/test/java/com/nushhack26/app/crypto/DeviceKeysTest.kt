@@ -37,6 +37,15 @@ class DeviceKeysTest {
         assertFalse(Signatures.verify(replacement.publicKey, "CS1 offline handover", signature))
     }
 
+    @Test fun deletingTheSoftwareKeyLeavesNoKey() {
+        val keys = SoftwareDeviceKeys(context)
+        keys.createKey()
+        keys.deleteKey()
+        assertNull(keys.keyInfo())
+        assertNull(deviceKeys(context).keyInfo())
+        assertThrows(IllegalStateException::class.java) { keys.sign("after withdrawal") }
+    }
+
     @Test fun aSecurePhoneNeverUsesTheSoftwareFallback() {
         shadowOf(context.getSystemService(KeyguardManager::class.java)).setIsDeviceSecure(true)
         assertTrue(deviceKeys(context) is KeystoreDeviceKeys)
