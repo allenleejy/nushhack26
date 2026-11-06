@@ -9,6 +9,7 @@ import com.nushhack26.app.data.local.Origin
 import com.nushhack26.app.data.local.SyncMark
 import com.nushhack26.app.data.remote.toPayload
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /** Receive (card 04): the receiver's side. */
 class ReceiveRepository(
@@ -17,7 +18,12 @@ class ReceiveRepository(
 ) {
     fun observeRoster(): Flow<Roster> = db.observeRoster()
 
-    suspend fun roster(): Roster = db.roster()
+    /** People, device keys and items, so the checks can name the camera. */
+    suspend fun roster(): Roster = db.roster().copy(items = db.itemDao().all())
+
+    /** One handover as it changes, for the "Not synced yet" mark after accepting. */
+    fun observeHandover(itemId: String, id: String): Flow<HandoverEntity?> =
+        db.handoverDao().observeForItem(itemId).map { list -> list.firstOrNull { it.id == id } }
 
     suspend fun item(itemId: String): ItemEntity? = db.itemDao().get(itemId)
 

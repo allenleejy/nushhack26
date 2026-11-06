@@ -1,0 +1,128 @@
+package com.nushhack26.app.screenshots
+
+import android.app.Application
+import com.nushhack26.app.crypto.CheckLine
+import com.nushhack26.app.ui.components.SyncChipState
+import com.nushhack26.app.ui.receive.HandoverSummary
+import com.nushhack26.app.ui.receive.ReceiveContent
+import com.nushhack26.app.ui.receive.ReceiveStep
+import com.nushhack26.app.ui.receive.ReceiveUiState
+import com.nushhack26.app.ui.receive.SealResult
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+import java.time.LocalDateTime
+import java.time.ZoneId
+
+@RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(application = Application::class, qualifiers = PHONE)
+class ReceiveScreenshotTest {
+    private fun at(h: Int, m: Int) = LocalDateTime.of(2026, 11, 7, h, m).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+    private val summary = HandoverSummary(
+        itemCode = "C-12", sourceSerial = "IR-0457", isotope = "Ir-192", sealNo = "S-40117",
+        giverName = "Siti Aminah", giverRole = "store_officer",
+        receiverName = "Ravi Kumar", receiverRole = "radiographer",
+        kind = "issue", dueMs = at(14, 31),
+    )
+
+    private val green = listOf(
+        CheckLine(true, "Signed by Siti Aminah · key on file"),
+        CheckLine(true, "Siti Aminah holds C-12"),
+        CheckLine(true, "Made out to you"),
+        CheckLine(true, "Valid for 0:41"),
+        CheckLine(true, "Not used before"),
+        CheckLine(true, "Authorised · radiographer · valid to 30 Jun 2027"),
+    )
+
+    private val base = ReceiveUiState(summary = summary, nowMs = at(13, 2))
+
+    @Test
+    fun scanOffer() = captureScreen("Receive_R1_scan_offer") {
+        ReceiveContent(base.copy(step = ReceiveStep.ScanOffer, summary = null))
+    }
+
+    @Test
+    fun notHandoverCode() = captureScreen("Receive_R1_not_handover_code") {
+        ReceiveContent(base.copy(step = ReceiveStep.ScanOffer, summary = null, message = "Not a handover code."))
+    }
+
+    @Test
+    fun noRoster() = captureScreen("Receive_R1_no_roster") {
+        ReceiveContent(base.copy(step = ReceiveStep.ScanOffer, summary = null, rosterEmpty = true))
+    }
+
+    @Test
+    fun checking() = captureScreen("Receive_R2_checking") {
+        ReceiveContent(base.copy(step = ReceiveStep.Checking))
+    }
+
+    @Test
+    fun checksPassed() = captureScreen("Receive_R2_checks_passed") {
+        ReceiveContent(base.copy(step = ReceiveStep.Checks, lines = green, passed = true))
+    }
+
+    @Test
+    fun refusedCopy() = captureScreen("Receive_R2_refused_copy") {
+        val lines = green.toMutableList().apply { this[4] = CheckLine(false, "Already used on this phone") }
+        ReceiveContent(base.copy(step = ReceiveStep.Checks, lines = lines, passed = false, looksLikeCopy = true))
+    }
+
+    @Test
+    fun refusedLapsed() = captureScreen("Receive_R2_refused_lapsed") {
+        val lines = green.toMutableList().apply {
+            this[2] = CheckLine(false, "Made out to Tan Wei Ming, not you")
+            this[5] = CheckLine(false, "You aren't authorised to hold sealed sources (lapsed 3 Nov)")
+        }
+        ReceiveContent(base.copy(step = ReceiveStep.Checks, lines = lines, passed = false))
+    }
+
+    @Test
+    fun scanSeal() = captureScreen("Receive_R3_scan_seal") {
+        ReceiveContent(base.copy(step = ReceiveStep.ScanSeal))
+    }
+
+    @Test
+    fun sealMatches() = captureScreen("Receive_R3_seal_matches") {
+        ReceiveContent(base.copy(step = ReceiveStep.ScanSeal, seal = SealResult(true, "S-40117", "S-40117", "Seal S-40117 matches C-12")))
+    }
+
+    @Test
+    fun sealMismatch() = captureScreen("Receive_R3_seal_mismatch") {
+        val text = "Seal S-40999 doesn't match C-12 (S-40117). Don't accept this camera."
+        ReceiveContent(base.copy(step = ReceiveStep.ScanSeal, seal = SealResult(false, "S-40999", "S-40117", text)))
+    }
+
+    @Test
+    fun accept() = captureScreen("Receive_R4_accept") {
+        ReceiveContent(base.copy(step = ReceiveStep.Accept))
+    }
+
+    @Test
+    fun acceptCancelled() = captureScreen("Receive_R4_fingerprint_cancelled") {
+        ReceiveContent(base.copy(step = ReceiveStep.Accept, message = "Fingerprint cancelled. Nothing was signed. Siti still holds C-12."))
+    }
+
+    @Test
+    fun leaseExpired() = captureScreen("Receive_R4_lease_expired") {
+        ReceiveContent(base.copy(step = ReceiveStep.Accept, leaseExpired = true))
+    }
+
+    @Test
+    fun showAcceptance() = captureScreen("Receive_R5_acceptance_qr") {
+        ReceiveContent(base.copy(step = ReceiveStep.ShowAcceptance, acceptanceQr = "CS1A:demo-acceptance-payload", matchCode = "48 21 07"))
+    }
+
+    @Test
+    fun done() = captureScreen("Receive_R5_done") {
+        ReceiveContent(base.copy(step = ReceiveStep.Done, matchCode = "48 21 07", recordSync = SyncChipState.Waiting))
+    }
+
+    @Test
+    fun unavailable() = captureScreen("Receive_not_enrolled") {
+        ReceiveContent(ReceiveUiState(ReceiveStep.Unavailable, message = "Enrol this phone before receiving a camera."))
+    }
+}
