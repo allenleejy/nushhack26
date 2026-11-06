@@ -508,6 +508,8 @@ class GiveViewModel(
                 it.copy(
                     step = toStep, offer = null, proof = null, scanError = null, snack = snack,
                     relayed = false, declined = false, relayError = null,
+                    // Back at G2, decide online or QR again: the network may have changed.
+                    online = if (toStep == GiveStep.Review) isOnline.value && serverConfigured else it.online,
                     selectedReceiverId = if (toStep == GiveStep.Choose) null else it.selectedReceiverId,
                 )
             }
