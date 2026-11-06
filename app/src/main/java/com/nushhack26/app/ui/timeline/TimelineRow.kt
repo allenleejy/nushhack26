@@ -19,13 +19,17 @@ import androidx.compose.material.icons.sharp.GppBad
 import androidx.compose.material.icons.sharp.Gavel
 import androidx.compose.material.icons.sharp.HelpOutline
 import androidx.compose.material.icons.sharp.Verified
+import androidx.compose.material.icons.sharp.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nushhack26.app.data.local.SyncMark
@@ -35,6 +39,7 @@ import com.nushhack26.app.ui.theme.Tenet
 import com.nushhack26.app.ui.theme.TenetDimens
 import com.nushhack26.app.ui.theme.TenetType
 import com.nushhack26.app.ui.theme.hatching
+import com.nushhack26.app.ui.theme.hazardStripes
 
 /**
  * One record on the custody chain (design/components/TimelineRow): a square node on a rail,
@@ -75,7 +80,7 @@ fun TimelineRow(entry: TimelineEntry, modifier: Modifier = Modifier, compact: Bo
             val extra = listOfNotNull(entry.dueMs?.let { "Due ${clockText(it)}" }, entry.sealNo?.let { "Seal $it" })
             if (extra.isNotEmpty()) Text(extra.joinToString(" · "), style = small, color = colors.inkMuted)
             if (entry.matchCode.isNotEmpty()) Text("MATCH ${entry.matchCode}", style = TenetType.recordLabel, color = colors.ink)
-            SigLine(entry.sig)
+            SigLine(entry.sig, entry.keyWithdrawn)
             when {
                 entry.look == EntryLook.Overruled -> Patch("OVERRULED BY SUPERVISOR", colors.ink, colors.bg000)
                 entry.look == EntryLook.Rejected -> {
@@ -95,7 +100,7 @@ private fun Patch(text: String, ink: Color, ground: Color) {
 }
 
 @Composable
-fun SigLine(sig: SigCheck) {
+fun SigLine(sig: SigCheck, keyWithdrawn: KeyWithdrawn? = null) {
     val colors = Tenet.colors
     val (text, icon, color) = when (sig) {
         SigCheck.Valid -> Triple("BOTH SIGNED ✓", Icons.Sharp.Verified, colors.ok)
@@ -103,9 +108,37 @@ fun SigLine(sig: SigCheck) {
         SigCheck.UnknownKey -> Triple("KEY NOT ON THIS PHONE YET", Icons.Sharp.HelpOutline, colors.pending)
         SigCheck.Unsigned -> Triple("STORE REGISTER", Icons.Sharp.Verified, colors.inkMuted)
     }
+    val mark = keyWithdrawn?.let {
+        if (it.afterSigning) "KEY WITHDRAWN ${clockText(it.atMs)}" to colors.inkMuted
+        else "SIGNED AFTER KEY WITHDRAWN ${clockText(it.atMs)}" to colors.alertText
+    }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(TenetDimens.space1)) {
         Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
-        Text(text, style = TenetType.recordLabel, color = color)
+        Text(
+            buildAnnotatedString {
+                withStyle(SpanStyle(color = color)) { append(text) }
+                mark?.let { (words, tint) -> withStyle(SpanStyle(color = tint)) { append(" · " + words.replace(' ', '\u00A0')) } }
+            },
+            style = TenetType.recordLabel,
+        )
+    }
+}
+
+/** A fork only this phone knows about yet: a red label above the branches (docs/spec.md T). */
+@Composable
+fun LocalForkCard(text: String, modifier: Modifier = Modifier) {
+    val colors = Tenet.colors
+    Column(modifier.fillMaxWidth().padding(bottom = TenetDimens.space2).border(TenetDimens.strokeControl, colors.alert).background(colors.alertBg)) {
+        Row(
+            Modifier.fillMaxWidth().background(colors.alert).padding(TenetDimens.space2),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(TenetDimens.space2),
+        ) {
+            Icon(Icons.Sharp.Warning, contentDescription = null, tint = colors.onAlert)
+            Text("TWO HANDOVERS ON THIS PHONE", style = TenetType.label, color = colors.onAlert)
+        }
+        Text(text, style = TenetType.body, color = colors.ink, modifier = Modifier.padding(TenetDimens.space3))
+        Box(Modifier.fillMaxWidth().height(TenetDimens.space3).hazardStripes(colors.alert, colors.alertBg))
     }
 }
 

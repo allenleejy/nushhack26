@@ -23,6 +23,8 @@ data class CustodyState(
     val allSynced: Boolean = true,
     /** At a fork with no resolution: the first record of each branch. */
     val forkBranches: List<HandoverEntity> = emptyList(),
+    /** Disputed, and only this phone knows: none of the branch records has a server_seq yet. */
+    val localFork: Boolean = false,
 )
 
 /**
@@ -78,7 +80,8 @@ fun deriveCustody(
             val selected = next.filter { branch -> choices.any { branchContains(branch, it.chosenHandoverId) } }
             if (selected.size != 1) {
                 return CustodyState(item, CustodyStatus.Disputed, head = head, dueMs = head.dueMs,
-                    lastSignedMs = head.acceptedMs, allSynced = allSynced, forkBranches = next)
+                    lastSignedMs = head.acceptedMs, allSynced = allSynced, forkBranches = next,
+                    localFork = next.none { it.serverSeq != null })
             }
             selected.single()
         }

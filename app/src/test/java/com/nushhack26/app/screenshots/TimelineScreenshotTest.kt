@@ -6,6 +6,7 @@ import com.nushhack26.app.data.local.HandoverKind
 import com.nushhack26.app.data.local.SyncMark
 import com.nushhack26.app.ui.store.LOCAL_DB_ERROR
 import com.nushhack26.app.ui.timeline.EntryLook
+import com.nushhack26.app.ui.timeline.KeyWithdrawn
 import com.nushhack26.app.ui.timeline.SigCheck
 import com.nushhack26.app.ui.timeline.TimelineContent
 import com.nushhack26.app.ui.timeline.TimelineEntry
@@ -31,6 +32,8 @@ private fun entry(id: String, kind: String, title: String, detail: String, minut
 private val register = entry("r", HandoverKind.REGISTER, "Registered to Store officer", "Store register", 600, sig = SigCheck.Unsigned)
 private val issue = entry("a", HandoverKind.ISSUE, "Issued to Priya Nair", "From Store officer", 120)
 private val transfer = entry("b", HandoverKind.TRANSFER, "Handed to Daniel Lim", "From Priya Nair", 30, sync = SyncMark.WAITING)
+
+private const val LOCAL_FORK = "This phone holds two handovers of CAM-01 from Priya Nair after H1. Only one can be right. The safety officer will decide once this phone syncs."
 
 private val header = TimelineHeader("CAM-01", "Ir-192 · IR-7714", "S-40213", CustodyStatus.Out, "Daniel Lim", SAMPLE_NOW + 21_480_000)
 
@@ -89,6 +92,40 @@ class TimelineScreenshotTest {
     }
 
     @Test
+    fun localFork() = captureScreen("Timeline_local_fork") {
+        TimelineContent(
+            TimelineUiState.Ready(
+                SAMPLE_NOW, header.copy(status = CustodyStatus.Disputed, holderName = null, dueMs = null),
+                listOf(
+                    TimelineNode.Record(register), TimelineNode.Record(issue),
+                    TimelineNode.LocalFork(LOCAL_FORK),
+                    TimelineNode.Fork(
+                        listOf(
+                            listOf(entry("b", HandoverKind.TRANSFER, "Handed to Daniel Lim", "From Priya Nair", 30, sync = SyncMark.WAITING)),
+                            listOf(entry("c", HandoverKind.RETURN, "Returned to Store officer", "From Priya Nair", 20, sync = SyncMark.WAITING)),
+                        ),
+                    ),
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun keyWithdrawn() = captureScreen("Timeline_key_withdrawn") {
+        TimelineContent(
+            TimelineUiState.Ready(
+                SAMPLE_NOW, header,
+                listOf(
+                    TimelineNode.Record(register),
+                    TimelineNode.Record(issue.copy(keyWithdrawn = KeyWithdrawn(SAMPLE_NOW - 300_000, afterSigning = true))),
+                    TimelineNode.Record(transfer.copy(keyWithdrawn = KeyWithdrawn(SAMPLE_NOW - 300_000, afterSigning = true))),
+                    TimelineNode.Record(entry("x", HandoverKind.TRANSFER, "Handed to Wei Ling", "From Daniel Lim", 2, sync = SyncMark.WAITING).copy(keyWithdrawn = KeyWithdrawn(SAMPLE_NOW - 300_000, afterSigning = false))),
+                ),
+            ),
+        )
+    }
+
+    @Test
     fun notFound() = captureScreen("Timeline_not_found") { TimelineContent(TimelineUiState.NotFound) }
 
     @Test
@@ -106,7 +143,8 @@ class TimelineScreenshotTest {
                 TimelineUiState.Ready(
                     SAMPLE_NOW, header.copy(status = CustodyStatus.Disputed),
                     listOf(
-                        TimelineNode.Record(issue),
+                        TimelineNode.Record(issue.copy(keyWithdrawn = KeyWithdrawn(SAMPLE_NOW - 300_000, afterSigning = true))),
+                        TimelineNode.LocalFork(LOCAL_FORK),
                         TimelineNode.Fork(listOf(listOf(transfer), listOf(entry("c", HandoverKind.TRANSFER, "Handed to Wei Ling", "From Priya Nair", 28)))),
                     ),
                 ),

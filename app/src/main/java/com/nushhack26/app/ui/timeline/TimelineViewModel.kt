@@ -39,12 +39,19 @@ data class TimelineEntry(
     val syncStatus: String,
     val look: EntryLook,
     val reason: String? = null,
+    /** A signer's key the safety officer has since withdrawn (docs/sync.md A.12). */
+    val keyWithdrawn: KeyWithdrawn? = null,
 )
+
+/** When a key on this record was withdrawn, and whether that came after the record was signed. */
+data class KeyWithdrawn(val atMs: Long, val afterSigning: Boolean)
 
 /** A row of the timeline: one record, a fork with its branches side by side, or a supervisor's decision. */
 sealed interface TimelineNode {
     data class Record(val entry: TimelineEntry) : TimelineNode
     data class Fork(val branches: List<List<TimelineEntry>>) : TimelineNode
+    /** Both branches of a fork are only on this phone so far: nobody else knows yet. */
+    data class LocalFork(val text: String) : TimelineNode
     data class Resolution(val chosenTitle: String, val by: String, val note: String, val timeMs: Long, val sig: SigCheck, val synced: Boolean) : TimelineNode
 }
 
@@ -105,6 +112,10 @@ fun buildTimeline(chain: ItemChain): TimelineUiState {
             next.isEmpty() -> null
             next.size == 1 -> next.single()
             else -> {
+                if (state?.localFork == true && state.head?.id == at.id) {
+                    val after = (nodes.count { it is TimelineNode.Record } - 1).let { if (it <= 0) "its registration" else "H$it" }
+                    nodes += TimelineNode.LocalFork(localForkText(item.code, state.forkBranches, after, roster))
+                }
                 nodes += TimelineNode.Fork(next.map { branchFrom(it) })
                 chain.resolutions.sortedBy { it.decidedMs }.forEach { nodes += resolutionNode(it, byId, roster) }
                 null
@@ -115,6 +126,10 @@ fun buildTimeline(chain: ItemChain): TimelineUiState {
     records.filter { it.id !in placed }
         .sortedBy { it.serverSeq ?: it.offeredMs ?: Long.MAX_VALUE }
         .forEach { nodes += TimelineNode.Record(entry(it).copy(look = lookOf(it, orphan = true))) }
+
+    if (state?.localFork == true && nodes.none { it is TimelineNode.LocalFork }) {
+        nodes.add(0, TimelineNode.LocalFork(localForkText(item.code, state.forkBranches, "the same record", roster)))
+    }
 
     val header = TimelineHeader(
         code = item.code, source = "${item.isotope} · ${item.sourceSerial}", sealNo = item.sealNo,
@@ -145,7 +160,26 @@ private fun toEntry(h: HandoverEntity, parent: HandoverEntity?, roster: Roster):
         syncStatus = h.syncStatus,
         look = lookOf(h, orphan = false),
         reason = h.syncReason ?: h.statusReason,
+        keyWithdrawn = keyWithdrawn(h, roster),
     )
+}
+
+/** "This phone holds two handovers of C-12 from Ravi Kumar after H1. …" (docs/spec.md T). */
+private fun localForkText(code: String, branches: List<HandoverEntity>, after: String, roster: Roster): String {
+    val giver = roster.person(branches.firstOrNull()?.fromPersonId)?.name ?: "the same giver"
+    val count = when (branches.size) { 2 -> "two"; 3 -> "three"; 4 -> "four"; else -> branches.size.toString() }
+    return "This phone holds $count handovers of $code from $giver after $after. Only one can be right. " +
+        "The safety officer will decide once this phone syncs."
+}
+
+/** The earliest withdrawal of either signer's key; the giver signed at offered_ms, the receiver at accepted_ms. */
+private fun keyWithdrawn(h: HandoverEntity, roster: Roster): KeyWithdrawn? {
+    if (h.kind == HandoverKind.REGISTER) return null
+    val withdrawals = listOf(h.fromDeviceId to h.offeredMs, h.toDeviceId to h.acceptedMs).mapNotNull { (device, signedMs) ->
+        roster.withdrawnAt(device)?.let { at -> KeyWithdrawn(at, signedMs != null && signedMs < at - 15_000) }
+    }
+    val first = withdrawals.minByOrNull { it.atMs } ?: return null
+    return first.copy(afterSigning = withdrawals.all { it.afterSigning })
 }
 
 private fun lookOf(h: HandoverEntity, orphan: Boolean): EntryLook = when {
