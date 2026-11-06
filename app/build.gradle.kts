@@ -70,6 +70,8 @@ android {
 
     testOptions {
         unitTests.isIncludeAndroidResources = true
+        // Robolectric on SDK 36 reaches into this JDK package.
+        unitTests.all { it.jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED", "--add-opens=java.base/jdk.internal.access=ALL-UNNAMED") }
     }
 }
 

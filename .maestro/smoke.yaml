@@ -1,0 +1,14 @@
+# The app opens, the tab bar shows, and Me shows a user id or "Will sign in when online".
+# Run: maestro test .maestro/smoke.yaml   (release build: -e APP_ID=com.nushhack26.app)
+appId: ${APP_ID || "com.nushhack26.app.debug"}
+---
+- launchApp
+- assertVisible: "Home"
+- assertVisible: "Tasks"
+- assertVisible: "Me"
+- tapOn: "Me"
+- assertVisible: "Signed in as"
+- assertVisible:
+    text: "User .*|Will sign in when online"
+- assertVisible:
+    text: "Version .*"

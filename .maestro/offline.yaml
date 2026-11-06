@@ -1,0 +1,17 @@
+# With airplane mode on, the offline banner shows; with it off again, the banner goes.
+# Run: maestro test .maestro/offline.yaml   (release build: -e APP_ID=com.nushhack26.app)
+appId: ${APP_ID || "com.nushhack26.app.debug"}
+---
+- setAirplaneMode: disabled
+- launchApp
+- extendedWaitUntil:
+    notVisible: "Offline.*"
+    timeout: 20000
+- setAirplaneMode: enabled
+- extendedWaitUntil:
+    visible: "Offline.*"
+    timeout: 20000
+- setAirplaneMode: disabled
+- extendedWaitUntil:
+    notVisible: "Offline.*"
+    timeout: 30000

@@ -46,7 +46,7 @@ fun SyncStatusBar(status: SyncStatus, modifier: Modifier = Modifier) {
 
 fun syncSummary(status: SyncStatus): String {
     val waiting = when (status.pendingCount) {
-        0 -> "All changes synced"
+        0 -> if (status.lastSyncAt == null) "No changes waiting" else "All changes synced"
         1 -> "1 change waiting"
         else -> "${status.pendingCount} changes waiting"
     }
