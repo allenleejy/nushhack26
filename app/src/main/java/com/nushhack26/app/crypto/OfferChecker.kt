@@ -4,6 +4,7 @@ import com.nushhack26.app.data.local.HandoverEntity
 import com.nushhack26.app.data.local.ItemEntity
 import com.nushhack26.app.data.local.HandoverKind
 import com.nushhack26.app.data.repo.Identity
+import com.nushhack26.app.data.repo.RelayRepository
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -20,6 +21,9 @@ data class OfferCheck(
 
 /** The offline checks (docs/sync.md A.4). Card 01 fills in the bodies. */
 object OfferChecker {
+    /** A relayed offer is signed for 3 minutes instead of 60 s (docs/sync.md A.10). */
+    private const val RELAYED_VALID_MS = RelayRepository.RELAYED_OFFER_VALID_MS
+
     /** The six checks, in order, against this phone's roster and records. */
     fun check(offer: ScannedCode.Offer, me: Identity, roster: Roster, local: List<HandoverEntity>, nowMs: Long): OfferCheck {
         val h = offer.offer
@@ -33,7 +37,7 @@ object OfferChecker {
         val expires = h.expiresMs
         val offered = h.offeredMs
         val valid = offered != null && expires != null && offered >= 0 && expires <= Long.MAX_VALUE - 15_000 &&
-            offered <= Long.MAX_VALUE - 60_000 && expires == offered + 60_000 &&
+            offered <= Long.MAX_VALUE - RELAYED_VALID_MS && (expires == offered + 60_000 || expires == offered + RELAYED_VALID_MS) &&
             nowMs >= offered - 15_000 && nowMs <= expires + 15_000
         val readable = h.kind in listOf(HandoverKind.ISSUE, HandoverKind.TRANSFER, HandoverKind.RETURN) &&
             listOf(h.id, h.itemId, h.prevId, h.fromPersonId, h.fromDeviceId, h.toPersonId).all { !it.isNullOrEmpty() } &&

@@ -18,8 +18,11 @@ import com.nushhack26.app.data.local.SyncMark
 import com.nushhack26.app.data.repo.Identity
 import com.nushhack26.app.data.repo.IdentityRepository
 import com.nushhack26.app.data.repo.ReceiveRepository
+import com.nushhack26.app.data.repo.RelayOutcome
+import com.nushhack26.app.data.repo.RelayRepository
 import com.nushhack26.app.ui.components.SignResult
 import com.nushhack26.app.ui.components.SyncChipState
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -31,8 +34,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** The receiver's flow, R1–R5 in docs/spec.md section 3. */
-enum class ReceiveStep { Loading, Unavailable, ScanOffer, Checking, Checks, ScanSeal, Accept, ShowAcceptance, Done }
+/** The receiver's flow, R1–R5 in docs/spec.md section 3. Sending and Declined are the relayed offer's (card 15). */
+enum class ReceiveStep { Loading, Unavailable, ScanOffer, Checking, Checks, ScanSeal, Accept, Sending, ShowAcceptance, Done, Declined }
 
 /** What the who-and-what card shows. */
 data class HandoverSummary(
@@ -71,6 +74,16 @@ data class ReceiveUiState(
     val matchCode: String? = null,
     val recordSync: SyncChipState = SyncChipState.Waiting,
     val nowMs: Long = 0L,
+    /** Opened from the R0 banner: the offer came through the server, not a scanned QR. */
+    val relayed: Boolean = false,
+    /** Declining: waiting for the server to close the offer. */
+    val declining: Boolean = false,
+    /** R5-online: the acceptance went back to the giver through the server. */
+    val sentOnline: Boolean = false,
+    /** R5 after a failed send: "Couldn't reach the server. Show this to Siti instead." */
+    val fallbackText: String? = null,
+    /** The Declined screen's lines. */
+    val declinedText: String? = null,
 ) {
     val refusedHeader: String
         get() = if (looksLikeCopy) "This is a copy. It can't be used." else "This handover can't be accepted."
@@ -86,6 +99,7 @@ sealed interface ReceiveAction {
     data object Next : ReceiveAction
     data object Accept : ReceiveAction
     data object Done : ReceiveAction
+    data object Decline : ReceiveAction
     data object Close : ReceiveAction
 }
 
@@ -94,6 +108,10 @@ class ReceiveViewModel(
     private val identityRepo: IdentityRepository,
     private val deviceKeys: () -> DeviceKeys,
     private val clock: () -> Long = System::currentTimeMillis,
+    private val relay: RelayRepository? = null,
+    private val relayedOfferId: String? = null,
+    /** Outlives this screen, so a refused offer still gets closed after the person leaves. */
+    private val appScope: CoroutineScope? = null,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ReceiveUiState())
     val state: StateFlow<ReceiveUiState> = _state.asStateFlow()
@@ -107,6 +125,7 @@ class ReceiveViewModel(
     private var giver: PersonEntity? = null
     private var scannedSeal: String? = null
     private var ticker: Job? = null
+    private var relayClosed = false
 
     init {
         viewModelScope.launch { load() }
@@ -121,7 +140,30 @@ class ReceiveViewModel(
         identity = id
         roster = withContext(Dispatchers.IO) { repo.roster() }
         me = roster.person(id.personId)
+        if (relayedOfferId != null) {
+            loadRelayed(relayedOfferId)
+            return
+        }
         _state.value = ReceiveUiState(ReceiveStep.ScanOffer, rosterEmpty = roster.devices.isEmpty(), nowMs = clock())
+    }
+
+    /** R0 → R2: the offer string from the server goes down the same path as a scanned one. R1 is skipped. */
+    private suspend fun loadRelayed(offerId: String) {
+        _state.value = ReceiveUiState(ReceiveStep.Checking, relayed = true, nowMs = clock())
+        val found = relay?.incomingOffer(offerId)
+        val scanned = found?.let { QrPayloads.parse(it.offer) as? ScannedCode.Offer }?.takeIf { it.offer.id == offerId }
+        if (scanned == null) {
+            if (found != null) closeRelayed()
+            val giverId = found?.fromPersonId ?: repo.relayedGiver(offerId)
+            val name = giverId?.let { roster.person(it)?.name ?: withContext(Dispatchers.IO) { repo.person(it) }?.name }
+            _state.value = ReceiveUiState(
+                ReceiveStep.Unavailable,
+                relayed = true,
+                message = if (found != null) "Not a handover code." else notOpenText(name),
+            )
+            return
+        }
+        startChecks(scanned)
     }
 
     fun onAction(action: ReceiveAction) {
@@ -140,6 +182,7 @@ class ReceiveViewModel(
                 _state.update { it.copy(step = ReceiveStep.Accept, message = null, leaseExpired = lease.expired, nowMs = clock()) }
             }
             ReceiveAction.Done -> _state.update { it.copy(step = ReceiveStep.Done) }
+            ReceiveAction.Decline -> decline()
             ReceiveAction.Accept, ReceiveAction.Close -> Unit
         }
     }
@@ -163,27 +206,34 @@ class ReceiveViewModel(
             return
         }
         _state.update { it.copy(step = ReceiveStep.Checking, message = null) }
-        viewModelScope.launch {
-            local = withContext(Dispatchers.IO) { repo.localHandovers() }
-            roster = withContext(Dispatchers.IO) { repo.roster() }
-            me = identity?.let { roster.person(it.personId) }
-            offer = scanned
-            item = roster.items.firstOrNull { it.id == scanned.offer.itemId }
-            giver = roster.person(scanned.offer.fromPersonId)
-            val result = check()
-            if (result == null) {
+        viewModelScope.launch { startChecks(scanned) }
+    }
+
+    private suspend fun startChecks(scanned: ScannedCode.Offer) {
+        local = withContext(Dispatchers.IO) { repo.localHandovers() }
+        roster = withContext(Dispatchers.IO) { repo.roster() }
+        me = identity?.let { roster.person(it.personId) }
+        offer = scanned
+        item = roster.items.firstOrNull { it.id == scanned.offer.itemId }
+        giver = roster.person(scanned.offer.fromPersonId)
+        val result = check()
+        if (result == null) {
+            if (relayedOfferId != null) {
+                closeRelayed()
+                _state.update { it.copy(step = ReceiveStep.Unavailable, message = "Not a handover code.") }
+            } else {
                 _state.update { it.copy(step = ReceiveStep.ScanOffer, message = "Not a handover code.") }
-                return@launch
             }
-            // "Checking offline…" for a moment, then the lines one by one.
-            delay(300)
-            _state.update { it.copy(step = ReceiveStep.Checks, revealedLines = 0) }
-            for (n in 1..result.lines.size) {
-                delay(110)
-                _state.update { it.copy(revealedLines = n) }
-            }
-            startTicker()
+            return
         }
+        // "Checking offline…" for a moment, then the lines one by one.
+        delay(300)
+        _state.update { it.copy(step = ReceiveStep.Checks, revealedLines = 0) }
+        for (n in 1..result.lines.size) {
+            delay(110)
+            _state.update { it.copy(revealedLines = n) }
+        }
+        startTicker()
     }
 
     /** Runs the six checks now and puts them in the state. Null if the code isn't readable. */
@@ -200,7 +250,39 @@ class ReceiveViewModel(
                 summary = summary(scanned.offer), nowMs = now,
             )
         }
+        // A refused relayed offer: nothing stored or sent, but the giver isn't left waiting.
+        if (!result.passed) closeRelayed()
         return result
+    }
+
+    /** Best effort: tells the server this offer is finished here. It also lapses at its expiry. */
+    private fun closeRelayed() {
+        val id = relayedOfferId ?: return
+        if (relayClosed) return
+        relayClosed = true
+        repo.markRelayedClosed(id)
+        relay?.let { r -> (appScope ?: viewModelScope).launch { r.close(id) } }
+    }
+
+    /** R2–R4 Decline: close the offer on the server; the giver's phone says "<name> declined". */
+    private fun decline() {
+        val id = relayedOfferId ?: return
+        val current = _state.value
+        if (current.declining || current.signing || current.step !in DECLINABLE) return
+        ticker?.cancel()
+        _state.update { it.copy(declining = true, message = null) }
+        viewModelScope.launch {
+            relayClosed = true
+            repo.markRelayedClosed(id)
+            val outcome = relay?.close(id) ?: RelayOutcome.Unavailable("no relay")
+            val who = giver?.name?.let(::shortName) ?: "The giver"
+            val code = item?.code ?: "the camera"
+            val text = buildString {
+                append("Declined. $who still holds $code.")
+                if (outcome !is RelayOutcome.Sent) append("\nCouldn't reach the server. The offer lapses on its own.")
+            }
+            _state.update { it.copy(step = ReceiveStep.Declined, declining = false, declinedText = text) }
+        }
     }
 
     /** Keeps "Valid for 0:41" counting, and refuses the offer the moment it expires. */
@@ -269,11 +351,27 @@ class ReceiveViewModel(
             return
         }
         withContext(Dispatchers.IO) { repo.saveAccepted(scanned.proof, record) }
-        _state.update {
-            it.copy(
-                step = ReceiveStep.ShowAcceptance, signing = false, message = null,
-                acceptanceQr = QrPayloads.acceptance(record), matchCode = Canonical.matchCode(record.recordHash),
-            )
+        val acceptance = QrPayloads.acceptance(record)
+        val matchCode = Canonical.matchCode(record.recordHash)
+        val relayedId = relayedOfferId
+        if (relayedId != null && relay != null) {
+            relayClosed = true
+            _state.update {
+                it.copy(step = ReceiveStep.Sending, signing = false, message = null, acceptanceQr = acceptance, matchCode = matchCode)
+            }
+            val sent = relay.accept(relayedId, acceptance) is RelayOutcome.Sent
+            val who = giver?.name?.let(::shortName) ?: "the giver"
+            _state.update {
+                if (sent) it.copy(step = ReceiveStep.Done, sentOnline = true)
+                else it.copy(step = ReceiveStep.ShowAcceptance, fallbackText = "Couldn't reach the server. Show this to $who instead.")
+            }
+        } else {
+            _state.update {
+                it.copy(
+                    step = ReceiveStep.ShowAcceptance, signing = false, message = null,
+                    acceptanceQr = acceptance, matchCode = matchCode,
+                )
+            }
         }
         viewModelScope.launch {
             repo.observeHandover(record.itemId, record.id).collect { saved ->
@@ -286,6 +384,10 @@ class ReceiveViewModel(
             }
         }
     }
+
+    private fun notOpenText(giverName: String?): String =
+        if (giverName == null) "This offer is no longer open. Ask the giver to send it again."
+        else "This offer is no longer open. Ask ${shortName(giverName)} to send it again."
 
     private fun cancelledText(): String {
         val who = giver?.name?.let(::shortName) ?: "The giver"
@@ -304,6 +406,8 @@ class ReceiveViewModel(
         )
     }
 }
+
+private val DECLINABLE = setOf(ReceiveStep.Checks, ReceiveStep.ScanSeal, ReceiveStep.Accept)
 
 data class CheckResult(val lines: List<CheckLine>, val passed: Boolean, val looksLikeCopy: Boolean)
 
