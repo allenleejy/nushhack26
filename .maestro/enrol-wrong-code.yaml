@@ -1,0 +1,26 @@
+# A wrong enrolment code is refused: the code field shows "doesn't match".
+# Needs the debug app, a network connection and a sync-configured build
+# (SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY), and a phone that is NOT enrolled.
+# One wrong code only, to stay under the 5-try limit.
+# Run: maestro test .maestro/enrol-wrong-code.yaml
+appId: ${APP_ID || "com.nushhack26.app.debug"}
+---
+- launchApp
+- runFlow:
+    when:
+      visible: "JOIN YOUR TEAM"
+    commands:
+      # The placeholder text sits inside the field; tapping it focuses the field.
+      - tapOn: "R-2210"
+      - inputText: "R-2210"
+      - tapOn: "000000"
+      - inputText: "000000"
+      - hideKeyboard
+      - tapOn:
+          text: "(?i)create my signing key.*"
+      # Debug builds on a phone with no screen lock sign with the software key;
+      # on a secured phone the system prompt still needs a finger or PIN.
+      - extendedWaitUntil:
+          visible:
+            text: "(?i).*doesn't match.*"
+          timeout: 30000

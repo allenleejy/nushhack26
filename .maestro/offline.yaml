@@ -1,4 +1,6 @@
 # With airplane mode on, the offline banner shows; with it off again, the banner goes.
+# The banner lives on the tab screens, so the checks run only when a tab screen is up:
+# a locked or un-enrolled phone has nothing to show the banner on.
 # Run: maestro test .maestro/offline.yaml   (release build: -e APP_ID=com.nushhack26.app)
 appId: ${APP_ID || "com.nushhack26.app.debug"}
 ---
@@ -8,10 +10,21 @@ appId: ${APP_ID || "com.nushhack26.app.debug"}
     notVisible: "OFFLINE"
     timeout: 20000
 - setAirplaneMode: enabled
-- extendedWaitUntil:
-    visible: "OFFLINE"
-    timeout: 20000
+# Online -> airplane on: the OFFLINE chip appears while a tab screen is showing.
+- runFlow:
+    when:
+      visible:
+        text: '(?i)(store|cameras|my custody|alerts|outbox|records|devices)'
+    commands:
+      - extendedWaitUntil:
+          visible: "OFFLINE"
+          timeout: 20000
 - setAirplaneMode: disabled
-- extendedWaitUntil:
-    notVisible: "OFFLINE"
-    timeout: 30000
+- runFlow:
+    when:
+      visible:
+        text: '(?i)(store|cameras|my custody|alerts|outbox|records|devices)'
+    commands:
+      - extendedWaitUntil:
+          notVisible: "OFFLINE"
+          timeout: 30000
