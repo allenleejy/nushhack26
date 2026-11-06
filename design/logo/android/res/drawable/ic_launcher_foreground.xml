@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generated from the Tenet logo. Junction mark inside the 66dp safe zone of a 108dp adaptive icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <group android:translateX="21.000" android:translateY="21.000" android:scaleX="0.6875" android:scaleY="0.6875">
+        <path android:fillColor="#f4f1e8" android:fillType="evenOdd" android:pathData="M7.5,11.5h81v31h-81z M12.5,16.5h71v21h-71z"/>
+        <group>
+            <clip-path android:pathData="M7.5,11.5h81v31h-81z"/>
+            <group android:rotation="-9" android:pivotX="49.5" android:pivotY="50.5">
+                <path android:fillColor="#f2b81f" android:pathData="M36.5,12.5h26v72h-26z"/>
+            </group>
+        </group>
+        <group android:rotation="-9" android:pivotX="49.5" android:pivotY="50.5">
+            <path android:fillColor="#f2b81f" android:fillType="evenOdd" android:pathData="M34,10h31v77h-31z M39,15h21v67h-21z"/>
+        </group>
+    </group>
+</vector>
