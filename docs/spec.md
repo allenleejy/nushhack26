@@ -25,53 +25,59 @@
 
 ## 2. Demo script
 
+Three real phones, no emulator. The cheat is caught **on the phone, offline, at the moment it happens**, and the safety officer then withdraws the compromised phone.
+
 **Devices.**
 
 | Label | Device | Person | Role | Network during the demo |
 |---|---|---|---|---|
-| A | Android phone | Siti Aminah | Store officer | Online for sign-out, then airplane mode |
-| B | Android phone | Ravi Kumar | Radiographer, **the tampered phone** | Online for sign-out, then airplane mode |
-| C | Android phone | Tan Wei Ming | Radiographer | Online for sign-out, then airplane mode |
-| D | Laptop emulator, mirrored | Dr Tan Mei Ling | Radiation safety officer | Online throughout |
+| A | Redmi Note 13 Pro+ (Android 16) | Siti Aminah | Store officer | Online for sign-out, then airplane mode |
+| B | Redmi Note 11 Pro+ (Android 13) | Ravi Kumar | Radiographer, **the tampered phone** | Online for sign-out, then airplane mode |
+| C | vivo V2124 (Android 13) | Dr Tan Mei Ling | Radiation safety officer | Online throughout |
+
+Airplane mode on A and B cuts mobile data and Wi-Fi but leaves Bluetooth and NFC on (`airplane_mode_radios` = `cell,wifi,wimax`; `scripts/demo-prep.sh` checks it).
 
 **Before the pitch (online, about 10 minutes).**
-1. On each device: install the release, open the app, type your staff number and enrolment code (§8) on Enrol, tap **Create my signing key**, touch the fingerprint (PIN on the emulator). Each shows "Enrolled as …".
-   - Press power and wake each phone: Tenet shows LOCKED with that person's name. Unlock it.
-2. On A: Debug, **Sync now**. Store shows C-12, C-07 and C-15, all "In store".
-3. On B: open Me, tap the version 5 times, turn on **Tampered phone**. Nothing on screen changes.
-4. On D: open Alerts. It shows "All cameras accounted for".
-5. Put the printed C-12 seal sticker on the prop camera. Ravi keeps the second copy of the C-12 seal in his pocket.
-6. Mirror A, B, C with `scrcpy` and D's emulator window on the projector.
+1. The build account runs `supabase/reset_demo.sql`. Every phone: Debug → **Clear local data** → **Sync now**.
+2. Run `bash scripts/demo-prep.sh` with all three phones plugged in: each line must say Tenet with the release, "airplane keeps BT/NFC", NFC on and BT on.
+3. Each phone is enrolled as its person (§8). Press power and wake each one: Tenet shows LOCKED with that person's name. Unlock it.
+4. A: Store shows Kestrel (C-12), Osprey (C-07) and Heron (C-15), all "In store".
+5. B: Me → tap the version 5 times → Debug → turn on **Tampered phone**. Nothing on screen changes.
+6. C: Alerts shows "All cameras accounted for".
+7. Put the printed Kestrel seal sticker on the prop camera.
+8. Mirror A, B and C with `scrcpy -s <serial>` on the projector.
 
 **The demo (about 3 minutes).**
 
 1. **Sign-out, online (0:00–0:30).**
-   - A (Siti): Store → **Issue** on C-12 → pick **Ravi Kumar** → due chip **+90 s** → **Sign** → fingerprint. A shows "Sent to Ravi's phone · waiting for Ravi to scan the seal and accept".
-   - B (Ravi) is already showing the yellow banner: "Siti Aminah is handing you C-12". **Open** → the checklist turns green: signed by Siti, Siti holds C-12, made out to you, valid, not used before, authorised. **Scan the seal** → he scans the sticker → "Seal S-40117 matches C-12". The accept card says "This is sealed source IR-0457 (iridium-192). You're liable for it the moment you sign." → **Accept** → fingerprint.
-   - A moves to Done by itself. Both show the parcel label with the stamp landing: HANDED OVER on A, RECEIVED on B. The presenter: "Online it's two fingerprints and the seal, and both phones check both signatures. Now watch what happens when the network goes."
-   - Wait until A's and B's sync bars show "All synced". **Airplane mode on: A, B and C.**
-2. **Shift change, offline (0:30–1:15).**
-   - C (Wei Ming) picks up his phone. Its screen went off, so Tenet locked itself: "LOCKED · TAN WEI MING · R-2234". **Unlock** → fingerprint → it opens, still in airplane mode. The presenter: "No network and no login server. His fingerprint unlocks a key in the phone's secure chip, and the app checks that key's signature against his enrolment."
-   - B (Ravi): My custody → C-12 card → **Hand over**. The picker shows **Jun Lim greyed out: "Authorisation lapsed 3 Nov"**. The presenter: "Jun's authorisation lapsed on Tuesday, so even offline Ravi can't hand him a source." → **Tan Wei Ming** → **Sign** → fingerprint. B shows the pulsing tap target: "HOLD TO WEI MING'S PHONE" and "For Wei Ming only · single use · valid for 0:58".
-   - **The presenter invites a judge to photograph B's offer QR** with their own phone: B → **SHOW QR CODE INSTEAD**, the judge snaps it, then **USE TAP INSTEAD**.
-   - C (Wei Ming): **RECEIVE** tab → Ravi holds B to C (**tap**). Both screens punch, flood amber and buzz. C's checklist turns green with no network → scans the seal → accept card → fingerprint. B moves to Done by itself over the phone-to-phone link, and both stamps land. The presenter: "No network, no codes: one tap and two fingerprints." C's home: "You hold C-12 · return by 14:31 · 1:02 left" (example times).
-   - B's home **still says "You hold C-12"**. The presenter: "Ravi's phone has been tampered with. It kept a copy of the token."
-3. **The cheat (1:15–1:40).**
-   - B (Ravi): Kestrel → **Hand over** → **Siti Aminah (return to store)** → sign → tap B to A on A's **RECEIVE** tab: checklist green, because offline nobody can tell. Siti scans the **copied seal** → match → accept → fingerprint. B finishes by itself. A's Store shows Kestrel "In store".
-   - The presenter: "Offline, nobody can tell. But Ravi has now signed two handovers of the same camera."
+   - A (Siti): Store → **Issue** on Kestrel. The picker shows **Jun Lim greyed out: "Authorisation lapsed 3 Nov"**. The presenter: "Jun's authorisation lapsed on Tuesday. The phone checks that itself, so it works offline too." → **Ravi Kumar** → due chip **+90 s** → **Sign** → fingerprint. A shows "Sent to Ravi's phone · waiting for Ravi to scan the seal and accept".
+   - B (Ravi) is already showing the yellow banner: "Siti Aminah is handing you Kestrel". **Open** → the checklist turns green: signed by Siti, Siti holds Kestrel, made out to you, valid, not used before, authorised. **Scan the seal** → "Seal S-40117 matches C-12" → the accept card says "This is sealed source IR-0457 (iridium-192). You're liable for it the moment you sign." → **Accept** → fingerprint.
+   - A moves to Done by itself, and both stamps land. The presenter: "Online it's two fingerprints and the seal, and both phones check both signatures. Now the network goes."
+   - Wait until A's and B's sync bars show "All synced". **Airplane mode on: A and B.** C stays online.
+2. **The return, offline (0:30–1:10).**
+   - A (Siti) picks up her phone. Its screen went off, so Tenet locked itself: "LOCKED · SITI AMINAH · S-1021". **Unlock** → fingerprint → it opens, still in airplane mode. The presenter: "No network and no login server. Her fingerprint unlocks a key in the phone's secure chip, and the app checks that key against her enrolment."
+   - B (Ravi): My custody → Kestrel → **Hand over** → under "Return to store", **Siti Aminah** → **Sign** → fingerprint. B shows the pulsing tap target "HOLD TO SITI'S PHONE".
+   - **The presenter invites a judge to photograph B's offer**: B → **SHOW QR CODE INSTEAD**, the judge snaps it, then **USE TAP INSTEAD**.
+   - A (Siti): **RECEIVE** tab → Ravi holds B to A (**tap**). Both screens flash and buzz. A's checklist turns green with no network → Siti scans the seal → accept card → fingerprint. B moves to Done by itself over the phone-to-phone link. The presenter: "No network, no codes: one tap and two fingerprints." A's Store shows Kestrel "In store".
+3. **The cheat, caught on the spot (1:10–1:40).**
+   - B's home **still says "You hold Kestrel"**. The presenter: "Ravi's phone has been tampered with. It hid the return and kept a copy of the token. Let's see if he can hand the same camera over twice."
+   - B (Ravi): Kestrel → **Hand over** → **Siti Aminah** (return to store) → sign → tap B to A on A's **RECEIVE** tab. (After 1:50 Kestrel is overdue on B and the button reads **Hand back to store**; either works.)
+   - A: red screen **"This is a copy. It can't be used."** ✗ "Ravi Kumar already handed Kestrel (C-12) to Siti Aminah at 14:31. This would be a second handover." · "Nothing was signed." The presenter: "Siti's phone already holds Ravi's first signature, so it refuses the second one, offline, before anyone signs anything."
 4. **The replay (1:40–1:55).** By now the judge's photo is over a minute old.
-   - A (Siti): **RECEIVE** → **SCAN A QR CODE INSTEAD** → scans the judge's photo. Red screen: **"This is a copy. It can't be used."** ✗ Made out to Tan Wei Ming, not you · ✗ Expired 0:10 ago (example) · ✗ Ravi Kumar already handed C-12 to Siti Aminah at 14:31. This would be a second handover. · "Nothing was signed." The presenter: "Her phone also knows Ravi already handed this camera to her, so it would refuse even a fresh code."
-5. **Overdue (1:55–2:10).**
-   - C (Wei Ming) alarms on its own with no network: red banner **"C-12 return overdue"**, sound, vibration and a notification.
-   - D (Dr Tan) Alerts, amber card: "C-12 overdue · last holder the server knows: Ravi Kumar, signed 14:29 · newer handovers may not have synced."
-6. **Reconnect (2:10–2:40).**
-   - Airplane mode off on **C first**, tap **Sync now**. Then A, Sync now. Then B.
-   - D Alerts within 10 seconds: red **Fork** card: "Ravi Kumar signed two handovers of C-12 after H1 · both signatures valid on this phone". The overdue card changes to "Last signed holder: Tan Wei Ming".
-   - D: tap the fork card. Two branches side by side: "Ravi → Wei Ming · 14:30 · delivered by Wei Ming's phone" and "Ravi → Siti · 14:31 · delivered by Siti's phone", both signed by Ravi's key 3F:A9:12:7C. The presenter: "Ravi's phone hid both handovers. The receivers' phones delivered them."
-7. **The decision (2:40–3:00).**
-   - D: **C-12 is with Tan Wei Ming** → note "Seal on camera checked by store" → **Sign decision** → fingerprint. The alert shows "Resolved by Dr Tan". After A syncs, A's Store shows C-12 "Out · Tan Wei Ming · overdue".
+   - A: **RECEIVE** → **SCAN A QR CODE INSTEAD** → scans the judge's photo. Red screen: **"This is a copy. It can't be used."** ✗ Expired 0:20 ago (example) · ✗ Already used on this phone · "Nothing was signed."
+5. **Overdue, as the server knows it (1:55–2:10).** Kestrel's 90 seconds have run out.
+   - C (Dr Tan), online, Alerts: amber card "Kestrel (C-12) overdue · last holder the server knows: Ravi Kumar, signed 14:29 · newer handovers may not have synced."
+   - B alarms too, with no network: red banner, sound and vibration. The presenter: "Ravi's tampered phone still thinks he has the camera. Even its own alarm believes the lie."
+6. **Reconnect (2:10–2:30).**
+   - Airplane mode off on **A**, **Sync now**. C's overdue card disappears within 10 seconds and Kestrel shows "In store · Siti Aminah". The presenter: "The return Siti signed offline is now on the server, with both signatures checked."
+7. **Withdraw the tampered phone (2:30–3:00).**
+   - The presenter: "Siti reports the double handover. Dr Tan doesn't need Ravi's phone in her hand."
+   - C (Dr Tan): **DEVICES** → Ravi Kumar's phone → **Withdraw** → **Withdraw phone**. The row turns "Withdrawn".
+   - B: airplane mode off, **Sync now**. Ravi's phone wipes itself and shows Enrol: "This phone was withdrawn by your safety officer. Ask them for a new enrolment code." The presenter: "Its key is gone, and every other phone now refuses anything it signed after the withdrawal, even offline."
 
-**Optional extras if time allows:** the wrong finger on B is refused by the system prompt, so nothing is signed (10 s); a judge's finger on C's lock screen is refused, and Tenet stays locked (5 s).
+**Optional extras if time allows:** the wrong finger on B is refused by the system prompt, so nothing is signed (10 s); a judge's finger on A's lock screen is refused and Tenet stays locked (5 s).
+
+**After the demo:** Ravi re-enrols B (R-2210 / 552917) with his fingerprint, so the phones are ready for the next run.
 
 ---
 
