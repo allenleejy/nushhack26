@@ -20,6 +20,7 @@ Exported 6 Nov 2026 from the Tenet design system artifact on claude.ai. The arti
 - **Type.** Space Mono, ALWAYS UPPERCASE, for anything you scan, tap or compare. Space Grotesk, sentence case, for sentences. Never a long sentence in uppercase.
 - **Shape.** Square corners everywhere. The only cut corners (45°, top right) are on the primary button and the Synced and Fork chips.
 - **Marks.** Hazard stripes mean attention; thin hatching means not available (disabled, void). The Class 7 diamond marks a sealed source. The countersigned stamp is the one tilted thing.
+- **Logo.** The Junction mark (a straight crossbar and a 9°-tilted stem that only make a T together, amber where they meet) beside a plain TENET wordmark in Space Mono Bold. Files in `logo/`, rules in `brand.md`.
 - **Voice.** Formal and matter-of-fact: "Custody transfer successful." then the facts. No emoji, no exclamation marks.
 - **Field use.** 48dp minimum targets, 72dp primary button, 16sp minimum for sentences, one primary action per screen. QR codes are always black on white.
 
@@ -37,6 +38,7 @@ Exported 6 Nov 2026 from the Tenet design system artifact on claude.ai. The arti
 | `index.html` | Gallery of every component |
 | `android/` | Starter Compose theme generated from the tokens: colours, type, shapes, dimensions, stripe and hatching modifiers, `TenetTheme` |
 | `fonts/` | Space Mono and Space Grotesk TTFs (SIL OFL), Material Symbols Sharp for the web previews (Apache 2.0) |
+| `logo/` | The logo: the Junction mark, the TENET wordmark and lockups as SVG (dark and light), one-colour marks, a 512px app tile, and the Android adaptive launcher icon |
 | `reference/` | The mood references the system grew from |
 
 ## Components

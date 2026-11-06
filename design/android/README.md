@@ -18,6 +18,8 @@ Starter theme files generated from `../tokens.json`, for `app/src/main/java/com/
 3. Add `androidx.compose.material:material-icons-extended` for `Icons.Sharp.*`.
 4. Wrap the app: `setContent { TenetTheme { AppNavHost() } }`.
 
+5. For the launcher icon, copy `../logo/android/res/` into `app/src/main/res/` (see `../logo/README.md`).
+
 ## Rules worth repeating
 
 - Space Mono text is always uppercase: call `.uppercase()` on the string.

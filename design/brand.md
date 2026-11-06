@@ -104,6 +104,19 @@ Sizes are in sp. Layouts must still work at 1.3× system font size: let rows gro
 - **Loading:** `bg-200` skeleton blocks, square, no shimmer. Local data loads instantly, so skeletons only appear for server-only views.
 - **Motion:** short and functional, 150–200ms. The custody label switches to the new holder once, on the moment of signing; the stamp appears once. Stripes and hatching never move. Respect "remove animations".
 
+## Logo
+
+The logo is the **Junction** mark beside the **TENET** wordmark. The mark is a T drawn by two parties: a straight crossbar (the giver) and a stem tilted 9° like a stamp (the receiver). Neither is a T on its own; where they meet is filled amber, the only point both have signed. The wordmark is plain: TENET in Space Mono Bold, tracked 0.12em, so the mark carries the meaning. TENET is a palindrome, the same read from either end, like a custody chain checked from either end.
+
+- Use `tenet-lockup-field.svg` on dark grounds and `tenet-lockup-daylight.svg` on light ones. In Field the junction covers both crossbar borders; in Daylight the crossbar's bottom border stays visible over the amber.
+- Use the mark alone (`tenet-icon-*`) where space is square or tight: the app icon, the splash screen, favicons. Use the wordmark alone (`tenet-wordmark-*`) where the mark is already on screen.
+- In the lockup the wordmark's cap height is 3/8 of the mark's height, centred on it, with a gap of about a quarter of the mark's width.
+- Keep clear space of half the mark's width on every side. Minimum size: the mark at 24dp, the lockup at 96dp wide.
+- One-colour versions (`tenet-icon-black.svg`, `tenet-icon-white.svg`) are for print, photos and amber grounds.
+- Don't redraw the wordmark in another font, change the 9° tilt, recolour the junction, put the mark on hazard stripes, or set the logo inside sentences.
+
+The Android launcher icon is the mark on `bg-000`, inside the 66dp safe zone of a 108dp adaptive icon, with a white monochrome layer for themed icons.
+
 ## Iconography
 
 Material Symbols **Sharp**, weight 500, 24dp in rows, chips and buttons (`icon-md`), 32dp in banners and alerts (`icon-lg`). In Compose use `Icons.Sharp.*` from `material-icons-extended`. Outlined by default; filled only for an active state (the alarm when overdue, the warning symbol in an alert header). Icons always sit beside a word, never alone, except standard app bar icons with content descriptions. The Class 7 diamond is drawn, not an icon.
@@ -126,4 +139,4 @@ Material Symbols **Sharp**, weight 500, 24dp in rows, chips and buttons (`icon-m
 | Supervisor decision | `gavel` |
 | Report missing | `report` |
 
-There is no logo yet: set TENET in Space Mono 700. The launcher icon is the filled Class 7 diamond on a `bg-000` square.
+The Class 7 diamond marks a sealed source; it is not the logo. For the logo see Logo above.
