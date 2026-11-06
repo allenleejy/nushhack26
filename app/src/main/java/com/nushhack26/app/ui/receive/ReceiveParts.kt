@@ -17,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.Check
 import androidx.compose.material.icons.sharp.Close
 import androidx.compose.material.icons.sharp.GppBad
-import androidx.compose.material.icons.sharp.Verified
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -115,10 +114,14 @@ fun WhoAndWhatCard(summary: HandoverSummary, modifier: Modifier = Modifier) {
             .padding(TenetDimens.space4),
         verticalArrangement = Arrangement.spacedBy(TenetDimens.space2),
     ) {
-        Text("${summary.itemCode} · ${summary.sourceSerial} · ${summary.isotope}".uppercase(), style = TenetType.title, color = colors.ink)
+        Text(summary.itemName.ifBlank { summary.itemCode }.uppercase(), style = TenetType.title, color = colors.ink)
+        Text(
+            "Camera ${summary.itemCode} · source ${summary.sourceSerial} · seal ${summary.sealNo}".uppercase(),
+            style = TenetType.record,
+            color = colors.inkMuted,
+        )
         Field("From", "${summary.giverName} · ${roleLabel(summary.giverRole)}")
         Field("To", "${summary.receiverName} · ${roleLabel(summary.receiverRole)} (you)")
-        Field("Seal", summary.sealNo)
         Field("Return by", summary.dueMs?.let(::formatTime) ?: "No return time")
     }
 }
@@ -165,43 +168,15 @@ fun LiabilityLine(sourceSerial: String, isotope: String, itemCode: String, nowMs
     }
 }
 
-/** The six digits both phones show, read aloud. */
+/** "VERIFY CODE 482 107 · same on both phones": small, since both phones already checked both signatures. */
 @Composable
-fun MatchCode(code: String, giverShortName: String, modifier: Modifier = Modifier) {
-    val colors = Tenet.colors
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(TenetDimens.space1)) {
-        Text("MATCH CODE", style = TenetType.recordLabel, color = colors.inkMuted)
-        Text(code, style = TenetType.codeLg, color = colors.ink)
-        Text("Check that $giverShortName's screen shows the same.", style = TenetType.body, color = colors.inkMuted)
-    }
+fun VerifyLine(code: String, modifier: Modifier = Modifier) {
+    Text("VERIFY CODE $code · same on both phones", style = TenetType.recordLabel, color = Tenet.colors.inkMuted, modifier = modifier)
 }
 
-/** R5 done: the receiver now holds the camera. */
-@Composable
-fun DoneLabel(
-    summary: HandoverSummary,
-    matchCode: String?,
-    modifier: Modifier = Modifier,
-    header: String = "Accepted · checked offline",
-) {
-    val colors = Tenet.colors
-    Column(
-        modifier
-            .fillMaxWidth()
-            .background(colors.okBg)
-            .border(TenetDimens.strokeControl, colors.ok)
-            .padding(TenetDimens.space4),
-        verticalArrangement = Arrangement.spacedBy(TenetDimens.space2),
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(TenetDimens.space3), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Sharp.Verified, contentDescription = null, tint = colors.ok, modifier = Modifier.size(TenetDimens.iconLg))
-            Text(header.uppercase(), style = TenetType.label, color = colors.ok)
-        }
-        val due = summary.dueMs?.let { " Return by ${formatTime(it)}." }.orEmpty()
-        Text("You hold ${summary.itemCode}.$due", style = TenetType.headline, color = colors.ink)
-        matchCode?.let { Text("MATCH CODE $it", style = TenetType.record, color = colors.ink) }
-    }
-}
+/** "Kestrel (C-12)", or "camera C-12" when it has no name yet. */
+fun cameraInSentence(summary: HandoverSummary): String =
+    if (summary.itemName.isBlank()) "camera ${summary.itemCode}" else "${summary.itemName} (${summary.itemCode})"
 
 fun roleLabel(role: String): String = role.replace('_', ' ')
 
