@@ -6,12 +6,25 @@ import com.nushhack26.app.data.local.AppDatabase
 import com.nushhack26.app.data.local.HandoverEntity
 import com.nushhack26.app.data.local.ItemEntity
 import com.nushhack26.app.data.local.Origin
+import com.nushhack26.app.data.local.PersonEntity
 import com.nushhack26.app.data.local.SyncMark
 import com.nushhack26.app.data.remote.toPayload
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
+import java.util.concurrent.ConcurrentHashMap
 
-/** Receive (card 04): the receiver's side. */
+/** What the incoming-offer banner reads from Room (docs/spec.md R0). */
+data class BannerLookup(
+    val people: Map<String, PersonEntity> = emptyMap(),
+    val items: Map<String, ItemEntity> = emptyMap(),
+    /** Handovers already on this phone, plus relayed offers declined or refused here. */
+    val doneOfferIds: Set<String> = emptySet(),
+)
+
+/** Receive (cards 04 and 15): the receiver's side. */
 class ReceiveRepository(
     private val db: AppDatabase,
     private val requestSync: () -> Unit,
@@ -26,6 +39,31 @@ class ReceiveRepository(
         db.handoverDao().observeForItem(itemId).map { list -> list.firstOrNull { it.id == id } }
 
     suspend fun item(itemId: String): ItemEntity? = db.itemDao().get(itemId)
+
+    suspend fun person(personId: String): PersonEntity? = db.peopleDao().get(personId)
+
+    private val closedOffers = MutableStateFlow<Set<String>>(emptySet())
+    private val relayedGivers = ConcurrentHashMap<String, String>()
+
+    /** Names, item codes and the offers to hide, for the R0 banner. */
+    fun observeBannerLookup(): Flow<BannerLookup> = combine(
+        db.peopleDao().observeAll(),
+        db.itemDao().observeAll(),
+        db.handoverDao().observeAll(),
+        closedOffers,
+    ) { people, items, handovers, closed ->
+        BannerLookup(people.associateBy { it.id }, items.associateBy { it.id }, handovers.mapTo(HashSet()) { it.id } + closed)
+    }
+
+    /** The banner saw this offer, so Receive can name the giver even after the offer leaves the inbox. */
+    fun rememberRelayedGiver(offerId: String, fromPersonId: String) {
+        relayedGivers[offerId] = fromPersonId
+    }
+
+    fun relayedGiver(offerId: String): String? = relayedGivers[offerId]
+
+    /** Declined or refused here: the banner stops showing it before the server's inbox catches up. */
+    fun markRelayedClosed(offerId: String) = closedOffers.update { it + offerId }
 
     /** Every handover on this phone, for the one-time-number and history checks. */
     suspend fun localHandovers(): List<HandoverEntity> = db.handoverDao().all()

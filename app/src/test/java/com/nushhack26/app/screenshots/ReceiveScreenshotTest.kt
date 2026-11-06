@@ -11,6 +11,7 @@ import com.nushhack26.app.ui.receive.SealResult
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.time.LocalDateTime
@@ -124,5 +125,65 @@ class ReceiveScreenshotTest {
     @Test
     fun unavailable() = captureScreen("Receive_not_enrolled") {
         ReceiveContent(ReceiveUiState(ReceiveStep.Unavailable, message = "Enrol this phone before receiving a camera."))
+    }
+
+    private val relayed = base.copy(relayed = true)
+
+    @Test
+    fun relayedChecksPassed() = captureScreen("Receive_online_R2_checks_with_decline") {
+        ReceiveContent(relayed.copy(step = ReceiveStep.Checks, lines = green.toMutableList().apply { this[3] = CheckLine(true, "Valid for 2:41") }, passed = true))
+    }
+
+    @Test
+    fun relayedAccept() = captureScreen("Receive_online_R4_accept_with_decline") {
+        ReceiveContent(relayed.copy(step = ReceiveStep.Accept))
+    }
+
+    @Test
+    fun relayedNotOpen() = captureScreen("Receive_online_offer_not_open") {
+        ReceiveContent(ReceiveUiState(ReceiveStep.Unavailable, relayed = true, message = "This offer is no longer open. Ask Siti to send it again."))
+    }
+
+    @Test
+    fun relayedDeclined() = captureScreen("Receive_online_declined") {
+        ReceiveContent(relayed.copy(step = ReceiveStep.Declined, declinedText = "Declined. Siti still holds C-12."))
+    }
+
+    @Test
+    fun relayedSending() = captureScreen("Receive_online_sending") {
+        ReceiveContent(relayed.copy(step = ReceiveStep.Sending, matchCode = "48 21 07"))
+    }
+
+    @Test
+    fun relayedSent() = captureScreen("Receive_online_R5_sent") {
+        ReceiveContent(relayed.copy(step = ReceiveStep.Done, sentOnline = true, matchCode = "48 21 07"))
+    }
+
+    @Test
+    fun relayedFallbackQr() = captureScreen("Receive_online_R5_fallback_qr") {
+        ReceiveContent(
+            relayed.copy(
+                step = ReceiveStep.ShowAcceptance, acceptanceQr = "CS1A:demo-acceptance-payload", matchCode = "48 21 07",
+                fallbackText = "Couldn't reach the server. Show this to Siti instead.",
+            ),
+        )
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h780dp-xxhdpi")
+    fun relayedSentNarrowLargeText() {
+        RuntimeEnvironment.setFontScale(1.3f)
+        captureScreen("Receive_online_R5_sent_360dp_large_text") {
+            ReceiveContent(relayed.copy(step = ReceiveStep.Done, sentOnline = true, matchCode = "48 21 07"))
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h780dp-xxhdpi")
+    fun relayedSealNarrowLargeText() {
+        RuntimeEnvironment.setFontScale(1.3f)
+        captureScreen("Receive_online_R3_seal_360dp_large_text") {
+            ReceiveContent(relayed.copy(step = ReceiveStep.ScanSeal, seal = SealResult(true, "S-40117", "S-40117", "Seal S-40117 matches C-12")))
+        }
     }
 }

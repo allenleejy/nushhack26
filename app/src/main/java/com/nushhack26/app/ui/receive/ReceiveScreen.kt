@@ -2,6 +2,7 @@ package com.nushhack26.app.ui.receive
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.sharp.PersonOff
 import androidx.compose.material.icons.sharp.QrCodeScanner
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -40,18 +42,32 @@ import com.nushhack26.app.auth.AccessRules
 import com.nushhack26.app.ui.theme.Tenet
 import com.nushhack26.app.ui.theme.TenetDimens
 import com.nushhack26.app.ui.theme.TenetType
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+private const val DECLINED_CLOSE_MS = 2_500L
 
 @Composable
 fun ReceiveScreen(container: AppContainer, onDone: () -> Unit, relayedOfferId: String? = null) {
     val viewModel: ReceiveViewModel = viewModel(
         factory = viewModelFactory {
-            initializer { ReceiveViewModel(container.receiveRepository, container.identity, { container.deviceKeys }) }
+            initializer {
+                ReceiveViewModel(
+                    container.receiveRepository, container.identity, { container.deviceKeys },
+                    relay = relayedOfferId?.let { container.offerRelay }, relayedOfferId = relayedOfferId, appScope = container.scope,
+                )
+            }
         },
     )
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sign = rememberSignPrompt()
     val scope = rememberCoroutineScope()
+    LaunchedEffect(state.step) {
+        if (state.step == ReceiveStep.Declined) {
+            delay(DECLINED_CLOSE_MS)
+            onDone()
+        }
+    }
     ReceiveContent(state) { action ->
         when (action) {
             ReceiveAction.Accept -> scope.launch {
@@ -84,7 +100,7 @@ private fun StepFrame(state: ReceiveUiState, modifier: Modifier, onAction: (Rece
     val stepNumber = when (state.step) {
         ReceiveStep.ScanOffer, ReceiveStep.Checking, ReceiveStep.Checks -> 1
         ReceiveStep.ScanSeal -> 2
-        ReceiveStep.Accept, ReceiveStep.ShowAcceptance -> 3
+        ReceiveStep.Accept, ReceiveStep.Sending, ReceiveStep.ShowAcceptance -> 3
         else -> 4
     }
     Column(modifier.fillMaxSize()) {
@@ -96,15 +112,21 @@ private fun StepFrame(state: ReceiveUiState, modifier: Modifier, onAction: (Rece
                 .padding(TenetDimens.space4),
             verticalArrangement = Arrangement.spacedBy(TenetDimens.space4),
         ) {
-            HandoverStepper(HandoverRole.Receiver, stepNumber)
+            if (state.step != ReceiveStep.Declined) HandoverStepper(HandoverRole.Receiver, stepNumber)
             when (state.step) {
                 ReceiveStep.ScanOffer -> ScanOfferBody(state, onAction)
                 ReceiveStep.Checking -> Text("Checking offline…", style = TenetType.bodyLg, color = Tenet.colors.ink)
                 ReceiveStep.Checks -> ChecksBody(state)
                 ReceiveStep.ScanSeal -> ScanSealBody(state, onAction)
                 ReceiveStep.Accept -> AcceptBody(state)
+                ReceiveStep.Sending -> Text(
+                    "Sending to ${state.summary?.giverShortName ?: "the giver"}…",
+                    style = TenetType.bodyLg,
+                    color = Tenet.colors.ink,
+                )
                 ReceiveStep.ShowAcceptance -> ShowBody(state)
                 ReceiveStep.Done -> DoneBody(state)
+                ReceiveStep.Declined -> DeclinedBody(state)
                 else -> Unit
             }
             state.message?.let { ErrorLine(it) }
@@ -192,6 +214,7 @@ private fun AcceptBody(state: ReceiveUiState) {
 private fun ShowBody(state: ReceiveUiState) {
     val summary = state.summary ?: return
     val qr = state.acceptanceQr ?: return
+    state.fallbackText?.let { Text(it, style = TenetType.bodyLg, color = Tenet.colors.ink) }
     QrPanel(qr, caption = "Acceptance · ${summary.itemCode}", instruction = "Show this to ${summary.giverShortName}")
     state.matchCode?.let { MatchCode(it, summary.giverShortName) }
 }
@@ -199,13 +222,43 @@ private fun ShowBody(state: ReceiveUiState) {
 @Composable
 private fun DoneBody(state: ReceiveUiState) {
     val summary = state.summary ?: return
-    DoneLabel(summary, state.matchCode)
+    if (state.sentOnline) {
+        Text("Sent to ${summary.giverShortName} · ask them to check the match code", style = TenetType.bodyLg, color = Tenet.colors.ink)
+        state.matchCode?.let { MatchCode(it, summary.giverShortName) }
+        DoneLabel(summary, matchCode = null, header = "Accepted · sent through the server")
+    } else {
+        DoneLabel(summary, state.matchCode)
+    }
     SyncChip(state.recordSync)
     Text(
         if (state.recordSync == SyncChipState.Synced) "Synced" else "Not synced yet",
         style = TenetType.body,
         color = Tenet.colors.inkMuted,
     )
+}
+
+@Composable
+private fun DeclinedBody(state: ReceiveUiState) {
+    state.declinedText?.lines()?.forEachIndexed { i, line ->
+        Text(line, style = if (i == 0) TenetType.bodyLg else TenetType.body, color = if (i == 0) Tenet.colors.ink else Tenet.colors.inkMuted)
+    }
+    Text("Nothing was signed.", style = TenetType.body, color = Tenet.colors.inkMuted)
+}
+
+/** Cancel, plus Decline on R2–R4 when the offer came through the server. */
+@Composable
+private fun LeaveActions(state: ReceiveUiState, onAction: (ReceiveAction) -> Unit) {
+    if (!state.relayed) {
+        TextLinkButton("Cancel", onClick = { onAction(ReceiveAction.Close) })
+        return
+    }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        TextLinkButton("Cancel", onClick = { onAction(ReceiveAction.Close) })
+        when {
+            state.declining -> TextLinkButton("Declining…", onClick = {})
+            !state.signing -> TextLinkButton("Decline", onClick = { onAction(ReceiveAction.Decline) })
+        }
+    }
 }
 
 @Composable
@@ -217,7 +270,9 @@ private fun BottomActions(state: ReceiveUiState, onAction: (ReceiveAction) -> Un
             val allShown = state.revealedLines >= state.lines.size
             if (allShown && state.passed) {
                 PrimaryButton("Scan seal", onClick = { onAction(ReceiveAction.ScanSeal) }, icon = Icons.Sharp.QrCodeScanner)
-                TextLinkButton("Cancel", onClick = { onAction(ReceiveAction.Close) })
+                LeaveActions(state, onAction)
+            } else if (allShown && state.relayed) {
+                TextLinkButton("Close", onClick = { onAction(ReceiveAction.Close) })
             } else if (allShown) {
                 SecondaryButton("Scan another code", onClick = { onAction(ReceiveAction.ScanAgain) })
                 TextLinkButton("Close", onClick = { onAction(ReceiveAction.Close) })
@@ -230,7 +285,7 @@ private fun BottomActions(state: ReceiveUiState, onAction: (ReceiveAction) -> Un
                 seal.matches -> PrimaryButton("Next", onClick = { onAction(ReceiveAction.Next) })
                 else -> PrimaryButton("Sign and accept $code", onClick = {}, enabled = false, disabledReason = "Seal doesn't match")
             }
-            TextLinkButton("Cancel", onClick = { onAction(ReceiveAction.Close) })
+            LeaveActions(state, onAction)
         }
         ReceiveStep.Accept -> {
             when {
@@ -238,10 +293,10 @@ private fun BottomActions(state: ReceiveUiState, onAction: (ReceiveAction) -> Un
                 state.signing -> PrimaryButton("Sign and accept $code", onClick = {}, enabled = false, disabledReason = "Signing")
                 else -> PrimaryButton("Sign and accept $code", onClick = { onAction(ReceiveAction.Accept) })
             }
-            TextLinkButton("Cancel", onClick = { onAction(ReceiveAction.Close) })
+            LeaveActions(state, onAction)
         }
         ReceiveStep.ShowAcceptance -> PrimaryButton("Done", onClick = { onAction(ReceiveAction.Done) })
-        ReceiveStep.Done -> PrimaryButton("Close", onClick = { onAction(ReceiveAction.Close) })
+        ReceiveStep.Done, ReceiveStep.Declined -> PrimaryButton("Close", onClick = { onAction(ReceiveAction.Close) })
         else -> Unit
     }
 }

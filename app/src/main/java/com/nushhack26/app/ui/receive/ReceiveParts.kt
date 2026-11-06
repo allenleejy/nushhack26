@@ -178,7 +178,12 @@ fun MatchCode(code: String, giverShortName: String, modifier: Modifier = Modifie
 
 /** R5 done: the receiver now holds the camera. */
 @Composable
-fun DoneLabel(summary: HandoverSummary, matchCode: String?, modifier: Modifier = Modifier) {
+fun DoneLabel(
+    summary: HandoverSummary,
+    matchCode: String?,
+    modifier: Modifier = Modifier,
+    header: String = "Accepted · checked offline",
+) {
     val colors = Tenet.colors
     Column(
         modifier
@@ -190,7 +195,7 @@ fun DoneLabel(summary: HandoverSummary, matchCode: String?, modifier: Modifier =
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(TenetDimens.space3), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Sharp.Verified, contentDescription = null, tint = colors.ok, modifier = Modifier.size(TenetDimens.iconLg))
-            Text("Accepted · checked offline".uppercase(), style = TenetType.label, color = colors.ok)
+            Text(header.uppercase(), style = TenetType.label, color = colors.ok)
         }
         val due = summary.dueMs?.let { " Return by ${formatTime(it)}." }.orEmpty()
         Text("You hold ${summary.itemCode}.$due", style = TenetType.headline, color = colors.ink)
