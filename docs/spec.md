@@ -60,7 +60,7 @@
    - B (Ravi): C-12 → **Hand over** → **Siti Aminah (return to store)** → sign. A scans it: checklist green, because offline nobody can tell. Siti scans the **copied seal** → match → accept → fingerprint. B scans A's acceptance. A's Store shows C-12 "In store".
    - The presenter: "Offline, nobody can tell. But Ravi has now signed two handovers of the same camera."
 4. **The replay (1:40–1:55).** By now the judge's photo is over a minute old.
-   - A (Siti): Store → **Receive return** → scans the judge's photo. Red screen: **"This is a copy. It can't be used."** ✗ Made out to Tan Wei Ming, not you · ✗ Expired 0:10 ago (example) · "Nothing was signed."
+   - A (Siti): Store → **Receive return** → scans the judge's photo. Red screen: **"This is a copy. It can't be used."** ✗ Made out to Tan Wei Ming, not you · ✗ Expired 0:10 ago (example) · ✗ Ravi Kumar already handed C-12 to Siti Aminah at 14:31. This would be a second handover. · "Nothing was signed." The presenter: "Her phone also knows Ravi already handed this camera to her, so it would refuse even a fresh code."
 5. **Overdue (1:55–2:10).**
    - C (Wei Ming) alarms on its own with no network: red banner **"C-12 return overdue"**, sound, vibration and a notification.
    - D (Dr Tan) Alerts, amber card: "C-12 overdue · last holder the server knows: Ravi Kumar, signed 14:29 · newer handovers may not have synced."

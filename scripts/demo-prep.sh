@@ -47,13 +47,14 @@ for s in $serials; do
     *) radio="airplane keeps BT/NFC" ;;
   esac
 
-  nfc=$("$adb" -s "$s" shell settings get global nfc_on 2>/dev/null | tr -d '\r')
+  # NFC's on/off state isn't in Settings.Global; NfcService reports it in dumpsys (not on every ROM).
+  nfc=$("$adb" -s "$s" shell dumpsys nfc 2>/dev/null | tr -d '\r' | grep -m1 -o 'mState=[a-z_]*')
   case "$nfc" in
-    1) nfc="NFC on" ;;
-    0) nfc="NFC OFF" ;;
+    mState=on) nfc="NFC on" ;;
+    mState=off|mState=turning_off) nfc="NFC OFF" ;;
     *)
       if "$adb" -s "$s" shell pm list features 2>/dev/null | tr -d '\r' | grep -qi 'android.hardware.nfc'; then
-        nfc="NFC ?"
+        nfc="NFC: check in Settings"
       else
         nfc="no NFC"
       fi ;;

@@ -100,7 +100,7 @@ QR codes use byte mode with error correction L. The screens that show a QR keep 
 Each check gives one line, ✓ or ✗, with the text from spec R2. The offer is refused if any check fails, and refused offers are never stored.
 
 1. **Readable:** it starts with `CS1O:` and parses. Otherwise: "Not a handover code".
-2. **Signed by the giver:** `from_device_id` is on this phone's roster (`devices`), belongs to `from_person_id`, and `giver_sig` verifies over the offer string. Otherwise: "Unknown signer. Sync this phone before accepting." or "Signature doesn't match".
+2. **Signed by the giver:** `from_device_id` is on this phone's roster (`devices`), belongs to `from_person_id`, and `giver_sig` verifies over the offer string. Otherwise: "Unknown signer. Sync this phone before accepting." or "Signature doesn't match". It also fails if that device was withdrawn (A.12) at or before `offered_ms` + 15 s: "<name>'s phone was withdrawn by the safety officer at 14:40."
 3. **The giver holds it:** checked against the proof record `p`, or the local register record when `p` is null. The proof record must:
    - recompute to the offer's `prev_hash`
    - have both its signatures verify against this phone's roster
@@ -111,7 +111,7 @@ Each check gives one line, ✓ or ✗, with the text from spec R2. The offer is 
 5. **Valid:**
    - It passes if `offered_ms − 15000 ≤ now ≤ expires_ms + 15000`. The 15 seconds allow for phone clocks that disagree.
    - Show "Valid for m:ss" or "Expired m:ss ago", measured from `expires_ms`.
-6. **Not used before:** no local handover has this `nonce` or this `id`.
+6. **Not used before:** no local handover has this `nonce` or this `id`, and no local handover (not hidden by tamper, not rejected) has the same `prev_id` with a different `id`. The second case reads "Ravi Kumar already handed C-12 to Tan Wei Ming at 14:30. This would be a second handover." and still counts as a copy for the red header.
 
 **The seal check (R3):**
 - The scanned code's item code must equal the item's `code`, and its seal number must equal the local `items.seal_no`.
@@ -141,6 +141,8 @@ When `sync_state` has `tampered = true` and this phone completes a handover **as
 The phone then still computes itself as the holder and can sign a new offer from the old previous record. Its receivers' phones still deliver those records.
 
 ### A.6 Who holds a camera: `deriveCustody`
+
+`CustodyState.localFork` is true when the camera is Disputed and none of the fork's first branch records has a `server_seq` yet: this phone saw the fork before the server did. The timeline then shows the phone-side warning (spec T).
 
 This is a pure function in `crypto/Custody.kt`, used by every screen and by the tests.
 
@@ -300,7 +302,7 @@ The safety officer withdraws a lost or stolen phone from the **Devices** tab (O3
   - the withdrawn phone's session is no longer enrolled (`is_enrolled` and `_my_person` skip withdrawn devices), so it can't read, push or relay
   - handovers the device signed at or after `revoked_at` are rejected: C.3.3b
 - **On the other phones**, after their next pull, `DeviceEntity.revokedAtMs` is set and the offline checks treat the device as withdrawn:
-  - R2 line 1 fails for an offer it signed after `revokedAtMs`: "Ravi Kumar's phone was withdrawn by the safety officer at 14:40. Don't accept."
+  - R2 line 1 fails for an offer it signed after `revokedAtMs`: "Ravi Kumar's phone was withdrawn by the safety officer at 14:40."
   - G4 refuses its acceptance the same way
   - signatures it made before `revokedAtMs` still verify, so the timeline stays readable, with a "withdrawn 14:40" mark on that key
   - the device's `revokedAtMs` is the server's clock, and `accepted_ms` is the phone's, so allow 15 s as in A.4.5
