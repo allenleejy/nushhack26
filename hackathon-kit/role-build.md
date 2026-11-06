@@ -18,7 +18,7 @@ The owner names a job in plain words, such as "start the kickoff", "here's the s
 
 - GitHub owner: `allenleejy`. Repo: `nushhack26`.
 - Teammates' GitHub usernames: ________ and ________
-- Supabase project ref: ________
+- Supabase project ref: `dxyerpysbpvmnlezhgpt`
 - Submission time S: ________
 
 ## Standing rules
