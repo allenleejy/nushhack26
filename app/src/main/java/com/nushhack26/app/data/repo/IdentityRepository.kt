@@ -1,5 +1,8 @@
 package com.nushhack26.app.data.repo
 
+import com.nushhack26.app.auth.AccessLease
+import com.nushhack26.app.auth.AccessRules
+import com.nushhack26.app.data.local.SyncKeys
 import com.nushhack26.app.data.local.SyncStateDao
 import com.nushhack26.app.data.local.put
 import kotlinx.coroutines.flow.Flow
@@ -55,6 +58,28 @@ class IdentityRepository(private val syncState: SyncStateDao) {
         syncState.put(ROLE, identity.role)
     }
 
+    /** The public key the server accepted at enrolment, for unlocking offline (docs/sync.md A.7). */
+    suspend fun enrolledPublicKey(): String? = syncState.get(DEVICE_PUBLIC_KEY)
+
+    suspend fun setEnrolment(publicKey: String, enrolledAt: Long) {
+        syncState.put(DEVICE_PUBLIC_KEY, publicKey)
+        syncState.put(ENROLLED_AT, enrolledAt.toString())
+    }
+
+    /**
+     * The offline access lease (docs/sync.md A.9), as of when it last changed. Hand over, Receive
+     * and Sign decision call [leaseNow] before signing, so expiry needs no ticking flow.
+     */
+    val lease: Flow<AccessLease> = combine(
+        syncState.observe(SyncKeys.LAST_SYNC_AT),
+        syncState.observe(ENROLLED_AT),
+    ) { lastSync, enrolledAt ->
+        AccessRules.lease(lastSync?.toLongOrNull(), enrolledAt?.toLongOrNull(), System.currentTimeMillis())
+    }
+
+    suspend fun leaseNow(now: Long = System.currentTimeMillis()): AccessLease =
+        AccessRules.lease(syncState.get(SyncKeys.LAST_SYNC_AT)?.toLongOrNull(), syncState.get(ENROLLED_AT)?.toLongOrNull(), now)
+
     /** Demo only: the tampered phone keeps an old copy of the token (docs/sync.md A.5). */
     val tampered: Flow<Boolean> = syncState.observe(TAMPERED).map { it == "true" }
 
@@ -68,8 +93,10 @@ class IdentityRepository(private val syncState: SyncStateDao) {
         const val NAME = "person_name"
         const val ROLE = "person_role"
         const val TAMPERED = "tampered"
+        const val ENROLLED_AT = "enrolled_at"
+        const val DEVICE_PUBLIC_KEY = "device_public_key"
 
-        /** Kept by "Clear local data". */
-        val KEPT_KEYS = listOf(PERSON_ID, DEVICE_ID, NAME, ROLE, TAMPERED)
+        /** Kept by "Clear local data", so the phone stays enrolled and can still unlock offline. */
+        val KEPT_KEYS = listOf(PERSON_ID, DEVICE_ID, NAME, ROLE, TAMPERED, ENROLLED_AT, DEVICE_PUBLIC_KEY, SyncKeys.LAST_SYNC_AT)
     }
 }

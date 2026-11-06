@@ -47,6 +47,7 @@ import com.nushhack26.app.ui.components.SyncChip
 import com.nushhack26.app.ui.components.SyncStatusBar
 import com.nushhack26.app.ui.components.chipState
 import com.nushhack26.app.ui.enrol.EnrolScreen
+import com.nushhack26.app.ui.lock.LockScreen
 import com.nushhack26.app.ui.navigation.AppNavHost
 import com.nushhack26.app.ui.navigation.DailyRecordRoute
 import com.nushhack26.app.ui.navigation.DebugRoute
@@ -65,15 +66,23 @@ import com.nushhack26.app.ui.theme.hazardStripes
 
 const val APP_NAME = "Tenet"
 
-/** The app frame: Enrol until the phone has an identity, then the role's tabs. */
+/**
+ * The app frame: Enrol until the phone has an identity, then the role's tabs, with the Lock
+ * screen drawn over them while the app is locked (docs/sync.md A.7). The tabs stay composed
+ * under the lock, so unlocking returns to where the person was.
+ */
 @Composable
 fun AppScaffold(container: AppContainer) {
     val identityState by container.identity.state.collectAsStateWithLifecycle(initialValue = IdentityState.Loading)
+    val locked by container.appLock.locked.collectAsStateWithLifecycle()
     when (val state = identityState) {
         IdentityState.Loading -> Box(Modifier.fillMaxSize().background(Tenet.colors.bg000))
         IdentityState.NotEnrolled -> EnrolFrame(container)
-        is IdentityState.Enrolled -> key(state.identity.role) {
-            RoleScaffold(container, state.identity.role)
+        is IdentityState.Enrolled -> Box(Modifier.fillMaxSize()) {
+            key(state.identity.role) {
+                RoleScaffold(container, state.identity.role)
+            }
+            if (locked) LockScreen(container, state.identity)
         }
     }
 }

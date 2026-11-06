@@ -16,7 +16,8 @@ The `GiveRoute(itemId)` screen, with steps G1–G5 from `docs/spec.md` §3 and t
   - Read the item and its custody (`deriveCustody`). If I'm not the holder, show the empty state.
   - **Receivers:** store officer → radiographers ("Issue to"); radiographer → "Hand to a colleague" (radiographers) and "Return to store" (store officers). The kind follows from the receiver's role.
   - **Due chips** (issue only): **+90 s**, **+5 min**, **17:00**, **19:00**. A clock time already passed today means tomorrow.
-- **G2 Review and sign:** the who-and-what card. **Sign** calls `SignPrompt`, then `HandoverBuilder` and `DeviceKeys.sign`. Save the offer with `GiveRepository.savePendingOffer` before showing the QR.
+  - **Authorisation** (docs/sync.md A.8): run `AccessRules.checkPick(me, receiver, now)` for every receiver. Those that fail stay in the list, greyed out and not selectable, showing its text ("Jun Lim · authorisation lapsed 3 Nov"). The kind comes from `AccessRules.kindFor`.
+- **G2 Review and sign:** the who-and-what card. If `container.identity.leaseNow().expired` (A.9), the Sign button is disabled with `AccessRules.LEASE_EXPIRED_TEXT`. **Sign** calls `SignPrompt`, then `HandoverBuilder` and `DeviceKeys.sign`. Save the offer with `GiveRepository.savePendingOffer` before showing the QR.
 - **G3 Offer QR:**
   - `QrCode(QrPayloads.offer(record, proof))` inside the card, where proof is the head record unless it's a register record
   - "For <first name> only · single use · valid for m:ss", ticking every second
@@ -35,6 +36,7 @@ The `GiveRoute(itemId)` screen, with steps G1–G5 from `docs/spec.md` §3 and t
 - [ ] Siti issues C-12 to Ravi with **+90 s**: the fingerprint prompt, then the offer card with Ravi's name, the countdown, and a QR another phone scans in under 2 seconds.
 - [ ] After scanning Ravi's acceptance, both phones show the same match code.
 - [ ] Cancelling the fingerprint leaves C-12 with Siti, and nothing is saved.
+- [ ] In Ravi's picker, Jun Lim is greyed out with "Jun Lim · authorisation lapsed 3 Nov", offline as well as online.
 - [ ] With the Debug **Tampered phone** switch on, after Ravi hands C-12 to Wei Ming, Ravi's My custody still shows C-12 and he can sign a new offer for it.
 - [ ] It works in airplane mode, and the handover syncs once the network is back, with nothing doubled.
 - [ ] Loading, empty and error states are shown.
@@ -47,7 +49,7 @@ The `GiveRoute(itemId)` screen, with steps G1–G5 from `docs/spec.md` §3 and t
 
 ## Notes
 - **Data:** `items`, `people`, `devices`, `handovers`, `pending_offers`, `sync_state` (`tampered`).
-- **Uses:** `crypto/` (card 01), `ui/components/QrCode.kt`, `QrScanner.kt`, `SignPrompt.kt`, `IdentityRepository`.
+- **Uses:** `crypto/` (card 01), `auth/AccessRules.kt`, `ui/components/QrCode.kt`, `QrScanner.kt`, `SignPrompt.kt`, `IdentityRepository` (including `leaseNow()`).
 - **Design:** build from `design/` (the Tenet design system). Read `design/brand.md` first.
   - **Theme:** use `ui/theme/`: `TenetTheme`, `Tenet.colors`, `TenetType`, `TenetDimens`, `hazardStripes`, `hatching`, `verticalText`. Icons are `Icons.Sharp.*`. Space Mono text is uppercase (call `.uppercase()`), and sentences are Space Grotesk.
   - **Already built (reuse, don't rebuild):**

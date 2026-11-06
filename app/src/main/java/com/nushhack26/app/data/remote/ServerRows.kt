@@ -41,6 +41,7 @@ data class PersonRow(
     @SerialName("nea_reg_no") val neaRegNo: String? = null,
     val active: Boolean = true,
     @SerialName("server_seq") val serverSeq: Long? = null,
+    @SerialName("authorised_until_ms") val authorisedUntilMs: Long? = null,
 )
 
 @Serializable
@@ -141,7 +142,7 @@ data class MissingReportRow(
 // Server row → entity. Pulled rows count as synced; the sync engine keeps the local-only
 // columns of a record the phone already has (docs/sync.md section E).
 
-fun PersonRow.toEntity() = PersonEntity(id, name, role, staffNo, neaRegNo, active, serverSeq)
+fun PersonRow.toEntity() = PersonEntity(id, name, role, staffNo, neaRegNo, active, serverSeq, authorisedUntilMs)
 
 fun DeviceRow.toEntity() = DeviceEntity(
     id = id, personId = personId, publicKey = publicKey, keyFp = keyFp, keySecurity = keySecurity,

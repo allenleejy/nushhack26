@@ -26,3 +26,13 @@ from (values
   ('c0000000-0000-4000-8000-000000000015'::uuid, 'b0000000-0000-4000-8000-000000000015'::uuid, 'a0000000-0000-4000-8000-000000000001'::uuid)
 ) as r (id, item_id, to_person_id)
 on conflict (id) do nothing;
+
+-- Authorisation to hold sealed sources (docs/spec.md section 8). Jun Lim's lapsed on 3 Nov,
+-- so the demo can show an offline refusal. Store officers and the safety officer have no expiry.
+update public.people set authorised_until_ms = v.until_ms
+from (values
+  ('a0000000-0000-4000-8000-000000000002'::uuid, (extract(epoch from timestamptz '2027-06-30 23:59:59+08') * 1000)::bigint),
+  ('a0000000-0000-4000-8000-000000000003'::uuid, (extract(epoch from timestamptz '2027-06-30 23:59:59+08') * 1000)::bigint),
+  ('a0000000-0000-4000-8000-000000000004'::uuid, (extract(epoch from timestamptz '2026-11-03 23:59:59+08') * 1000)::bigint)
+) as v (id, until_ms)
+where people.id = v.id and people.authorised_until_ms is distinct from v.until_ms;

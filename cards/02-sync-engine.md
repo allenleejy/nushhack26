@@ -29,7 +29,8 @@ Follow `docs/sync.md` §D and §E exactly.
 
 ## Acceptance criteria (checked on a phone)
 - [ ] All sync tests in `app/src/test/.../sync/` pass, with none ignored.
-- [ ] Online: enrol a phone. The `devices` row reaches Supabase within 10 seconds, and the sync bar shows "All synced".
+- [ ] Online, on a phone enrolled through card 07's Enrol (or `EnrolRepository.enrol`): Sync now pulls the roster and the cameras, and the sync bar shows "All synced". Devices are no longer pushed: the server adds them in `enrol_device` (docs/sync.md C.2).
+- [ ] On a phone that isn't enrolled, the server raises "not enrolled" (C.0): the engine keeps the outbox and writes `LAST_ERROR`, like a network error.
 - [ ] Offline: create a record (a handover from card 03 or 04). The sync bar shows "1 waiting". Airplane mode off, and it goes to "All synced", with one row on the server.
 - [ ] A forced failure (no server config) shows the error in Debug, and the record stays waiting.
 - [ ] A pulled fork alert appears in the local `alerts` table, so card 06 shows it.

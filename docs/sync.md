@@ -1,6 +1,6 @@
 # Sync and signed records
 
-The exact formats and rules behind `docs/spec.md`. Card 01 (token core) implements §A, card 02 (sync engine) implements §D and §E, and the build account's migration implements §B and §C. If code and this file disagree, fix one of them in the same pull request.
+The exact formats and rules behind `docs/spec.md`. Card 01 (token core) implements A.1–A.6, card 02 (sync engine) implements §D and §E, the build account implements A.7–A.9 in `auth/` and §B and §C in the migrations (`custody_schema`, then `access`). If code and this file disagree, fix one of them in the same pull request.
 
 ---
 
@@ -20,6 +20,7 @@ The exact formats and rules behind `docs/spec.md`. Card 01 (token core) implemen
 - **Debug builds only:** if the phone has no secure lock screen (Devin's emulator), use a software EC P-256 key stored in app files, with `key_security = software`. Me shows "Unprotected test key". Release builds refuse to enrol without a lock screen.
 - **Public key:** the X.509 SubjectPublicKeyInfo DER, base64url without padding, in `devices.public_key`.
 - **Key fingerprint `key_fp`:** the first 4 bytes of SHA-256(SPKI DER), as uppercase hex pairs joined by `:`, for example `3F:A9:12:7C`.
+- **The same key unlocks the app** (A.7). There's no separate password or login key.
 
 ### A.2 Canonical strings
 
@@ -53,6 +54,11 @@ record_hash = hex(SHA-256("CS1-REGISTER|" + id + "|" + item_id + "|" + to_person
 **A resolution** (the safety officer signs this):
 ```
 CS1-RESOLVE|id|alert_id|item_id|chosen_handover_id|decided_by_person_id|decided_by_device_id|hex(SHA-256(note))|decided_ms
+```
+
+**An unlock challenge** (the phone signs it and checks it itself; it never leaves the phone):
+```
+CS1-UNLOCK|device_id|person_id|nonce|unlock_ms
 ```
 
 **The values:**
@@ -124,6 +130,8 @@ Then show the acceptance QR.
 
 If they pass, in one transaction: save the complete handover (origin `mine`), insert it into the outbox, and delete the pending offer. A giver may scan an acceptance after the offer expired: the receiver's own check (A.4.5) already limited when they could accept.
 
+**The authorisation line (R2, line 6)** comes from `AccessRules.checkReceiver` (A.8), not from `OfferChecker`. The receive screen shows it after the five offer lines, and a ✗ refuses the offer like any other check (header "This handover can't be accepted.").
+
 ### A.5 The tampered phone (demo only)
 
 When `sync_state` has `tampered = true` and this phone completes a handover **as the giver**, in the same transaction:
@@ -165,6 +173,44 @@ This is a pure function in `crypto/Custody.kt`, used by every screen and by the 
 - whether every record on the path has synced
 - the fork branches, if there are any
 
+### A.7 Unlocking the app offline (`auth/Unlocker.kt`, `auth/AppLock.kt`)
+
+- **When it locks:** once the phone is enrolled, on a cold start and whenever the screen turns off (`ACTION_SCREEN_OFF`). Debug builds on a phone with no secure lock screen never lock, because they sign with the software key and there's nothing to authenticate with.
+- **Unlocking:**
+  1. Show `SignPrompt` ("Unlock Tenet", the person's name).
+  2. Build `CS1-UNLOCK|device_id|person_id|nonce|unlock_ms`, with a fresh 16-byte nonce.
+  3. Sign it with `DeviceKeys.sign`. The Keystore refuses unless the person has just authenticated.
+  4. Verify the signature with `Signatures.verify` against this phone's enrolled public key, kept in `sync_state` (`device_public_key`), so the check works offline and after "Clear local data".
+  5. The app unlocks only if the Keystore key's public key equals the enrolled one and the signature verifies against it.
+- **What this proves:** the enrolled person's fingerprint or PIN opened this phone's hardware key just now, and it's the key the server accepted at enrolment. No network is needed.
+
+### A.8 Who may do what (`auth/AccessRules.kt`, pure, used offline and mirrored on the server)
+
+| Kind | Giver's role | Receiver's role | The receiver must also be |
+|---|---|---|---|
+| `issue` | store officer | radiographer | active, with `authorised_until_ms` empty or ≥ the time |
+| `transfer` | radiographer | radiographer | active, with `authorised_until_ms` empty or ≥ the time |
+| `return` | radiographer | store officer | active |
+
+- **On the phone:**
+  - G1 greys out receivers that fail, with the reason ("Jun Lim · authorisation lapsed 3 Nov").
+  - R2 line 6 checks this phone's own person as the receiver, at the current time.
+  - Only a safety officer sees Sign decision.
+- **On the server:** `sync_push` rules C.3.4 and C.3.4b, and C.4, check the same rules, using `accepted_ms` as the time.
+- **Texts:**
+  - pass: "Authorised · radiographer · valid to 30 Jun 2027" (no expiry: "Authorised · radiographer"; a return: "Authorised · store officer")
+  - lapsed, on the receiver's phone: "You aren't authorised to hold sealed sources (lapsed 3 Nov)"
+  - lapsed, in G1: "Jun Lim · authorisation lapsed 3 Nov"
+  - inactive: "Jun Lim is no longer on the active roster"
+  - wrong role: "A radiographer can't issue cameras" (or the matching sentence for that kind)
+
+### A.9 The offline access lease
+
+- **Its start** is the later of `sync_state.last_sync_at` (written after every successful sync, which the server allows only for an enrolled session) and `sync_state.enrolled_at`.
+- **It lasts 72 hours.** Until then, everything works offline.
+- **After that,** the app still unlocks and shows every record, but Hand over, Receive and Sign decision are disabled with "Connect once to confirm your access. Until then you can look but not sign." The next successful sync renews it.
+- "Clear local data" keeps `last_sync_at`, `enrolled_at` and `device_public_key`.
+
 ---
 
 ## B. Tables
@@ -179,13 +225,14 @@ Every table has, as the kit requires:
 
 | Table | Kind | Columns besides the standard ones |
 |---|---|---|
-| `people` | Read-only, seed | `id uuid PK`, `name text`, `role text` (`store_officer`, `radiographer` or `rso`), `staff_no text`, `nea_reg_no text null`, `enrol_code_hash text null` (hex SHA-256 of the code), `active boolean default true` |
-| `devices` | Append-only | `id uuid PK` (made on the phone), `person_id uuid FK people`, `public_key text`, `key_fp text`, `key_security text` (`strongbox`, `tee` or `software`), `app_version text`. Its `performed_at` is the enrolment time on the phone. |
+| `people` | Read-only, seed | `id uuid PK`, `name text`, `role text` (`store_officer`, `radiographer` or `rso`), `staff_no text`, `nea_reg_no text null`, `enrol_code_hash text null` (hex SHA-256 of the code; never readable or pulled), `active boolean default true`, `authorised_until_ms bigint null` (when the person's authorisation to hold sealed sources lapses; null means no expiry) |
+| `devices` | Append-only, written only by `enrol_device` | `id uuid PK` (made on the phone), `person_id uuid FK people` (set by the server from the staff number), `public_key text`, `key_fp text`, `key_security text` (`strongbox`, `tee` or `software`), `app_version text`. Its `created_by` is the enrolled session. |
 | `items` | Read-only, seed | `id uuid PK`, `code text unique`, `source_serial text`, `isotope text`, `seal_no text`, `store_name text` |
 | `handovers` | Append-only, with clash rules | See below |
 | `alerts` | Written by the server only | `id uuid PK default gen_random_uuid()`, `kind text` (`fork`, `seal_mismatch`, `orphan` or `rejected`), `item_id uuid null FK items`, `person_id uuid null FK people` (the person named), `handover_ids uuid[] default '{}'`, `fork_prev_id uuid null` (for a fork, the record both branches follow), `reason text`, `op_table text null`, `op_payload jsonb null`, `resolution_id uuid null`, `closed_at timestamptz null` |
 | `resolutions` | Append-only, with a clash rule | `id uuid PK`, `alert_id uuid FK alerts`, `item_id uuid FK items`, `chosen_handover_id uuid FK handovers`, `decided_by_person_id uuid FK people`, `decided_by_device_id uuid FK devices`, `note text default ''`, `decided_ms bigint`, `sig text` |
 | `missing_reports` | Append-only | `id uuid PK`, `item_id uuid FK items`, `reported_by_person_id uuid FK people`, `reported_by_device_id uuid FK devices`, `last_handover_id uuid null`, `note text`, `reported_ms bigint` |
+| `enrol_attempts` | Server only, never pulled | `id bigint identity PK`, `uid uuid`, `staff_no text`, `ok boolean`, `at timestamptz default now()` |
 | `applied_ops` | Server only, never pulled | `op_id uuid PK`, `table_name text`, `result text`, `reason text null`, `status text null`, `record_hash text null`, `applied_at timestamptz default now()` |
 
 **The `handovers` columns:**
@@ -215,12 +262,17 @@ Every table has, as the kit requires:
   - `outbox` and `sync_state`, from the kickoff
 
 **RLS:**
-- `select` is allowed to `authenticated` on every table except `applied_ops`.
-- There are no insert, update or delete policies. All writes go through `sync_push` (`security definer`).
+- `select` is allowed to `authenticated` only when `is_enrolled()`: the session's `auth.uid()` is the `created_by` of a device whose person is active. That covers every table except `applied_ops` and `enrol_attempts`, which nobody can read.
+- There are no insert, update or delete policies. All writes go through `sync_push` or `enrol_device` (both `security definer`).
 
 ---
 
 ## C. Server rules in `sync_push`
+
+### C.0 Who may call
+
+- `sync_push` and `sync_pull` raise `not enrolled` (SQLSTATE 42501) unless `is_enrolled()`. The phone treats it like a network error (§E).
+- `enrol_device` needs only a signed-in session (D.4).
 
 All of one call's ops run in **one transaction**. For each op, in order:
 
@@ -230,9 +282,14 @@ All of one call's ops run in **one transaction**. For each op, in order:
 - Ignore server-owned fields in any payload: `status`, `server_seq`, `received_at`, `created_by`, `performed_at`.
 
 ### C.2 `devices`
-- `person_id` must exist with `active = true`. Otherwise: rejected, "unknown person".
-- Wave 2: the payload must carry `enrol_code`, whose SHA-256 must match `people.enrol_code_hash`. Otherwise: rejected, "wrong enrolment code". The code is never stored.
-- Otherwise: applied.
+- A `devices` op in `sync_push` is always rejected: "devices are added by enrol_device only".
+- **`enrol_device(p_staff_no, p_code, p_device)`** (D.4), in order:
+  1. **Too many tries:** five failed tries in the last 10 minutes for this session or this staff number. Result: `locked`, "too many wrong codes".
+  2. **Wrong code:** the staff number (trimmed, any case) isn't an active person, or SHA-256 of the code isn't their `enrol_code_hash`. The try is logged as failed. Result: `rejected`, "wrong code". The code is never stored.
+  3. **Malformed device:** no `id`, `public_key` or `key_fp`, or a bad `key_security`. Result: `rejected`, "malformed device".
+  4. **A retry:** the device id already exists for the same person, key and session. Result: `duplicate`. The same id in any other case is `rejected`, "device id already used".
+  5. Otherwise the server inserts the device with `person_id` from the staff number and `created_by = auth.uid()`, and logs the try as successful. Result: `applied`.
+- A person may enrol several devices. Enrolment doesn't check `authorised_until_ms`: a person whose authorisation lapsed can still sign in and look, but can't receive a source (C.3.4b).
 
 ### C.3 `handovers` (lock the `items` row with `FOR UPDATE` first)
 1. **Hash:** recompute `record_hash` from the fields (A.2, using `pgcrypto`'s `digest`). If it doesn't match: rejected, "hash mismatch".
@@ -242,6 +299,7 @@ All of one call's ops run in **one transaction**. For each op, in order:
    - `issue`: from a store officer to a radiographer
    - `transfer`: from a radiographer to a radiographer
    - `return`: from a radiographer to a store officer
+   - **4b.** On `issue` and `transfer`, the receiver must be active ("not authorised: inactive") and have `authorised_until_ms` null or ≥ `accepted_ms` ("not authorised: lapsed"). Both are rejected.
 5. **Previous record:**
    - not found: store it with status `orphan` and add an `orphan` alert ("waiting for an earlier record"). Result: `conflict`.
    - its `to_person_id` isn't `from_person_id`: rejected, "giver was not the holder".
@@ -300,6 +358,24 @@ The phone calls `sync_pull(since bigint)`. It returns every row with `server_seq
 
 The phone saves `max_seq` as `sync_state.last_seq` and calls again while `more` is true.
 
+### D.4 Enrol
+
+The phone calls `enrol_device(p_staff_no text, p_code text, p_device jsonb)` once, online, through `EnrolApi`, not the outbox:
+```json
+{"p_staff_no": "R-2210", "p_code": "552917", "p_device": {"id": "<uuid>", "public_key": "<b64url SPKI>", "key_fp": "3F:A9:12:7C", "key_security": "tee", "app_version": "r07", "performed_at": "<ISO time>"}}
+```
+It returns:
+```json
+{"result": "applied | duplicate | rejected | locked", "reason": "<text or null>", "person": { "<people row without enrol_code_hash>": "..." }, "device": { "<devices row>": "..." }}
+```
+On `applied` or `duplicate`, in one Room transaction, the phone:
+- saves the person and the device (`sync_status = synced`)
+- sets the identity
+- puts `enrolled_at` and `device_public_key` in `sync_state`
+- marks the app unlocked
+
+Then it syncs.
+
 ### D.3 When sync runs
 - after every local save
 - when the network returns
@@ -320,13 +396,14 @@ A push is always followed by a pull.
 | `conflict` | `sync_status = synced`, `status` = `forked` or `orphan`. It shows as Disputed or waiting through `deriveCustody` and the alerts. | Deleted |
 | `rejected` | `sync_status = rejected`, `sync_reason` = the reason. Kept on the phone, left out of `deriveCustody`, and shown in red on the timeline. | Deleted |
 | Network error, timeout, 5xx, or no session yet | Unchanged | Kept: `attempts + 1` and `last_error`. WorkManager retries with backoff. |
+| `not enrolled` raised by the server (C.0) | Unchanged | Kept, as for a network error. `last_error` shows it, and the lease (A.9) runs out unless the phone enrols again. |
 
 **Merging pulled rows** (upsert by `id`):
 - **Server-owned columns** overwrite the local ones: `status`, `status_reason`, `server_seq`, `received_at`, `created_by`, `performed_at`, and `closed_at` and `resolution_id` on alerts.
 - **Local-only columns** are kept: `origin`, `hidden_by_tamper`, `sync_status`. A pulled row that's new to the phone gets `sync_status = synced` and `origin = pulled`.
 - **Signed fields never change.** If a pulled handover's `record_hash` differs from the local copy, keep the server copy and set `sync_state.last_error` to "Server copy of <id> differs from this phone's".
 
-**Debug, Clear local data:** deletes every row and resets `last_seq` to 0. It keeps the Keystore key and the `sync_state` keys `device_id` and `person_id`, so the phone stays enrolled, then syncs.
+**Debug, Clear local data:** deletes every row and resets `last_seq` to 0. It keeps the Keystore key and the identity keys in `sync_state` (`person_id`, `device_id`, name, role, `enrolled_at`, `device_public_key`, `last_sync_at`), so the phone stays enrolled and can still unlock offline, then it syncs.
 
 ---
 
@@ -360,7 +437,8 @@ There are **no editable tables**, so the kit's "two phones edit the same field" 
 10. A resolution choosing the forked branch: the statuses swap. A second resolution is rejected.
 11. An unknown device: rejected.
 12. A changed field with the old `record_hash`: rejected, "hash mismatch".
-13. `deriveCustody`:
+13. **Not covered by the fake server:** C.0, `enrol_device` and C.3.4b. They're checked live against Supabase (the `access` migration's checks) and in `test/.../auth/AccessRulesTest.kt`.
+14. `deriveCustody`:
     - tampered records are hidden
     - a fork with no resolution is Disputed
     - a resolution picks the chosen branch

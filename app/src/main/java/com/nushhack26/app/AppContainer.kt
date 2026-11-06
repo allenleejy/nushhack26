@@ -1,11 +1,14 @@
 package com.nushhack26.app
 
 import android.content.Context
+import com.nushhack26.app.auth.AppLock
+import com.nushhack26.app.auth.Unlocker
 import com.nushhack26.app.crypto.DeviceKeys
 import com.nushhack26.app.crypto.deviceKeys
 import com.nushhack26.app.data.local.AppDatabase
 import com.nushhack26.app.data.local.put
 import com.nushhack26.app.data.remote.SessionManager
+import com.nushhack26.app.data.remote.SupabaseEnrolApi
 import com.nushhack26.app.data.remote.SupabaseConfig
 import com.nushhack26.app.data.remote.SupabaseSyncApi
 import com.nushhack26.app.data.remote.createSupabase
@@ -59,15 +62,20 @@ class AppContainer(context: Context) {
 
     val identity: IdentityRepository by lazy { IdentityRepository(database.syncStateDao()) }
 
+    /** The app lock and the offline unlock (docs/sync.md A.7). */
+    val appLock = AppLock(appContext)
+    val unlocker: Unlocker by lazy { Unlocker({ deviceKeys }, identity, appLock) }
+
     // Repositories, one per feature. Each save also asks for a sync.
     private val requestSync: () -> Unit = { syncScheduler.syncNow() }
     val giveRepository by lazy { GiveRepository(database, identity, requestSync) }
     val receiveRepository by lazy { ReceiveRepository(database, requestSync) }
     val custodyRepository by lazy { CustodyRepository(database) }
-    val enrolRepository by lazy { EnrolRepository(database, identity, requestSync) }
+    val enrolRepository by lazy { EnrolRepository(database, identity, SupabaseEnrolApi(supabase), appLock, requestSync) }
     val safetyRepository by lazy { SafetyRepository(database, requestSync) }
 
     fun start() {
+        appLock.start()
         session.start()
         syncScheduler.schedulePeriodic()
         syncScheduler.syncNow()
@@ -79,7 +87,8 @@ class AppContainer(context: Context) {
 
     /**
      * Wipes the phone's copy of the data. The sign-in, the signing key and the enrolment are
-     * kept, so the phone stays the same person and the next sync pulls everything again.
+     * kept, so the phone stays the same person, can still unlock offline, and the next sync
+     * pulls everything again.
      */
     suspend fun clearLocalData() = withContext(Dispatchers.IO) {
         val syncState = database.syncStateDao()

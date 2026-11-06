@@ -62,6 +62,8 @@ data class PersonEntity(
     val neaRegNo: String? = null,
     val active: Boolean = true,
     val serverSeq: Long? = null,
+    /** When the person's authorisation to hold sealed sources lapses (docs/sync.md A.8). Null: no expiry. */
+    val authorisedUntilMs: Long? = null,
 )
 
 @Entity(tableName = "devices", indices = [Index("personId")])

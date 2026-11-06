@@ -15,6 +15,12 @@
 
 **The QR code is signed, not secret.** A photo of it is useless: it's made out to one named person, works once, expires in 60 seconds, and still needs the camera's seal scanned and the receiver's own fingerprint. The demo invites a judge to try.
 
+**Only enrolled staff get in, even offline.** This is how Tenet meets the hackathon's Sudden Development requirement (authentication and authorisation that still work offline):
+- **Enrolment, once, online:** a phone joins the team with the person's staff number and a one-time enrolment code from the safety officer. The server checks the code, and until it does, the phone can read nothing.
+- **Unlocking, offline:** after that, the app opens only for that person. The lock screen asks for their fingerprint, and the same hardware key that signs handovers signs a fresh challenge, which the phone checks with no network.
+- **Authorisation, offline and at sync:** what a person may do comes from the roster: their role, and the date their authorisation to hold sealed sources lapses. The receiver's phone checks it offline, and the server checks it again at sync.
+- **A 72-hour offline lease:** each successful sync confirms the phone is still enrolled. After 72 hours without one, the app opens read-only until it connects.
+
 ---
 
 ## 2. Demo script
@@ -29,7 +35,8 @@
 | D | Laptop emulator, mirrored | Dr Tan Mei Ling | Radiation safety officer | Online throughout |
 
 **Before the pitch (online, about 10 minutes).**
-1. On each device: install the release, open the app, tap your name on Enrol, tap **Create my signing key**, touch the fingerprint (PIN on the emulator). Each shows "Enrolled as …".
+1. On each device: install the release, open the app, type your staff number and enrolment code (§8) on Enrol, tap **Create my signing key**, touch the fingerprint (PIN on the emulator). Each shows "Enrolled as …".
+   - Press power and wake each phone: Tenet shows LOCKED with that person's name. Unlock it.
 2. On A: Debug, **Sync now**. Store shows C-12, C-07 and C-15, all "In store".
 3. On B: open Me, tap the version 5 times, turn on **Tampered phone**. Nothing on screen changes.
 4. On D: open Alerts. It shows "All cameras accounted for".
@@ -40,30 +47,31 @@
 
 1. **Sign-out, online (0:00–0:30).**
    - A (Siti): Store → **Issue** on C-12 → pick **Ravi Kumar** → due chip **+90 s** → **Sign** → fingerprint. A shows the offer card: "Siti Aminah → Ravi Kumar · C-12 · IR-0457 · For Ravi only · single use · valid for 0:58" with the QR inside it.
-   - B (Ravi): My custody → **Receive** → camera scans A's QR. The checklist turns green: signed by Siti, Siti holds C-12, made out to you, valid, not used before. **Scan the seal** → he scans the sticker → "Seal S-40117 matches C-12". The accept card says "This is sealed source IR-0457 (iridium-192). You're liable for it the moment you sign." → **Accept** → fingerprint. B shows its acceptance QR and the match code.
+   - B (Ravi): My custody → **Receive** → camera scans A's QR. The checklist turns green: signed by Siti, Siti holds C-12, made out to you, valid, not used before, authorised. **Scan the seal** → he scans the sticker → "Seal S-40117 matches C-12". The accept card says "This is sealed source IR-0457 (iridium-192). You're liable for it the moment you sign." → **Accept** → fingerprint. B shows its acceptance QR and the match code.
    - A: **Scan acceptance** → scans B. Both A and B show "Signed by both · checked offline · 2 of 2 signatures valid" and the same match code, for example **48 21 07**. Siti and Ravi read it aloud.
    - Wait until A's and B's sync bars show "All synced". **Airplane mode on: A, B and C.**
-2. **Shift change, offline (0:30–1:10).**
-   - B (Ravi): My custody → C-12 card → **Hand over** → **Tan Wei Ming** → **Sign** → fingerprint. B shows the offer card with "For Wei Ming only · single use · valid for 0:58".
+2. **Shift change, offline (0:30–1:15).**
+   - C (Wei Ming) picks up his phone. Its screen went off, so Tenet locked itself: "LOCKED · TAN WEI MING · R-2234". **Unlock** → fingerprint → it opens, still in airplane mode. The presenter: "No network and no login server. His fingerprint unlocks a key in the phone's secure chip, and the app checks that key's signature against his enrolment."
+   - B (Ravi): My custody → C-12 card → **Hand over**. The picker shows **Jun Lim greyed out: "Authorisation lapsed 3 Nov"**. The presenter: "Jun's authorisation lapsed on Tuesday, so even offline Ravi can't hand him a source." → **Tan Wei Ming** → **Sign** → fingerprint. B shows the offer card with "For Wei Ming only · single use · valid for 0:58".
    - **The presenter invites a judge to photograph B's offer QR** with their own phone.
    - C (Wei Ming): **Receive** → scans B → checklist green → scans the seal → accept card → fingerprint → acceptance QR. B scans it. Both show the same match code. C's home: "You hold C-12 · return by 14:31 · 1:02 left" (example times).
    - B's home **still says "You hold C-12"**. The presenter: "Ravi's phone has been tampered with. It kept a copy of the token."
-3. **The cheat (1:10–1:40).**
+3. **The cheat (1:15–1:40).**
    - B (Ravi): C-12 → **Hand over** → **Siti Aminah (return to store)** → sign. A scans it: checklist green, because offline nobody can tell. Siti scans the **copied seal** → match → accept → fingerprint. B scans A's acceptance. A's Store shows C-12 "In store".
    - The presenter: "Offline, nobody can tell. But Ravi has now signed two handovers of the same camera."
-4. **The replay (1:40–2:00).** By now the judge's photo is over a minute old.
+4. **The replay (1:40–1:55).** By now the judge's photo is over a minute old.
    - A (Siti): Store → **Receive return** → scans the judge's photo. Red screen: **"This is a copy. It can't be used."** ✗ Made out to Tan Wei Ming, not you · ✗ Expired 0:10 ago (example) · "Nothing was signed."
-5. **Overdue (2:00–2:20).**
+5. **Overdue (1:55–2:10).**
    - C (Wei Ming) alarms on its own with no network: red banner **"C-12 return overdue"**, sound, vibration and a notification.
    - D (Dr Tan) Alerts, amber card: "C-12 overdue · last holder the server knows: Ravi Kumar, signed 14:29 · newer handovers may not have synced."
-6. **Reconnect (2:20–2:50).**
+6. **Reconnect (2:10–2:40).**
    - Airplane mode off on **C first**, tap **Sync now**. Then A, Sync now. Then B.
    - D Alerts within 10 seconds: red **Fork** card: "Ravi Kumar signed two handovers of C-12 after H1 · both signatures valid on this phone". The overdue card changes to "Last signed holder: Tan Wei Ming".
    - D: tap the fork card. Two branches side by side: "Ravi → Wei Ming · 14:30 · delivered by Wei Ming's phone" and "Ravi → Siti · 14:31 · delivered by Siti's phone", both signed by Ravi's key 3F:A9:12:7C. The presenter: "Ravi's phone hid both handovers. The receivers' phones delivered them."
-7. **The decision (2:50–3:10).**
+7. **The decision (2:40–3:00).**
    - D: **C-12 is with Tan Wei Ming** → note "Seal on camera checked by store" → **Sign decision** → fingerprint. The alert shows "Resolved by Dr Tan". After A syncs, A's Store shows C-12 "Out · Tan Wei Ming · overdue".
 
-**Optional extras if time allows:** the wrong finger on B is refused by the system prompt, so nothing is signed (10 s); Wei Ming returns C-12 to Siti online and the server checks it straight away (20 s).
+**Optional extras if time allows:** the wrong finger on B is refused by the system prompt, so nothing is signed (10 s); a judge's finger on C's lock screen is refused, and Tenet stays locked (5 s).
 
 ---
 
@@ -91,26 +99,41 @@ Designed for a 412×915 dp Android phone, portrait. Times on screen are phone ti
 
 **Navigation by role** (three bottom tabs, as in `design/components/BottomNav`):
 - Not enrolled: Enrol, full screen, no tabs.
+- Enrolled but locked: Lock (L1), full screen over whatever was open, no tabs.
 - Store officer: **ITEMS** (the Store screen), **SCAN** (Receive, full screen), **OUTBOX**.
 - Radiographer: **CUSTODY** (My custody), **SCAN** (Receive, full screen), **OUTBOX**.
 - Radiation safety officer: **ITEMS** (the Store screen, read-only), **ALERTS** (where the app opens), **RECORDS** (the daily record).
 - **Me** opens from the menu icon at the left of the top app bar. Debug opens from Me.
 
-Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `Receive`, `Timeline(itemId)`, `Alerts`, `Fork(alertId)`, `Outbox`, `Me`, `Debug`, `DailyRecord`, `ReportMissing(itemId)`. Enrol isn't a route: `AppScaffold` shows it until the phone has an identity.
+Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `Receive`, `Timeline(itemId)`, `Alerts`, `Fork(alertId)`, `Outbox`, `Me`, `Debug`, `DailyRecord`, `ReportMissing(itemId)`. Enrol and Lock aren't routes: `AppScaffold` shows Enrol until the phone has an identity, and Lock over the app while it's locked.
 
 ### E1 Enrol (`ui/enrol/`)
-- **Purpose:** link this phone to one person and create its signing key. Needs the network once.
-- **Components:** title "Who are you?"; a list of roster rows (name, role, staff number); after picking, a card "Create my signing key" with a primary button; a result card.
-- **Data:** `people` (active), this phone's `devices` row.
-- **Actions:** pick a name → **Create my signing key** → system fingerprint or PIN prompt → saves the `devices` row through the outbox and syncs at once.
-- **Empty:** "Connect once to download your team." with a **Try again** button.
-- **Loading:** three skeleton rows while the roster downloads.
-- **Error:** "Couldn't reach the server. Enrolment needs a connection once." / "Set a fingerprint or PIN on this phone to sign handovers." (no secure lock screen, release builds) / "Fingerprint cancelled. Nothing was created."
-- **Waiting to sync:** "Enrolled as Ravi Kumar · key 3F:A9:12:7C. Others can check your signatures once this phone syncs." with a spinner chip.
+- **Purpose:** link this phone to one person on the roster, proven by their enrolment code, and create its signing key. Needs the network once.
+- **Components:** title "Join your team"; a staff number field ("R-2210"); a 6-digit enrolment code field with the hint "From your safety officer"; the primary button **Create my signing key**; a result card.
+- **Data:** nothing local before enrolment: the roster downloads only after the server accepts the code. The `enrol_device` call (`sync.md` D.4), then this phone's `devices` and `people` rows from its answer.
+- **Actions:** type the staff number and code → **Create my signing key** → the phone creates its key → system fingerprint or PIN prompt → `enrol_device` → on success the phone saves its identity, opens unlocked and syncs at once.
+- **Empty:** the two empty fields; the button stays disabled until both are filled.
+- **Loading:** "Checking with the server…" on the button.
+- **Error:**
+  - "That code doesn't match R-2210. Ask your safety officer." (wrong code, or no such staff number)
+  - "Too many wrong codes. Try again in 10 minutes."
+  - "No connection. Enrolment needs the network once."
+  - "Set a fingerprint or PIN on this phone to sign handovers." (no secure lock screen, release builds)
+  - "Fingerprint cancelled. Nothing was created."
+- **Done:** "Enrolled as Ravi Kumar · radiographer · key 3F:A9:12:7C", then the role's home.
+
+### L1 Lock (`ui/lock/`)
+- **Purpose:** only the enrolled person can open the app, with no network.
+- **When:** once the phone is enrolled, on every cold start and whenever the screen turns off. Debug builds on a phone with no screen lock skip it, because they sign with the labelled software key.
+- **Components:** the hazard diamond; "LOCKED"; the person's name and staff number ("TAN WEI MING · R-2234"); the access line "Access confirmed with the server 14:02 · valid offline until Mon 9 Nov 14:02"; the primary button **UNLOCK** with "Place your finger to unlock".
+- **Actions:** **UNLOCK** → system fingerprint or PIN prompt → the phone signs a fresh `CS1-UNLOCK` challenge with its key and checks it against its own enrolled public key (`sync.md` A.7) → the app opens where it was.
+- **Error:** "Fingerprint cancelled. Tenet stays locked." / "This phone's key doesn't match its enrolment. Clear the app's storage and enrol again."
+- **Lease expired** (no successful sync for 72 hours, `sync.md` A.9): it still unlocks, but a red banner under the top app bar says "Connect once to confirm your access. Until then you can look but not sign.", and Hand over, Receive and Sign decision are disabled.
+- Back does nothing, and nothing behind the lock is visible.
 
 ### E2 Me (`ui/me/`)
 - **Purpose:** who this phone is and how sync stands.
-- **Components:** name, role and staff number; the key card ("Device key 3F:A9:12:7C · hardware-backed (TEE)"); the sync card (waiting count, last sync, last error, **Sync now**); the release version ("Release r07"), which opens Debug after 5 taps.
+- **Components:** name, role and staff number; the access card ("Authorised radiographer · valid to 30 Jun 2027 · access confirmed 14:02 · valid offline until Mon 14:02") with **LOCK NOW**; the key card ("Device key 3F:A9:12:7C · hardware-backed (TEE)"); the sync card (waiting count, last sync, last error, **Sync now**); the release version ("Release r07"), which opens Debug after 5 taps.
 - **Empty / loading / error:** "Server not configured" when there's no Supabase URL; "Will sign in when online"; the last sync error in red text.
 - **Waiting to sync:** the waiting count.
 
@@ -158,6 +181,7 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
 
 ### G Hand over (`ui/give/`, one route with steps)
 - **G1 Choose.** The camera (preselected), and the receiver from the roster. A store officer sees radiographers ("Issue to"). A radiographer sees "Hand to a colleague" (radiographers) and "Return to store" (store officers). On issue only, the due time chips **+90 s**, **+5 min**, **17:00**, **19:00**.
+  - **Authorisation:** receivers who may not take the camera (`sync.md` A.8) stay in the list, greyed out and not selectable, with the reason: "Jun Lim · authorisation lapsed 3 Nov".
   - **Empty:** "You don't hold this camera" (it isn't yours to give) / "No one on the roster can receive it. Sync once."
 - **G2 Review and sign.** The who-and-what card: giver → receiver with names and roles; "C-12 · sealed source IR-0457 (Ir-192) · seal S-40117"; due time. The primary button **Sign** with the line "Place your finger to sign this handover".
   - **Error:** "Fingerprint cancelled. Nothing was handed over."
@@ -177,9 +201,10 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
   3. "Made out to you"
   4. "Valid for 0:41"
   5. "Not used before"
+  6. "Authorised · radiographer · valid to 30 Jun 2027" (for a return: "Authorised · store officer")
 
   If all pass, the button is **Scan the seal**.
-  - **Refused (any ✗):** a red header **"This is a copy. It can't be used."** (or "This handover can't be accepted." when the code isn't a copy), the failed lines in red with reasons ("Made out to Tan Wei Ming, not you", "Expired 0:40 ago", "Already used on this phone", "Unknown signer. Sync this phone before accepting."), and "Nothing was signed."
+  - **Refused (any ✗):** a red header **"This is a copy. It can't be used."** (or "This handover can't be accepted." when the code isn't a copy), the failed lines in red with reasons ("Made out to Tan Wei Ming, not you", "Expired 0:40 ago", "Already used on this phone", "Unknown signer. Sync this phone before accepting.", "You aren't authorised to hold sealed sources (lapsed 3 Nov)"), and "Nothing was signed."
 - **R3 Scan the seal.** "Scan the seal on camera C-12".
   - **Match:** "Seal S-40117 matches C-12" → **Next**.
   - **Mismatch:** "Seal S-40999 doesn't match C-12 (S-40117). Don't accept this camera." with no way on.
@@ -246,13 +271,14 @@ Full column lists, SQL types and the server's rules are in `sync.md` §B. In sho
 
 | Table | Kind | Who writes | Key columns |
 |---|---|---|---|
-| `people` | Read-only (seed) | Seed only | `id uuid PK`, `name`, `role` (`store_officer`, `radiographer` or `rso`), `staff_no`, `nea_reg_no`, `enrol_code_hash`, `active` |
-| `devices` | Append-only | The phone, at enrolment | `id uuid PK`, `person_id FK people`, `public_key`, `key_fp`, `key_security` |
+| `people` | Read-only (seed) | Seed only | `id uuid PK`, `name`, `role` (`store_officer`, `radiographer` or `rso`), `staff_no`, `nea_reg_no`, `enrol_code_hash` (never readable), `active`, `authorised_until_ms` |
+| `devices` | Append-only | The server's `enrol_device`, at enrolment | `id uuid PK`, `person_id FK people`, `public_key`, `key_fp`, `key_security` |
 | `items` | Read-only (seed) | Seed only | `id uuid PK`, `code` (C-12), `source_serial`, `isotope`, `seal_no`, `store_name` |
 | `handovers` | Append-only, **with clash rules** | Phones (the giver makes the id) | Signed fields: item, kind, previous record, giver and receiver (person and device), seal, due, one-time number, times, both signatures, record hash. Server fields: `status`, `status_reason`. |
 | `alerts` | Server-written only | `sync_push` | `id`, `kind` (fork, seal_mismatch, orphan or rejected), `item_id`, `person_id` (the person named), `handover_ids`, `reason`, `resolution_id` |
 | `resolutions` | Append-only, with a clash rule | The safety officer's phone | `alert_id`, `chosen_handover_id`, `note`, signature |
 | `missing_reports` | Append-only | Phones | `item_id`, `last_handover_id`, `note` |
+| `enrol_attempts` | Server only, never pulled | `enrol_device` | `uid`, `staff_no`, `ok`, `at` |
 
 Every server table also has `version`, `server_seq`, `deleted_at`, `performed_at`, `received_at` and `created_by`, as the kit requires. Because every table is append-only or server-written, nothing is ever edited by a phone, so there are no base-version conflicts and no deletes.
 
@@ -265,15 +291,16 @@ Every server table also has `version`, `server_seq`, `deleted_at`, `performed_at
   - a one-time number is used once
   - both devices must be on the roster and belong to the named people
   - the roles must fit the kind
+  - whoever receives an issue or transfer must be active and authorised when they accept
   - the hashes must link
 
   A second handover from the same previous record is stored as **forked**, with an alert naming the giver. A wrong seal is accepted with an alert. A record whose previous record hasn't arrived is held as an **orphan** and checked again later. Everything else that breaks a rule is **rejected** with a reason, logged as an alert, never dropped silently.
 - **`resolutions`:** only a safety officer can decide, and only once per alert. The decision makes the chosen branch accepted and the other overruled.
-- **`devices`:** the person must exist and be active. In wave 2, the enrolment code must match.
+- **`devices`:** only `enrol_device` adds them. The staff number must belong to an active person and the enrolment code must match. Five wrong codes in 10 minutes, for one staff number or one session, lock enrolment for 10 minutes.
 
-**Who may read and write:** every signed-in phone may read every table (it's one team, and phones need the roster and the chains). No phone may insert, update or delete directly. Every write goes through `sync_push` (security definer), which checks the rules and sets `created_by = auth.uid()`. `people` and `items` change only through migrations and seed.
+**Who may read and write:** only an enrolled session may read, and then it may read every table (it's one team, and phones need the roster and the chains). An enrolled session is a Supabase session that has enrolled a device for an active person. A session that hasn't enrolled reads nothing, and `sync_push` and `sync_pull` refuse it with "not enrolled". No phone may insert, update or delete directly. Every write goes through `sync_push` or `enrol_device` (both security definer), which check the rules and set `created_by = auth.uid()`. `people` and `items` change only through migrations and seed.
 
-**Sign-in:** each phone signs in anonymously once while online and keeps its session. The officer picks their name on Enrol. The phone's public key on the roster, not the Supabase account, is what identifies a person in a signature.
+**Sign-in:** each phone signs in anonymously once while online and keeps its session. That session is only a pipe: it gets access by enrolling with a staff number and enrolment code. The phone's public key on the roster, not the Supabase account, is what identifies a person in a signature, and the same key unlocks the app offline.
 
 **Phone-only tables:** `outbox` and `sync_state` (from the kickoff); `pending_offers` (the giver's offer waiting for its acceptance scan); and on `handovers` the local columns `sync_status`, `sync_reason`, `origin` and `hidden_by_tamper`.
 
@@ -290,9 +317,11 @@ Every server table also has `version`, `server_seq`, `deleted_at`, `performed_at
 - the overdue alarm
 - the safety officer's decision (queued)
 - reports
+- unlocking the app, and every authorisation check, for 72 hours after the last successful sync
 
 **Needs the network:**
-- the first enrolment (download the roster, upload the public key)
+- the first enrolment (the code check, the public key upload, then the roster download)
+- renewing the 72-hour offline lease (any successful sync)
 - seeing other phones' records
 - the server's checks, including fork detection
 - the safety officer's alerts, which are as fresh as the last sync
@@ -334,6 +363,7 @@ None.
 - in Debug, the Tampered phone switch and Test signing
 - the printable seal codes in `docs/demo/`
 - the sync tests, marked `@Ignore`
+- after the Sudden Dev change: the access migration, `auth/AccessRules.kt`, `auth/AppLock.kt`, `auth/Unlocker.kt`, `data/remote/EnrolApi.kt`, `EnrolRepository.enrol`, and the Lock gate in `AppScaffold` with a placeholder `LockScreen`
 
 | # | Card | Owns | Depends on | Wave | Devin mode |
 |---|---|---|---|---|---|
@@ -342,15 +372,16 @@ None.
 | 03 | Hand over, G1–G5 | `ui/give/`, `data/repo/GiveRepository.kt`, `GiveScreenshotTest.kt` | Plan (01 for real signing) | 1 | Normal |
 | 04 | Receive, R1–R5, including the refused screen | `ui/receive/`, `data/repo/ReceiveRepository.kt`, `ReceiveScreenshotTest.kt` | Plan (01) | 1 | Normal |
 | 05 | Store, My custody, timeline, overdue alarm | `ui/store/`, `ui/mycustody/`, `ui/timeline/`, `alarm/`, `data/repo/CustodyRepository.kt`, three screenshot tests | Plan (01 for `deriveCustody`) | 1 | Normal |
-| 06 | Enrol, Me, Outbox, Alerts, Fork and the signed decision | `ui/enrol/`, `ui/me/`, `ui/outbox/`, `ui/alerts/`, `ui/fork/`, `data/repo/EnrolRepository.kt`, `data/repo/SafetyRepository.kt`, three screenshot tests | Plan (01, 02) | 1 | Normal |
-| 07 | Daily record (reg 26) and Report missing | `ui/dailyrecord/`, `ui/missing/`, their repositories and tests | 05 | 2 | Normal |
-| 08 | Enrolment code, and the key details sheet on Me (fingerprint, security level) | `ui/enrol/`, `ui/me/` | 06 | 2 | Lite |
+| 06 | Outbox, Alerts, Fork and the signed decision | `ui/outbox/`, `ui/alerts/`, `ui/fork/`, `data/repo/SafetyRepository.kt`, three screenshot tests | Plan (01, 02) | 1 | Normal |
+| 07 | Access: Enrol with a code, Lock and unlock, Me with the access and key cards | `ui/enrol/`, `ui/lock/`, `ui/me/`, `EnrolScreenshotTest.kt`, `LockScreenshotTest.kt`, `MeScreenshotTest.kt` | Plan (01 for real keys) | 1 | Normal |
+| 08 | Daily record (reg 26) and Report missing | `ui/dailyrecord/`, `ui/missing/`, their repositories and tests | 05 | 2 | Normal |
 | 09 | Offline fork detection: a phone holding both branches warns, and R2 refuses "already handed over" | `crypto/OfferChecker.kt`, `crypto/Custody.kt`, `ui/timeline/` fork marker | 01, 05 | 2 | Normal |
-| 10 | Maestro flows for the demo path, and demo polish of copy and seed | `.maestro/`, `supabase/seed.sql` (via a pull request) | 03–06 | 2 | Lite |
-| 11 | Offers encrypted for the receiver, so a photo shows nothing | `crypto/` codec, a migration adding `devices.agreement_key` | 01, 09 | 3 | Normal |
-| 12 | Radio check: a 4-digit challenge, a 6-digit answer | `ui/radiocheck/`, `crypto/RadioCheck.kt` | 01 | 3 | Normal |
-| 13 | Handover over Nearby Connections, the same signed records | `transport/nearby/`, a "Send by radio" option in G3 and R1 | 03, 04 | 3 | Fusion |
-| 14 | Signature check on the server, in an Edge Function before `sync_push` | `supabase/functions/` | 02 | 3 | Normal |
+| 10 | Maestro flows for the demo path, and demo polish of copy and seed | `.maestro/`, `supabase/seed.sql` (via a pull request) | 03–07 | 2 | Lite |
+| 11 | Radio check: a 4-digit challenge, a 6-digit answer | `ui/radiocheck/`, `crypto/RadioCheck.kt` | 01 | 3 | Normal |
+| 12 | Signature check on the server, in an Edge Function before `sync_push` | `supabase/functions/` | 02 | 3 | Normal |
+| 13 | Device revocation: the safety officer withdraws a phone; other phones refuse its signatures after they sync | a migration adding `devices.revoked_at`, `auth/` | 07 | 3 | Normal |
+
+Cut to make room for the Sudden Dev change: the old card 08 (enrolment code, key details) is folded into 07; encrypted offers and handover over Nearby Connections are stretch ideas only.
 
 Overnight wave: polish and the QA sweep (`role-build.md`).
 
@@ -358,15 +389,15 @@ Overnight wave: polish and the QA sweep (`role-build.md`).
 
 ## 8. Demo data
 
-**People** (seed; enrolment codes for wave 2, stored as SHA-256 hashes):
+**People** (seed; enrolment codes are typed on Enrol and stored as SHA-256 hashes; "authorised until" is end of day, Singapore time):
 
-| Name | Role | Staff no | NEA reg (dummy) | Enrolment code |
-|---|---|---|---|---|
-| Siti Aminah | Store officer | S-1021 | (none) | 418203 |
-| Ravi Kumar | Radiographer | R-2210 | RW-DEMO-1452 | 552917 |
-| Tan Wei Ming | Radiographer | R-2234 | RW-DEMO-1478 | 730164 |
-| Jun Lim | Radiographer | R-2251 | RW-DEMO-1503 | 286540 |
-| Dr Tan Mei Ling | Radiation safety officer | O-3001 | (none) | 904372 |
+| Name | Role | Staff no | NEA reg (dummy) | Enrolment code | Authorised until |
+|---|---|---|---|---|---|
+| Siti Aminah | Store officer | S-1021 | (none) | 418203 | no expiry |
+| Ravi Kumar | Radiographer | R-2210 | RW-DEMO-1452 | 552917 | 30 Jun 2027 |
+| Tan Wei Ming | Radiographer | R-2234 | RW-DEMO-1478 | 730164 | 30 Jun 2027 |
+| Jun Lim | Radiographer | R-2251 | RW-DEMO-1503 | 286540 | **3 Nov 2026 (lapsed)** |
+| Dr Tan Mei Ling | Radiation safety officer | O-3001 | (none) | 904372 | no expiry |
 
 **Cameras** (seed; all dummy, at "Tuas Store 1"):
 
@@ -396,8 +427,9 @@ Each camera has a server-made **register** record: "in store with Siti Aminah".
 - server-signed checkpoints (the offer carries the giver's proof record instead; `sync.md` §A)
 - signature checks on the server (card 14 is a stretch; phones check every signature)
 - NFC tags with one-time codes, NFC phone-to-phone handover, and hardware key attestation
-- an encrypted local database (SQLCipher), an app lock, `FLAG_SECURE` and remote wipe (named in the pitch as production settings)
-- device revocation
+- an encrypted local database (SQLCipher), `FLAG_SECURE` and remote wipe (named in the pitch as production settings)
+- device revocation (card 13 is a stretch)
+- several people sharing one phone, each with their own sign-in
 - any AI feature
 - more than one site, item types other than radiography cameras, photos, and editing or deleting records
 - real sources, real NEA numbers and real seal hardware
@@ -418,4 +450,6 @@ Each camera has a server-made **register** record: "in store with Siti Aminah".
 | Sync is slow on reconnect | **Sync now** on each phone, and the Alerts screen syncs every 10 seconds. |
 | Devin's cards drift apart | Every card codes against the `crypto/` and repository interfaces from the plan job. Merge 01 and 02 first. |
 | The fork names someone falsely through a forged record | The safety officer's phone checks both signatures before naming anyone, and says so when one fails. |
-| A "Sudden Dev" twist | New rules (for example a witness signature for issue) fit as one more signed field plus one more clash rule in `sync_push`. Keep a few hours of Devin capacity free on Saturday. |
+| The lock gets in the way during the demo | It locks only on a cold start or when the screen turns off, and the QR screens keep the screen on. The safety officer's emulator has a PIN and stays awake. |
+| A reinstalled app can't sync ("not enrolled") | A reinstall gets a new anonymous session, so enrol again with the code. The server allows one person several devices. |
+| A phone hasn't synced for 72 hours | It opens read-only. Connect once: any successful sync renews the lease. |
