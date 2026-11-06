@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Placeholder mark: a white circle. The plan job swaps in the real icon. -->
+<!-- The launcher mark from design/brand.md: the filled Class 7 diamond on a bg-000 square. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- The diamond: signal amber, inside the 66dp safe zone. -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,36a18,18 0,1 1,0 36a18,18 0,1 1,0 -36z" />
+        android:fillColor="#F2B81F"
+        android:pathData="M54,24 L84,54 L54,84 L24,54 Z" />
+    <!-- The figure 7, drawn as two strokes in on-signal. -->
+    <path
+        android:fillColor="#1F1E1B"
+        android:pathData="M43,40 L65,40 L65,45 L43,45 Z" />
+    <path
+        android:fillColor="#1F1E1B"
+        android:pathData="M59.5,45 L65,45 L54.5,69 L49,69 Z" />
 </vector>

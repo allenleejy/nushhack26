@@ -1,45 +1,184 @@
+// Generated from design/tokens.json (Tenet design system). Edit the tokens, not this file.
 package com.nushhack26.app.ui.theme
 
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
-// Placeholder palette. The plan job maps the design's colours here.
-val Navy = Color(0xFF1F4E79)
-val NavyLight = Color(0xFFD3E4F5)
-val Teal = Color(0xFF2E7D73)
-val TealLight = Color(0xFFCDEAE5)
-val Amber = Color(0xFFB26A00)
-val AmberLight = Color(0xFFFFE3B8)
-val Red = Color(0xFFB3261E)
-val RedLight = Color(0xFFF9DEDC)
-val Paper = Color(0xFFFAFBFD)
-val PaperShade = Color(0xFFE6EAF0)
-val Ink = Color(0xFF1A1C1E)
-val InkMuted = Color(0xFF44474E)
-val Outline = Color(0xFF74777F)
-
-val AppColors = lightColorScheme(
-    primary = Navy,
-    onPrimary = Color.White,
-    primaryContainer = NavyLight,
-    onPrimaryContainer = Navy,
-    secondary = Teal,
-    onSecondary = Color.White,
-    secondaryContainer = TealLight,
-    onSecondaryContainer = Teal,
-    tertiary = Amber,
-    onTertiary = Color.White,
-    tertiaryContainer = AmberLight,
-    onTertiaryContainer = Color(0xFF4A2800),
-    error = Red,
-    onError = Color.White,
-    errorContainer = RedLight,
-    onErrorContainer = Color(0xFF410E0B),
-    background = Paper,
-    onBackground = Ink,
-    surface = Paper,
-    onSurface = Ink,
-    surfaceVariant = PaperShade,
-    onSurfaceVariant = InkMuted,
-    outline = Outline,
+/** Every colour role in the system. Read it in composables with `Tenet.colors`. */
+@Immutable
+data class TenetColors(
+    val bg000: Color,
+    val bg100: Color,
+    val bg200: Color,
+    val line: Color,
+    val lineStrong: Color,
+    val ink: Color,
+    val inkMuted: Color,
+    val inkDisabled: Color,
+    val signal: Color,
+    val onSignal: Color,
+    val signalEdge: Color,
+    val signalText: Color,
+    val signalBg: Color,
+    val ok: Color,
+    val okBg: Color,
+    val alert: Color,
+    val alertText: Color,
+    val onAlert: Color,
+    val alertBg: Color,
+    val pending: Color,
+    val focus: Color,
+    val qrGround: Color,
+    val qrInk: Color,
+    val inverse: Color,
+    val onInverse: Color,
+    val inverseAction: Color,
+    val inverseOk: Color,
 )
+
+/** Field: the dark theme, warm charcoal and amber. The signature theme. */
+val FieldColors = TenetColors(
+    bg000 = Color(0xFF262522),
+    bg100 = Color(0xFF302F2B),
+    bg200 = Color(0xFF3B3A35),
+    line = Color(0xFF4A4842),
+    lineStrong = Color(0xFF8F8C83),
+    ink = Color(0xFFF4F1E8),
+    inkMuted = Color(0xFFC2BEB2),
+    inkDisabled = Color(0xFF77746B),
+    signal = Color(0xFFF2B81F),
+    onSignal = Color(0xFF1F1E1B),
+    signalEdge = Color(0xFFF2B81F),
+    signalText = Color(0xFFF2B81F),
+    signalBg = Color(0xFF4A3B12),
+    ok = Color(0xFF66D2EE),
+    okBg = Color(0xFF1D3A42),
+    alert = Color(0xFFFF6A4D),
+    alertText = Color(0xFFFF8066),
+    onAlert = Color(0xFF1F1E1B),
+    alertBg = Color(0xFF44241D),
+    pending = Color(0xFFD2CEC3),
+    focus = Color(0xFFF2B81F),
+    qrGround = Color(0xFFFFFFFF),
+    qrInk = Color(0xFF000000),
+    inverse = Color(0xFFF4F1E8),
+    onInverse = Color(0xFF1F1E1B),
+    inverseAction = Color(0xFF6B5200),
+    inverseOk = Color(0xFF00677F),
+)
+
+/** Daylight: the light theme. */
+val DaylightColors = TenetColors(
+    bg000 = Color(0xFFE7E8E3),
+    bg100 = Color(0xFFFFFFFF),
+    bg200 = Color(0xFFF2F2EE),
+    line = Color(0xFFD3D5CF),
+    lineStrong = Color(0xFF6E737C),
+    ink = Color(0xFF0E0F11),
+    inkMuted = Color(0xFF4C5159),
+    inkDisabled = Color(0xFFA3A7AD),
+    signal = Color(0xFFF2B81F),
+    onSignal = Color(0xFF0E0F11),
+    signalEdge = Color(0xFF0E0F11),
+    signalText = Color(0xFF6B5200),
+    signalBg = Color(0xFFFCEFC8),
+    ok = Color(0xFF006E8A),
+    okBg = Color(0xFFDCF0F5),
+    alert = Color(0xFFBF3412),
+    alertText = Color(0xFFBF3412),
+    onAlert = Color(0xFFFFFFFF),
+    alertBg = Color(0xFFFBE4DC),
+    pending = Color(0xFF4C5159),
+    focus = Color(0xFF0E0F11),
+    qrGround = Color(0xFFFFFFFF),
+    qrInk = Color(0xFF000000),
+    inverse = Color(0xFF1F1E1B),
+    onInverse = Color(0xFFF4F1E8),
+    inverseAction = Color(0xFFF2B81F),
+    inverseOk = Color(0xFF66D2EE),
+)
+
+val LocalTenetColors = staticCompositionLocalOf { FieldColors }
+
+/** Maps the roles onto Material 3 so stock components pick them up. Dynamic colour stays off.
+ *  surfaceContainer* roles need Material 3 1.2 or newer. */
+fun TenetColors.toColorScheme(dark: Boolean): ColorScheme =
+    if (dark) darkColorScheme(
+        primary = signal,
+        onPrimary = onSignal,
+        primaryContainer = signalBg,
+        onPrimaryContainer = ink,
+        inversePrimary = inverseAction,
+        secondary = ink,
+        onSecondary = bg100,
+        secondaryContainer = bg200,
+        onSecondaryContainer = ink,
+        tertiary = ok,
+        onTertiary = onAlert,
+        tertiaryContainer = okBg,
+        onTertiaryContainer = ink,
+        background = bg000,
+        onBackground = ink,
+        surface = bg100,
+        onSurface = ink,
+        surfaceVariant = bg200,
+        onSurfaceVariant = inkMuted,
+        surfaceTint = bg100,
+        inverseSurface = inverse,
+        inverseOnSurface = onInverse,
+        error = alert,
+        onError = onAlert,
+        errorContainer = alertBg,
+        onErrorContainer = ink,
+        outline = lineStrong,
+        outlineVariant = line,
+        scrim = Color.Black,
+        surfaceBright = bg100,
+        surfaceContainer = bg100,
+        surfaceContainerHigh = bg200,
+        surfaceContainerHighest = bg200,
+        surfaceContainerLow = bg000,
+        surfaceContainerLowest = bg000,
+        surfaceDim = bg000,
+    ) else lightColorScheme(
+        primary = signal,
+        onPrimary = onSignal,
+        primaryContainer = signalBg,
+        onPrimaryContainer = ink,
+        inversePrimary = inverseAction,
+        secondary = ink,
+        onSecondary = bg100,
+        secondaryContainer = bg200,
+        onSecondaryContainer = ink,
+        tertiary = ok,
+        onTertiary = onAlert,
+        tertiaryContainer = okBg,
+        onTertiaryContainer = ink,
+        background = bg000,
+        onBackground = ink,
+        surface = bg100,
+        onSurface = ink,
+        surfaceVariant = bg200,
+        onSurfaceVariant = inkMuted,
+        surfaceTint = bg100,
+        inverseSurface = inverse,
+        inverseOnSurface = onInverse,
+        error = alert,
+        onError = onAlert,
+        errorContainer = alertBg,
+        onErrorContainer = ink,
+        outline = lineStrong,
+        outlineVariant = line,
+        scrim = Color.Black,
+        surfaceBright = bg100,
+        surfaceContainer = bg100,
+        surfaceContainerHigh = bg200,
+        surfaceContainerHighest = bg200,
+        surfaceContainerLow = bg000,
+        surfaceContainerLowest = bg000,
+        surfaceDim = bg000,
+    )

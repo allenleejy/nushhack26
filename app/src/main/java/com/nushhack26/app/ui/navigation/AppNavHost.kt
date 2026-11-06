@@ -15,6 +15,7 @@ import com.nushhack26.app.ui.give.GiveScreen
 import com.nushhack26.app.ui.me.MeScreen
 import com.nushhack26.app.ui.missing.ReportMissingScreen
 import com.nushhack26.app.ui.mycustody.MyCustodyScreen
+import com.nushhack26.app.ui.outbox.OutboxScreen
 import com.nushhack26.app.ui.receive.ReceiveScreen
 import com.nushhack26.app.ui.store.StoreScreen
 import com.nushhack26.app.ui.timeline.TimelineScreen
@@ -51,6 +52,7 @@ fun AppNavHost(
         composable<ForkRoute> { entry -> ForkScreen(container, entry.toRoute<ForkRoute>().alertId, onDone = back) }
         composable<DailyRecordRoute> { DailyRecordScreen(container) }
         composable<ReportMissingRoute> { entry -> ReportMissingScreen(container, entry.toRoute<ReportMissingRoute>().itemId, onDone = back) }
+        composable<OutboxRoute> { OutboxScreen(container) }
         composable<MeRoute> { MeScreen(container, onOpenDebug = { navController.navigate(DebugRoute) }) }
         composable<DebugRoute> { DebugScreen(container) }
     }

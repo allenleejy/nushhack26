@@ -48,4 +48,11 @@ The `GiveRoute(itemId)` screen, with steps G1–G5 from `docs/spec.md` §3 and t
 ## Notes
 - **Data:** `items`, `people`, `devices`, `handovers`, `pending_offers`, `sync_state` (`tampered`).
 - **Uses:** `crypto/` (card 01), `ui/components/QrCode.kt`, `QrScanner.kt`, `SignPrompt.kt`, `IdentityRepository`.
-- **Design:** spec G1–G5; `design/` if exported.
+- **Design:** build from `design/` (the Tenet design system). Read `design/brand.md` first.
+  - **Theme:** use `ui/theme/`: `TenetTheme`, `Tenet.colors`, `TenetType`, `TenetDimens`, `hazardStripes`, `hatching`, `verticalText`. Icons are `Icons.Sharp.*`. Space Mono text is uppercase (call `.uppercase()`), and sentences are Space Grotesk.
+  - **Already built (reuse, don't rebuild):**
+    - in `ui/components/`: `PrimaryButton`, `SecondaryButton`, `DangerButton`, `TextLinkButton`, `HazardDiamond`, `HandoverStepper`, `SealCheckRow`, `QrPanel`, `SyncChip`, `ListRow`, `SquareList`, `ListDivider`, `EmptyState`, `LoadingState`, `ErrorState`
+    - in the shared app frame: the top app bar, the offline banner and the bottom nav
+    - you can see them in `app/src/test/.../screenshots/ComponentsScreenshotTest.kt`
+  - **Build the others in your own package,** following `design/components/<Name>/README.md`:
+    `BottomSheet` (the receiver picker), `Receipt` (G5, with the countersigned stamp) and `Snackbar`. Use `HandoverStepper(Giver)`, `QrPanel` (caption OFFER · C-12) and `PrimaryButton` (SIGN AND SHOW QR, SCAN ACCEPTANCE). The design's giver stepper starts with "Scan seal"; ours starts with CHOOSE, because only the receiver scans the seal.

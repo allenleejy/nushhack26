@@ -5,13 +5,13 @@ appId: ${APP_ID || "com.nushhack26.app.debug"}
 - setAirplaneMode: disabled
 - launchApp
 - extendedWaitUntil:
-    notVisible: "Offline.*"
+    notVisible: "OFFLINE"
     timeout: 20000
 - setAirplaneMode: enabled
 - extendedWaitUntil:
-    visible: "Offline.*"
+    visible: "OFFLINE"
     timeout: 20000
 - setAirplaneMode: disabled
 - extendedWaitUntil:
-    notVisible: "Offline.*"
+    notVisible: "OFFLINE"
     timeout: 30000

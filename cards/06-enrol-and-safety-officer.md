@@ -1,4 +1,4 @@
-# 06: Enrol, Me, and the safety officer's Alerts and Fork screens
+# 06: Enrol, Me, Outbox, and the safety officer's Alerts and Fork screens
 
 Wave: 1 · Devin mode: Normal · Depends on: the plan job (cards 01 and 02 to work end to end)
 
@@ -8,11 +8,12 @@ A new phone enrols as one person and gets its signing key. Me shows who the phon
 ## Files owned
 - app/src/main/java/com/nushhack26/app/ui/enrol/
 - app/src/main/java/com/nushhack26/app/ui/me/
+- app/src/main/java/com/nushhack26/app/ui/outbox/
 - app/src/main/java/com/nushhack26/app/ui/alerts/
 - app/src/main/java/com/nushhack26/app/ui/fork/
 - app/src/main/java/com/nushhack26/app/data/repo/EnrolRepository.kt
 - app/src/main/java/com/nushhack26/app/data/repo/SafetyRepository.kt
-- app/src/test/java/com/nushhack26/app/screenshots/EnrolScreenshotTest.kt, AlertsScreenshotTest.kt, ForkScreenshotTest.kt, MeScreenshotTest.kt
+- app/src/test/java/com/nushhack26/app/screenshots/EnrolScreenshotTest.kt, AlertsScreenshotTest.kt, ForkScreenshotTest.kt, MeScreenshotTest.kt, OutboxScreenshotTest.kt
 
 ## Build
 Follow `docs/spec.md` §3 for E1, E2, O1 and O2, with that exact text.
@@ -23,6 +24,7 @@ Follow `docs/spec.md` §3 for E1, E2, O1 and O2, with that exact text.
   - then `syncNow()`, and the "Enrolled as …" card with the waiting state
   - release builds with no secure lock screen: the spec's error
   - the app shows Enrol until an identity exists (`AppScaffold` already does this)
+- **E4 Outbox** (`OutboxScreen`, opened by the top app bar's SyncChip and the OUTBOX tab): follow the spec's E4. Each `outbox` row shows what record it carries (read the record from Room by `recordId`), its tries and last error, with **SYNC NOW** as the primary action.
 - **E2 Me:** name, role, staff number; "Device key 3F:A9:12:7C · hardware-backed (TEE)"; the sync card with **Sync now**; the release version (5 taps → Debug, as now).
 - **O1 Alerts:**
   - cards sorted fork, overdue, seal mismatch, then refused, using `SafetyRepository`
@@ -57,4 +59,11 @@ Follow `docs/spec.md` §3 for E1, E2, O1 and O2, with that exact text.
 ## Notes
 - **Data:** `people`, `devices`, `items`, `handovers`, `alerts`, `resolutions`, `sync_state`.
 - **Uses:** `crypto/` (card 01), `SignPrompt.kt`, `IdentityRepository`, `container.syncScheduler`.
-- **Design:** spec E1, E2, O1, O2; `design/` if exported.
+- **Design:** build from `design/` (the Tenet design system). Read `design/brand.md` first.
+  - **Theme:** use `ui/theme/`: `TenetTheme`, `Tenet.colors`, `TenetType`, `TenetDimens`, `hazardStripes`, `hatching`, `verticalText`. Icons are `Icons.Sharp.*`. Space Mono text is uppercase (call `.uppercase()`), and sentences are Space Grotesk.
+  - **Already built (reuse, don't rebuild):**
+    - in `ui/components/`: `PrimaryButton`, `SecondaryButton`, `DangerButton`, `TextLinkButton`, `HazardDiamond`, `HandoverStepper`, `SealCheckRow`, `QrPanel`, `SyncChip`, `ListRow`, `SquareList`, `ListDivider`, `EmptyState`, `LoadingState`, `ErrorState`
+    - in the shared app frame: the top app bar, the offline banner and the bottom nav
+    - you can see them in `app/src/test/.../screenshots/ComponentsScreenshotTest.kt`
+  - **Build the others in your own package,** following `design/components/<Name>/README.md`:
+    `ForkAlert` (the O1 fork card and the O2 header), `LoadingSkeleton` (Alerts while syncing), `BottomSheet` (confirming the decision) and `TextField` (the decision note). Use `ListRow` (the roster on Enrol with `RowLeading.Initials`, the outbox rows), `SyncChip` (FORK, WAITING), `PrimaryButton` (CREATE MY SIGNING KEY, SYNC NOW, DECIDE WHO HOLDS C-12) and `EmptyState`.

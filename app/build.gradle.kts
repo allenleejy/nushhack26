@@ -47,12 +47,12 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
-            resValue("string", "app_name", "Countersign dev")
+            resValue("string", "app_name", "Tenet dev")
             signingConfig = signingConfigs.getByName("hack")
         }
         release {
             isMinifyEnabled = false
-            resValue("string", "app_name", "Countersign")
+            resValue("string", "app_name", "Tenet")
             signingConfig = signingConfigs.getByName("hack")
         }
     }
@@ -90,6 +90,7 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons.core)
+    implementation(libs.compose.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

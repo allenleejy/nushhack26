@@ -4,4 +4,4 @@ appId: ${APP_ID || "com.nushhack26.app.debug"}
 ---
 - launchApp
 - assertVisible:
-    text: "Who are you\\?|Store|My custody|Alerts"
+    text: '(?i)(who are you\?|custody|items|alerts)'

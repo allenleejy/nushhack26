@@ -20,7 +20,7 @@ Follow `docs/spec.md` §3 for S1, P1 and T, with that exact text.
   - rows with status chips: In store, Out, Overdue (red), Disputed (striped red)
   - the holder line, the due line, and "Not synced yet"
   - **Issue** on in-store rows (→ `GiveRoute`), **Receive return** at the top (→ `ReceiveRoute`), row → `TimelineRoute`
-  - `readOnly = true` (the safety officer's Cameras tab) hides the buttons and uses `serverView`, captioned "As the server knows it".
+  - `readOnly = true` (the safety officer's ITEMS tab) hides the buttons and uses `serverView`, captioned "As the server knows it".
 - **P1 My custody:**
   - one large card per camera I hold, with a countdown and **Hand over**
   - when overdue, a full-width red banner with **Hand back to store**
@@ -54,4 +54,11 @@ Follow `docs/spec.md` §3 for S1, P1 and T, with that exact text.
 ## Notes
 - **Data:** `items`, `handovers`, `resolutions`, `alerts`, `people`, `pending_offers`.
 - **Permissions:** `POST_NOTIFICATIONS` and `VIBRATE` are already in the manifest.
-- **Design:** spec S1, P1, T; `design/` if exported.
+- **Design:** build from `design/` (the Tenet design system). Read `design/brand.md` first.
+  - **Theme:** use `ui/theme/`: `TenetTheme`, `Tenet.colors`, `TenetType`, `TenetDimens`, `hazardStripes`, `hatching`, `verticalText`. Icons are `Icons.Sharp.*`. Space Mono text is uppercase (call `.uppercase()`), and sentences are Space Grotesk.
+  - **Already built (reuse, don't rebuild):**
+    - in `ui/components/`: `PrimaryButton`, `SecondaryButton`, `DangerButton`, `TextLinkButton`, `HazardDiamond`, `HandoverStepper`, `SealCheckRow`, `QrPanel`, `SyncChip`, `ListRow`, `SquareList`, `ListDivider`, `EmptyState`, `LoadingState`, `ErrorState`
+    - in the shared app frame: the top app bar, the offline banner and the bottom nav
+    - you can see them in `app/src/test/.../screenshots/ComponentsScreenshotTest.kt`
+  - **Build the others in your own package,** following `design/components/<Name>/README.md`:
+    `CustodyCard` (the hero of My custody and the timeline header: amber IN CUSTODY side tab for the holder), `CountdownBar` (due time: solid, then stripes in the last hour, then orange when overdue), `TimelineRow` (chain entries: voided and overruled ones hatched with a VOID strip) and `Receipt` (the receipts list). Use `ListRow` with `RowLeading.SealedSource` for Store rows, `HazardDiamond` (Alert when overdue) and `SyncChip` for per-record sync marks.

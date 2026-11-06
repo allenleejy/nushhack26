@@ -1,6 +1,6 @@
-# Spec: Countersign
+# Spec: Tenet
 
-6 Nov 2026. Working name **Countersign** (change it in the theme and the app name only). The idea is in `docs/concept.md`, the setting in `docs/setting.md`, and the exact record formats and sync rules in `docs/sync.md`. Where this spec and `sync.md` disagree, `sync.md` wins on formats and server rules, and this spec wins on screens and behaviour.
+6 Nov 2026. The app is **Tenet**, the name the design system in `design/` uses. The idea is in `docs/concept.md`, the setting in `docs/setting.md`, and the exact record formats and sync rules in `docs/sync.md`. Where this spec and `sync.md` disagree, `sync.md` wins on formats and server rules, and this spec wins on screens and behaviour.
 
 ---
 
@@ -69,15 +69,34 @@
 
 ## 3. Screens
 
-Designed for a 412×915 dp Android phone, portrait. Every screen sits under the **sync status bar**: an offline banner, "N waiting", and "Last sync 14:02" (or "All synced"). Times on screen are phone times.
+Designed for a 412×915 dp Android phone, portrait. Times on screen are phone times.
 
-**Navigation by role** (bottom tabs):
+**Visual design: `design/`, the Tenet design system.** Build every screen from it:
+- **Rules:** read `design/brand.md` first.
+- **Components:** follow `design/components/<Name>/README.md` for each one a screen uses. Open `design/index.html` to see them live.
+- **Theme:** it's already in `ui/theme/`: `TenetTheme`, `Tenet.colors` for the extra roles, `TenetType`, `TenetDimens`, `PrimaryButtonShape`, `ChipCutShape`, and the `hazardStripes`, `hatching` and `verticalText` modifiers.
+- **Icons:** `Icons.Sharp.*` (material-icons-extended is a dependency).
+- **The text in this section is the content; `brand.md` sets its voice and casing:**
+  - Space Mono UPPERCASE for titles, buttons, labels, names, IDs and times
+  - Space Grotesk sentence case for anything read as a sentence
+  - buttons are a verb and its object (SIGN AND SHOW QR, SCAN ACCEPTANCE, SCAN SEAL)
+  - no exclamation marks
+
+  Where this spec and a component README disagree on wording, use the README.
+
+**Already built in the shared files** (cards don't rebuild them):
+- the top app bar, with the phone's `SyncChip`, which syncs and opens Outbox when tapped
+- the 2dp rule under the bar, replaced by a hazard band inside Give and Receive
+- the offline banner, the bottom nav, and `ui/components/SyncChip.kt` for per-record sync marks
+
+**Navigation by role** (three bottom tabs, as in `design/components/BottomNav`):
 - Not enrolled: Enrol, full screen, no tabs.
-- Store officer: **Store**, **Me**.
-- Radiographer: **My custody**, **Me**.
-- Radiation safety officer: **Alerts**, **Cameras** (the Store screen, read-only), **Me**.
+- Store officer: **ITEMS** (the Store screen), **SCAN** (Receive, full screen), **OUTBOX**.
+- Radiographer: **CUSTODY** (My custody), **SCAN** (Receive, full screen), **OUTBOX**.
+- Radiation safety officer: **ITEMS** (the Store screen, read-only), **ALERTS** (where the app opens), **RECORDS** (the daily record).
+- **Me** opens from the menu icon at the left of the top app bar. Debug opens from Me.
 
-Route names for `Routes.kt`: `Enrol`, `Store`, `MyCustody`, `Give(itemId)`, `Receive`, `Timeline(itemId)`, `Alerts`, `Fork(alertId)`, `Cameras`, `Me`, `Debug`, `DailyRecord`, `ReportMissing(itemId)`.
+Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `Receive`, `Timeline(itemId)`, `Alerts`, `Fork(alertId)`, `Outbox`, `Me`, `Debug`, `DailyRecord`, `ReportMissing(itemId)`. Enrol isn't a route: `AppScaffold` shows it until the phone has an identity.
 
 ### E1 Enrol (`ui/enrol/`)
 - **Purpose:** link this phone to one person and create its signing key. Needs the network once.
@@ -95,6 +114,16 @@ Route names for `Routes.kt`: `Enrol`, `Store`, `MyCustody`, `Give(itemId)`, `Rec
 - **Empty / loading / error:** "Server not configured" when there's no Supabase URL; "Will sign in when online"; the last sync error in red text.
 - **Waiting to sync:** the waiting count.
 
+### E4 Outbox (`ui/outbox/`)
+- **Purpose:** what this phone hasn't delivered yet. The top app bar's `SyncChip` opens it.
+- **Components:**
+  - the outbox count and the last sync time
+  - one `ListRow` per waiting record, for example "HANDOVER · C-12 · RAVI → WEI MING · SIGNED 14:30" with a WAITING `SyncChip`, and its last error, if any, in `alert-text`
+  - a **SYNC NOW** primary button
+- **Data:** `outbox` joined to the record it carries; `sync_state`.
+- **Empty:** "Nothing waiting. Every record on this phone has reached the server." with the last sync time.
+- **Error:** the last sync error in words, for example "Can't reach the server. Records stay on this phone."
+
 ### E3 Debug (`ui/debug/`, hidden)
 - The outbox entries, last sync time and error, **Sync now**, **Clear local data**.
 - **Tampered phone** switch: "Keep an old copy of the token and hide my handovers (demo)".
@@ -102,7 +131,7 @@ Route names for `Routes.kt`: `Enrol`, `Store`, `MyCustody`, `Give(itemId)`, `Rec
 - Debug builds only: **Paste code** (feeds clipboard text to the open scanner).
 - **Empty:** "Outbox empty".
 
-### S1 Store (`ui/store/`; also the safety officer's Cameras tab, read-only)
+### S1 Store (`ui/store/`; also the safety officer's ITEMS tab, read-only)
 - **Purpose:** every camera, who holds it per the latest signature this phone knows, and when it's due back.
 - **Components:** one row per camera: code and source ("C-12 · IR-0457 · Ir-192"), status chip (**In store**, **Out**, **Overdue** in red, **Disputed** striped red), holder line ("Ravi Kumar · signed 14:29"), due line ("Due 14:31 · 1:02 left"), and a "Not synced yet" mark. A primary **Issue** button on in-store rows and **Receive return** at the top. Tapping a row opens the timeline.
 - **Data:** `items`, `handovers`, `resolutions`, `alerts`, computed with `deriveCustody` (see `sync.md`).
@@ -111,7 +140,7 @@ Route names for `Routes.kt`: `Enrol`, `Store`, `MyCustody`, `Give(itemId)`, `Rec
 - **Loading:** three skeleton rows.
 - **Error:** "Couldn't read this phone's records. Restart the app." (local database error).
 - **Waiting to sync:** the "Not synced yet" mark on rows whose latest record hasn't synced.
-- **Cameras tab (safety officer):** no Issue or Receive buttons, and the holder line reads "As the server knows it · signed 14:29".
+- **The safety officer's ITEMS tab:** no Issue or Receive buttons, and the holder line reads "As the server knows it · signed 14:29".
 
 ### P1 My custody (`ui/mycustody/`)
 - **Purpose:** what I hold, when it's due, and my receipts.
@@ -313,7 +342,7 @@ None.
 | 03 | Hand over, G1–G5 | `ui/give/`, `data/repo/GiveRepository.kt`, `GiveScreenshotTest.kt` | Plan (01 for real signing) | 1 | Normal |
 | 04 | Receive, R1–R5, including the refused screen | `ui/receive/`, `data/repo/ReceiveRepository.kt`, `ReceiveScreenshotTest.kt` | Plan (01) | 1 | Normal |
 | 05 | Store, My custody, timeline, overdue alarm | `ui/store/`, `ui/mycustody/`, `ui/timeline/`, `alarm/`, `data/repo/CustodyRepository.kt`, three screenshot tests | Plan (01 for `deriveCustody`) | 1 | Normal |
-| 06 | Enrol, Alerts, Fork and the signed decision | `ui/enrol/`, `ui/alerts/`, `ui/fork/`, `data/repo/EnrolRepository.kt`, `data/repo/SafetyRepository.kt`, three screenshot tests | Plan (01, 02) | 1 | Normal |
+| 06 | Enrol, Me, Outbox, Alerts, Fork and the signed decision | `ui/enrol/`, `ui/me/`, `ui/outbox/`, `ui/alerts/`, `ui/fork/`, `data/repo/EnrolRepository.kt`, `data/repo/SafetyRepository.kt`, three screenshot tests | Plan (01, 02) | 1 | Normal |
 | 07 | Daily record (reg 26) and Report missing | `ui/dailyrecord/`, `ui/missing/`, their repositories and tests | 05 | 2 | Normal |
 | 08 | Enrolment code, and the key details sheet on Me (fingerprint, security level) | `ui/enrol/`, `ui/me/` | 06 | 2 | Lite |
 | 09 | Offline fork detection: a phone holding both branches warns, and R2 refuses "already handed over" | `crypto/OfferChecker.kt`, `crypto/Custody.kt`, `ui/timeline/` fork marker | 01, 05 | 2 | Normal |

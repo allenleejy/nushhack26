@@ -46,4 +46,11 @@ The `ReceiveRoute` screen, with steps R1–R5 from `docs/spec.md` §3 and that e
 ## Notes
 - **Data:** `items`, `people`, `devices`, `handovers`, `sync_state`.
 - **Uses:** `crypto/` (card 01), `ui/components/QrCode.kt`, `QrScanner.kt`, `SignPrompt.kt`, `IdentityRepository`.
-- **Design:** spec R1–R5; `design/` if exported.
+- **Design:** build from `design/` (the Tenet design system). Read `design/brand.md` first.
+  - **Theme:** use `ui/theme/`: `TenetTheme`, `Tenet.colors`, `TenetType`, `TenetDimens`, `hazardStripes`, `hatching`, `verticalText`. Icons are `Icons.Sharp.*`. Space Mono text is uppercase (call `.uppercase()`), and sentences are Space Grotesk.
+  - **Already built (reuse, don't rebuild):**
+    - in `ui/components/`: `PrimaryButton`, `SecondaryButton`, `DangerButton`, `TextLinkButton`, `HazardDiamond`, `HandoverStepper`, `SealCheckRow`, `QrPanel`, `SyncChip`, `ListRow`, `SquareList`, `ListDivider`, `EmptyState`, `LoadingState`, `ErrorState`
+    - in the shared app frame: the top app bar, the offline banner and the bottom nav
+    - you can see them in `app/src/test/.../screenshots/ComponentsScreenshotTest.kt`
+  - **Build the others in your own package,** following `design/components/<Name>/README.md`:
+    `LiabilityLine` (above the Accept button: THIS IS SEALED SOURCE IR-0457, then the sentence) and the refused screen as an alert label. Use `HandoverStepper(Receiver)`, `SealCheckRow`, `QrPanel` (caption ACCEPTANCE · C-12), `HazardDiamond(Filled, diamondLg)` beside the liability line, and `PrimaryButton` (SCAN SEAL, then SIGN AND ACCEPT C-12; hatched out with "Scan seal first" until the seal matches).

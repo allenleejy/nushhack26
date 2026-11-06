@@ -5,7 +5,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.fragment.app.FragmentActivity
 import com.nushhack26.app.ui.AppScaffold
-import com.nushhack26.app.ui.theme.AppTheme
+import com.nushhack26.app.ui.theme.TenetTheme
 
 /** A FragmentActivity only because BiometricPrompt needs one. The UI is all Compose. */
 class MainActivity : FragmentActivity() {
@@ -14,7 +14,7 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         val container = (application as App).container
         setContent {
-            AppTheme { AppScaffold(container) }
+            TenetTheme { AppScaffold(container) }
         }
     }
 }
