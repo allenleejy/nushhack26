@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.sharp.Block
 import androidx.compose.material.icons.sharp.Key
 import androidx.compose.material.icons.sharp.Verified
 import androidx.compose.material.icons.sharp.Warning
@@ -72,6 +73,17 @@ fun EnrolContent(state: EnrolUiState, modifier: Modifier = Modifier, onAction: (
             modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(TenetDimens.space6),
         ) {
+            state.withdrawnNotice?.let {
+                Note(
+                    it,
+                    Icons.Sharp.Block,
+                    colors.alertBg,
+                    colors.alert,
+                    colors.alertText,
+                    Modifier.testTag("withdrawn_notice"),
+                    title = "PHONE WITHDRAWN",
+                )
+            }
             Column(verticalArrangement = Arrangement.spacedBy(TenetDimens.space2)) {
                 Text("JOIN YOUR TEAM", style = TenetType.headline, color = colors.ink)
                 Text(

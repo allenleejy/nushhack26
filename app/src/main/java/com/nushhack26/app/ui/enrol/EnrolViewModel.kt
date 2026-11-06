@@ -26,6 +26,8 @@ data class EnrolUiState(
     val wrongCode: Boolean = false,
     /** "Enrolled as Ravi Kumar · radiographer · key 3F:A9:12:7C" once the server accepted the phone. */
     val enrolled: String? = null,
+    /** "This phone was withdrawn by your safety officer…" after a withdrawal wiped it (docs/sync.md A.12). */
+    val withdrawnNotice: String? = null,
 ) {
     val canSubmit: Boolean get() = staffNo.isNotBlank() && code.length == CODE_LENGTH && enrolled == null
 }
@@ -42,6 +44,12 @@ sealed interface EnrolAction {
 class EnrolViewModel(private val container: AppContainer) : ViewModel() {
     private val _state = MutableStateFlow(EnrolUiState())
     val state: StateFlow<EnrolUiState> = _state.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            container.revocation.withdrawnNotice.collect { notice -> _state.update { it.copy(withdrawnNotice = notice) } }
+        }
+    }
 
     fun onStaffNo(value: String) = _state.update {
         it.copy(staffNo = value.uppercase().filter { c -> !c.isWhitespace() }.take(16), error = null, wrongCode = false)
@@ -77,11 +85,14 @@ class EnrolViewModel(private val container: AppContainer) : ViewModel() {
                 return@launch
             }
             when (val outcome = container.enrolRepository.enrol(staffNo, code, key, "r${BuildConfig.VERSION_CODE}")) {
-                is EnrolOutcome.Enrolled -> _state.update {
-                    it.copy(
-                        busy = false,
-                        enrolled = enrolledLine(outcome.identity.name, outcome.identity.role, key.keyFp),
-                    )
+                is EnrolOutcome.Enrolled -> {
+                    container.revocation.clearWithdrawnNotice()
+                    _state.update {
+                        it.copy(
+                            busy = false,
+                            enrolled = enrolledLine(outcome.identity.name, outcome.identity.role, key.keyFp),
+                        )
+                    }
                 }
                 EnrolOutcome.WrongCode -> _state.update {
                     it.copy(busy = false, wrongCode = true, error = wrongCodeText(staffNo))

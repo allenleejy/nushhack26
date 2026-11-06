@@ -87,6 +87,13 @@ class IdentityRepository(private val syncState: SyncStateDao) {
 
     suspend fun setTampered(on: Boolean) = syncState.put(TAMPERED, on.toString())
 
+    /** Set when the safety officer withdrew this phone and it wiped itself; Enrol shows it (docs/sync.md A.12). */
+    val withdrawnNotice: Flow<String?> = syncState.observe(WITHDRAWN_NOTICE)
+
+    suspend fun setWithdrawnNotice(text: String) = syncState.put(WITHDRAWN_NOTICE, text)
+
+    suspend fun clearWithdrawnNotice() = syncState.remove(WITHDRAWN_NOTICE)
+
     companion object {
         const val PERSON_ID = "person_id"
         const val DEVICE_ID = "device_id"
@@ -95,6 +102,7 @@ class IdentityRepository(private val syncState: SyncStateDao) {
         const val TAMPERED = "tampered"
         const val ENROLLED_AT = "enrolled_at"
         const val DEVICE_PUBLIC_KEY = "device_public_key"
+        const val WITHDRAWN_NOTICE = "withdrawn_notice"
 
         /** Kept by "Clear local data", so the phone stays enrolled and can still unlock offline. */
         val KEPT_KEYS = listOf(PERSON_ID, DEVICE_ID, NAME, ROLE, TAMPERED, ENROLLED_AT, DEVICE_PUBLIC_KEY, SyncKeys.LAST_SYNC_AT)
