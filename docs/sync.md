@@ -292,6 +292,24 @@ The same as A.10, only the transport changes: the strings are the `CS1O:` offer 
 
 **Airplane mode in the demo:** airplane mode turns Bluetooth off on both phones, and NFC off on the Android 13 phone. Before the demo, on each phone, run `adb shell settings put global airplane_mode_radios cell,wifi,wimax`. Airplane mode then cuts the network (mobile data and Wi-Fi) but leaves Bluetooth and NFC on. Otherwise, turn Bluetooth (and NFC) back on after switching airplane mode on.
 
+### A.12 Withdrawing a lost phone (`revoke_device`, `RevocationRepository`)
+
+The safety officer withdraws a lost or stolen phone from the **Devices** tab (O3).
+- **On the server** (migration `20261107030000_device_revocation`):
+  - `devices.revoked_at` and `revoked_by` are set, and the row gets a new `server_seq`, so every phone pulls the change
+  - the withdrawn phone's session is no longer enrolled (`is_enrolled` and `_my_person` skip withdrawn devices), so it can't read, push or relay
+  - handovers the device signed at or after `revoked_at` are rejected: C.3.3b
+- **On the other phones**, after their next pull, `DeviceEntity.revokedAtMs` is set and the offline checks treat the device as withdrawn:
+  - R2 line 1 fails for an offer it signed after `revokedAtMs`: "Ravi Kumar's phone was withdrawn by the safety officer at 14:40. Don't accept."
+  - G4 refuses its acceptance the same way
+  - signatures it made before `revokedAtMs` still verify, so the timeline stays readable, with a "withdrawn 14:40" mark on that key
+  - the device's `revokedAtMs` is the server's clock, and `accepted_ms` is the phone's, so allow 15 s as in A.4.5
+- **On the withdrawn phone:**
+  - its next sync fails with `not enrolled`, so `SyncWorker` asks `RevocationRepository.checkWithdrawn()`, which calls `device_status()`
+  - if it says `revoked`, the phone deletes its signing key, clears every table and the identity, and shows Enrol with "This phone was withdrawn by your safety officer. Ask them for a new enrolment code."
+  - a phone that's never online again keeps working offline only until its 72-hour lease runs out (A.9), and its signatures are refused by everyone who has synced since
+- **Enrolling again** needs a new code from the safety officer (the build account resets it on the server for the hackathon).
+
 ---
 
 ## B. Tables
@@ -376,6 +394,7 @@ All of one call's ops run in **one transaction**. For each op, in order:
 1. **Hash:** recompute `record_hash` from the fields (A.2, using `pgcrypto`'s `digest`). If it doesn't match: rejected, "hash mismatch".
 2. **One-time number:** another record already has this `nonce`. Rejected: "replayed offer".
 3. **Roster:** `from_device_id` must belong to `from_person_id`, and `to_device_id` to `to_person_id`. Otherwise: rejected, "unknown signer".
+   - **3b.** If either device has `revoked_at` at or before the record's `accepted_ms`: rejected, "device revoked". Records signed before the revocation still count.
 4. **Roles:** the kind must fit the roles. Otherwise: rejected, "not authorised".
    - `issue`: from a store officer to a radiographer
    - `transfer`: from a radiographer to a radiographer
@@ -470,6 +489,15 @@ Online only, never queued, through `OfferRelayApi` (`data/remote/`) and `RelayRe
 | `relay_status(p_id)` | either | `{"status": "open" \| "accepted" \| "declined" \| "cancelled" \| "unknown", "acceptance"}` |
 
 `offer_relay` rows are never pulled by `sync_pull` and never stored in Room.
+
+### D.6 Revocation (A.12)
+
+Online only, through `DeviceAdminApi` (`data/remote/`) and `RevocationRepository` (`data/repo/`).
+
+| Call | Who | Returns |
+|---|---|---|
+| `revoke_device(p_device_id)` | safety officer only, not their own current device | `{"result": "revoked" \| "duplicate" \| "rejected", "reason", "device": <devices row>}` |
+| `device_status()` | any signed-in session, enrolled or not | `{"revoked": bool, "revoked_at", "device_id"}` for the device this session enrolled |
 
 ### D.3 When sync runs
 - after every local save

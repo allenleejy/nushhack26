@@ -50,6 +50,7 @@ import com.nushhack26.app.ui.enrol.EnrolScreen
 import com.nushhack26.app.ui.lock.LockScreen
 import com.nushhack26.app.ui.navigation.AppNavHost
 import com.nushhack26.app.ui.navigation.DailyRecordRoute
+import com.nushhack26.app.ui.navigation.DevicesRoute
 import com.nushhack26.app.ui.navigation.DebugRoute
 import com.nushhack26.app.ui.navigation.ForkRoute
 import com.nushhack26.app.ui.navigation.GiveRoute
@@ -256,6 +257,7 @@ private fun titleFor(destination: NavDestination?, tab: TopLevelTab?): String = 
     destination.hasRoute(ForkRoute::class) -> "Fork"
     destination.hasRoute(OutboxRoute::class) -> "Outbox"
     destination.hasRoute(DailyRecordRoute::class) -> "Records"
+    destination.hasRoute(DevicesRoute::class) -> "Devices"
     destination.hasRoute(ReportMissingRoute::class) -> "Report missing"
     destination.hasRoute(MeRoute::class) -> "Me"
     destination.hasRoute(DebugRoute::class) -> "Debug"

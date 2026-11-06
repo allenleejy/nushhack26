@@ -118,6 +118,7 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
   - "That code doesn't match R-2210. Ask your safety officer." (wrong code, or no such staff number)
   - "Too many wrong codes. Try again in 10 minutes."
   - "No connection. Enrolment needs the network once."
+  - After a withdrawal (`sync.md` A.12), a red notice above the form: "This phone was withdrawn by your safety officer. Ask them for a new enrolment code."
   - "Set a fingerprint or PIN on this phone to sign handovers." (no secure lock screen, release builds)
   - "Fingerprint cancelled. Nothing was created."
 - **Done:** "Enrolled as Ravi Kumar · radiographer · key 3F:A9:12:7C", then the role's home.
@@ -213,7 +214,7 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
   6. "Authorised · radiographer · valid to 30 Jun 2027" (for a return: "Authorised · store officer")
 
   If all pass, the button is **Scan the seal**.
-  - **Refused (any ✗):** a red header **"This is a copy. It can't be used."** (or "This handover can't be accepted." when the code isn't a copy), the failed lines in red with reasons ("Made out to Tan Wei Ming, not you", "Expired 0:40 ago", "Already used on this phone", "Unknown signer. Sync this phone before accepting.", "You aren't authorised to hold sealed sources (lapsed 3 Nov)"), and "Nothing was signed."
+  - **Refused (any ✗):** a red header **"This is a copy. It can't be used."** (or "This handover can't be accepted." when the code isn't a copy), the failed lines in red with reasons ("Made out to Tan Wei Ming, not you", "Expired 0:40 ago", "Already used on this phone", "Unknown signer. Sync this phone before accepting.", "You aren't authorised to hold sealed sources (lapsed 3 Nov)", "Ravi Kumar already handed C-12 to Tan Wei Ming at 14:30. This would be a second handover.", "Ravi Kumar's phone was withdrawn by the safety officer at 14:40."), and "Nothing was signed."
 - **R3 Scan the seal.** "Scan the seal on camera C-12".
   - **Match:** "Seal S-40117 matches C-12" → **Next**.
   - **Mismatch:** "Seal S-40999 doesn't match C-12 (S-40117). Don't accept this camera." with no way on.
@@ -264,6 +265,13 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
 - **Empty:** "This alert has no records. Sync again."
 - **Error:** a branch with a ✗ signature, in red.
 - **Waiting to sync:** "Decision signed · not synced yet".
+
+### O3 Devices (`ui/devices/`, the safety officer's DEVICES tab)
+- **Purpose:** see every enrolled phone and withdraw a lost one (`sync.md` A.12).
+- **Components:** one row per device: the person's name and role, "Key 3F:A9:12:7C · hardware-backed", "enrolled 6 Nov 23:51", and a status chip **In use** or **Withdrawn 14:40** (striped red). This phone's own row says "This phone" and has no action.
+- **Action:** **Withdraw** on a row → a bottom sheet "Withdraw Ravi Kumar's phone? It stops working at once, and other phones refuse anything it signs from now on." → **Withdraw phone** (red) → `revoke_device` → the row turns Withdrawn.
+- **Offline:** the list shows what last synced; **Withdraw** is disabled with "Withdrawing a phone needs the network."
+- **Errors:** the server's reason in words ("Only the safety officer can withdraw a phone").
 
 ### O4 Daily record (`ui/dailyrecord/`, wave 2)
 - **Purpose:** the reg 26 records, produced from the chain.
@@ -386,11 +394,11 @@ None.
 | 06 | Outbox, Alerts, Fork and the signed decision | `ui/outbox/`, `ui/alerts/`, `ui/fork/`, `data/repo/SafetyRepository.kt`, three screenshot tests | Plan (01, 02) | 1 | Normal |
 | 07 | Access: Enrol with a code, Lock and unlock, Me with the access and key cards | `ui/enrol/`, `ui/lock/`, `ui/me/`, `EnrolScreenshotTest.kt`, `LockScreenshotTest.kt`, `MeScreenshotTest.kt` | Plan (01 for real keys) | 1 | Normal |
 | 08 | Daily record (reg 26) and Report missing | `ui/dailyrecord/`, `ui/missing/`, their repositories and tests | 05 | 2 | Normal |
-| 09 | Offline fork detection: a phone holding both branches warns, and R2 refuses "already handed over" | `crypto/OfferChecker.kt`, `crypto/Custody.kt`, `ui/timeline/` fork marker | 01, 05 | 2 | Normal |
+| 09 | Offline checks: a phone holding both branches warns, R2 refuses "already handed over", and withdrawn keys are refused | `crypto/OfferChecker.kt`, `crypto/Custody.kt`, `crypto/Roster.kt`, `ui/timeline/` | 01, 05 | overnight | Normal |
 | 10 | Maestro flows for the demo path, and demo polish of copy and seed | `.maestro/`, `supabase/seed.sql` (via a pull request) | 03–07 | 2 | Lite |
 | 11 | Radio check: a 4-digit challenge, a 6-digit answer | `ui/radiocheck/`, `crypto/RadioCheck.kt` | 01 | 3 | Normal |
 | 12 | Signature check on the server, in an Edge Function before `sync_push` | `supabase/functions/` | 02 | 3 | Normal |
-| 13 | Device revocation: the safety officer withdraws a phone; other phones refuse its signatures after they sync | a migration adding `devices.revoked_at`, `auth/` | 07 | 3 | Normal |
+| 13 | Device revocation: the Devices tab, Withdraw, and wiping a withdrawn phone (server, Room and wiring by the build account) | `ui/devices/`, `data/repo/RevocationRepository.kt`, `ui/enrol/`, `ui/alerts/` reason text | 07 | overnight | Normal |
 | 14 | Online hand over: post the offer through the relay, G3-online waiting, finish on the relayed acceptance, QR fallback | `ui/give/`, `data/repo/GiveRepository.kt`, `GiveScreenshotTest.kt` | relay (plan job, `sync.md` A.10), 03 | 2 | Normal |
 | 15 | Online receive: the R0 banner, R2–R4 from a relayed offer, Decline, send the acceptance, R5-online | `ui/incoming/`, `ui/receive/`, `data/repo/ReceiveRepository.kt`, `ReceiveScreenshotTest.kt` | relay, 04 | 2 | Normal |
 | 16 | Tap link: NFC card emulation and reader, the `CS1T:` payload, Nearby Connections, a Debug tap test | `nearby/`, `ui/debug/`, `test/.../nearby/` | plan (A.11) | 2 | Fusion |

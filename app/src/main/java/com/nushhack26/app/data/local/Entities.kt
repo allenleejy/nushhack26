@@ -80,6 +80,8 @@ data class DeviceEntity(
     val serverSeq: Long? = null,
     val syncStatus: String = SyncMark.WAITING,
     val syncReason: String? = null,
+    /** When the safety officer withdrew this device (docs/sync.md A.12); null while it's in use. */
+    val revokedAtMs: Long? = null,
 )
 
 @Entity(tableName = "items")

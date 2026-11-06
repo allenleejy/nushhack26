@@ -23,7 +23,7 @@ import androidx.room.TypeConverters
         MissingReportEntity::class,
         PendingOfferEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)

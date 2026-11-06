@@ -55,6 +55,7 @@ data class DeviceRow(
     @SerialName("performed_at") val performedAt: String? = null,
     @SerialName("created_by") val createdBy: String? = null,
     @SerialName("server_seq") val serverSeq: Long? = null,
+    @SerialName("revoked_at") val revokedAt: String? = null,
 )
 
 @Serializable
@@ -147,7 +148,7 @@ fun PersonRow.toEntity() = PersonEntity(id, name, role, staffNo, neaRegNo, activ
 fun DeviceRow.toEntity() = DeviceEntity(
     id = id, personId = personId, publicKey = publicKey, keyFp = keyFp, keySecurity = keySecurity,
     appVersion = appVersion, performedAt = parseServerTime(performedAt) ?: 0L, createdBy = createdBy,
-    serverSeq = serverSeq, syncStatus = SyncMark.SYNCED,
+    serverSeq = serverSeq, syncStatus = SyncMark.SYNCED, revokedAtMs = parseServerTime(revokedAt),
 )
 
 fun ItemRow.toEntity() = ItemEntity(id, code, sourceSerial, isotope, sealNo, storeName, serverSeq)

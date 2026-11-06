@@ -28,6 +28,8 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
         } catch (e: NotReadyException) {
             Result.retry()
         } catch (e: Exception) {
+            // "not enrolled" from an enrolled phone: maybe the safety officer withdrew it (docs/sync.md A.12).
+            if (e.message?.contains("not enrolled") == true && container.revocation.checkWithdrawn()) return Result.success()
             syncState.put(SyncKeys.LAST_ERROR, e.message ?: e::class.simpleName.orEmpty())
             if (runAttemptCount < MAX_ATTEMPTS) Result.retry() else Result.failure()
         }

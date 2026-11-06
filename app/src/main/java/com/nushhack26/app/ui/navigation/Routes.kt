@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.Description
 import androidx.compose.material.icons.sharp.Inventory2
 import androidx.compose.material.icons.sharp.Outbox
+import androidx.compose.material.icons.sharp.PhonelinkLock
 import androidx.compose.material.icons.sharp.QrCodeScanner
 import androidx.compose.material.icons.sharp.Warning
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -28,6 +29,8 @@ import kotlin.reflect.KClass
 @Serializable data class TimelineRoute(val itemId: String)
 @Serializable data class ForkRoute(val alertId: String)
 @Serializable data object DailyRecordRoute
+/** The safety officer's enrolled phones, where a lost one is withdrawn (docs/sync.md A.12). */
+@Serializable data object DevicesRoute
 @Serializable data class ReportMissingRoute(val itemId: String)
 
 /**
@@ -42,6 +45,7 @@ enum class TopLevelTab(val route: Any, val label: String, val icon: ImageVector,
     SupervisorItems(CamerasRoute, "Items", Icons.Sharp.Inventory2),
     Alerts(AlertsRoute, "Alerts", Icons.Sharp.Warning),
     Records(DailyRecordRoute, "Records", Icons.Sharp.Description),
+    Devices(DevicesRoute, "Devices", Icons.Sharp.PhonelinkLock),
     ;
 
     val routeClass: KClass<*> get() = route::class
@@ -49,7 +53,7 @@ enum class TopLevelTab(val route: Any, val label: String, val icon: ImageVector,
     companion object {
         fun forRole(role: String): List<TopLevelTab> = when (role) {
             Roles.STORE_OFFICER -> listOf(Items, Scan, Outbox)
-            Roles.RSO -> listOf(SupervisorItems, Alerts, Records)
+            Roles.RSO -> listOf(SupervisorItems, Alerts, Devices)
             else -> listOf(Custody, Scan, Outbox)
         }
 

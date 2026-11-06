@@ -10,6 +10,7 @@ import com.nushhack26.app.AppContainer
 import com.nushhack26.app.ui.alerts.AlertsScreen
 import com.nushhack26.app.ui.dailyrecord.DailyRecordScreen
 import com.nushhack26.app.ui.debug.DebugScreen
+import com.nushhack26.app.ui.devices.DevicesScreen
 import com.nushhack26.app.ui.fork.ForkScreen
 import com.nushhack26.app.ui.give.GiveScreen
 import com.nushhack26.app.ui.me.MeScreen
@@ -54,6 +55,7 @@ fun AppNavHost(
         }
         composable<ForkRoute> { entry -> ForkScreen(container, entry.toRoute<ForkRoute>().alertId, onDone = back) }
         composable<DailyRecordRoute> { DailyRecordScreen(container) }
+        composable<DevicesRoute> { DevicesScreen(container) }
         composable<ReportMissingRoute> { entry -> ReportMissingScreen(container, entry.toRoute<ReportMissingRoute>().itemId, onDone = back) }
         composable<OutboxRoute> { OutboxScreen(container) }
         composable<MeRoute> { MeScreen(container, onOpenDebug = { navController.navigate(DebugRoute) }) }

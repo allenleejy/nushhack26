@@ -10,6 +10,7 @@ import com.nushhack26.app.data.local.put
 import com.nushhack26.app.data.remote.SessionManager
 import com.nushhack26.app.data.remote.SupabaseEnrolApi
 import com.nushhack26.app.data.remote.SupabaseConfig
+import com.nushhack26.app.data.remote.SupabaseDeviceAdminApi
 import com.nushhack26.app.data.remote.SupabaseOfferRelayApi
 import com.nushhack26.app.data.remote.SupabaseSyncApi
 import com.nushhack26.app.data.remote.createSupabase
@@ -19,6 +20,7 @@ import com.nushhack26.app.data.repo.GiveRepository
 import com.nushhack26.app.data.repo.IdentityRepository
 import com.nushhack26.app.data.repo.ReceiveRepository
 import com.nushhack26.app.data.repo.RelayRepository
+import com.nushhack26.app.data.repo.RevocationRepository
 import com.nushhack26.app.data.repo.SafetyRepository
 import com.nushhack26.app.nearby.TapLink
 import com.nushhack26.app.sync.NetworkMonitor
@@ -82,6 +84,11 @@ class AppContainer(context: Context) {
 
     /** Tap to hand over offline: NFC pairs the phones, Nearby Connections links them (docs/sync.md A.11). */
     val tapLink by lazy { TapLink(appContext, scope) }
+
+    /** Withdrawing a lost phone, and wiping this one if it was withdrawn (docs/sync.md A.12). */
+    val revocation by lazy {
+        RevocationRepository(database, identity, SupabaseDeviceAdminApi(supabase), { deviceKeys }, requestSync)
+    }
 
     fun start() {
         appLock.start()
