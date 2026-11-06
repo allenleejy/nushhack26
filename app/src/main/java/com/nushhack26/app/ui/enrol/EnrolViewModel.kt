@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -47,7 +48,10 @@ class EnrolViewModel(private val container: AppContainer) : ViewModel() {
 
     init {
         viewModelScope.launch {
-            container.revocation.withdrawnNotice.collect { notice -> _state.update { it.copy(withdrawnNotice = notice) } }
+            // A new notice means this phone was just wiped: drop any earlier enrolment from this process.
+            container.revocation.withdrawnNotice.distinctUntilChanged().collect { notice ->
+                _state.update { if (notice != null) EnrolUiState(withdrawnNotice = notice) else it.copy(withdrawnNotice = null) }
+            }
         }
     }
 
