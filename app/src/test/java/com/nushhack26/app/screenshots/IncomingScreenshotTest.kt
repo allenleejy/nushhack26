@@ -21,7 +21,7 @@ import org.robolectric.annotation.GraphicsMode
 @Config(application = Application::class, qualifiers = PHONE)
 class IncomingScreenshotTest {
     private val now = 1_794_466_800_000L
-    private val offer = IncomingOfferUi("o1", "Siti Aminah", "C-12", now + 161_000)
+    private val offer = IncomingOfferUi("o1", "Siti Aminah", "C-12", now + 161_000, itemName = "Kestrel")
 
     @Test
     fun banner() = captureScreen("Incoming_R0_banner") {
@@ -36,7 +36,7 @@ class IncomingScreenshotTest {
     fun bannerNarrowLargeText() {
         RuntimeEnvironment.setFontScale(1.3f)
         captureScreen("Incoming_R0_banner_360dp_large_text") {
-            IncomingOfferBannerContent(offer.copy(giverName = "Tan Wei Ming", itemCode = "C-07"), now)
+            IncomingOfferBannerContent(offer.copy(giverName = "Tan Wei Ming", itemCode = "C-07", itemName = ""), now)
         }
     }
 }

@@ -25,7 +25,7 @@ class AlertCardsTest {
     @Test
     fun forkNamesGiverAndChecksSignatures() {
         val fork = buildAlertCards(s.data(listOf(s.fork)), now).first() as AlertCard.Fork
-        assertTrue(fork.sentence.startsWith("Ravi Kumar signed two handovers of C-12 after H1"))
+        assertTrue(fork.sentence.startsWith("Ravi Kumar signed two handovers of Kestrel (C-12) after H1"))
         assertTrue(fork.sentence.endsWith(SIGNATURES_VALID_TEXT))
 
         val tampered = buildAlertCards(s.data(listOf(s.fork), tamperH2b = true), now).first() as AlertCard.Fork
@@ -43,7 +43,7 @@ class AlertCardsTest {
     @Test
     fun refusedReasonsInWords() {
         val refused = buildAlertCards(s.data(listOf(s.refusedLapsed, s.refusedDevice)), now).filterIsInstance<AlertCard.Refused>()
-        assertEquals("Refused: C-12 to Jun Lim, whose authorisation had lapsed", refused[0].sentence)
+        assertEquals("Refused: Kestrel (C-12) to Jun Lim, whose authorisation had lapsed", refused[0].sentence)
         assertTrue(refused[1].sentence.endsWith("devices are added by enrol_device only"))
     }
 

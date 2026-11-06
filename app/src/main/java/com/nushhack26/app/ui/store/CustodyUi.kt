@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nushhack26.app.crypto.CustodyStatus
+import com.nushhack26.app.data.local.ItemEntity
 import com.nushhack26.app.ui.components.dashedBorder
 import com.nushhack26.app.ui.theme.Tenet
 import com.nushhack26.app.ui.theme.TenetDimens
@@ -40,6 +41,14 @@ import java.time.format.DateTimeFormatter
 import kotlin.math.abs
 
 // Shared by Store, My custody and the timeline (card 05).
+
+/** A camera inside a sentence: "Kestrel (C-12)", or "C-12" while it has no name (docs/spec.md, camera names). */
+fun cameraPhrase(name: String, code: String): String = if (name.isBlank() || name == code) code else "$name ($code)"
+
+val ItemEntity.phrase: String get() = cameraPhrase(name, code)
+
+/** A title's labelled code line: "CAMERA C-12 · SOURCE IR-0457 · IR-192". Blank parts are left out. */
+fun codeLine(vararg parts: String?): String = parts.filterNot { it.isNullOrBlank() }.joinToString(" · ").uppercase()
 
 /** A phone or server time as 24-hour HH:mm, no seconds. */
 fun clockText(ms: Long, zone: ZoneId = ZoneId.systemDefault()): String =

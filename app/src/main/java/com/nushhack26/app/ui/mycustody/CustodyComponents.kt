@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nushhack26.app.crypto.CustodyStatus
 import com.nushhack26.app.data.local.HandoverKind
+import com.nushhack26.app.ui.alerts.shortName
 import com.nushhack26.app.ui.components.DangerButton
 import com.nushhack26.app.ui.components.HazardDiamond
 import com.nushhack26.app.ui.components.SecondaryButton
@@ -34,6 +35,7 @@ import com.nushhack26.app.ui.components.dashedBorder
 import com.nushhack26.app.ui.store.CustodyStatusChip
 import com.nushhack26.app.ui.store.NotSyncedMark
 import com.nushhack26.app.ui.store.clockText
+import com.nushhack26.app.ui.store.codeLine
 import com.nushhack26.app.ui.store.durationText
 import com.nushhack26.app.ui.store.remainingText
 import com.nushhack26.app.ui.theme.Tenet
@@ -91,21 +93,25 @@ fun CustodyCard(camera: HeldCamera, nowMs: Long, onHandOver: () -> Unit, onOpen:
                 horizontalArrangement = Arrangement.spacedBy(TenetDimens.space2),
             ) {
                 Icon(Icons.Sharp.Alarm, contentDescription = null, tint = colors.onAlert)
-                Text("${camera.code} return overdue · ${durationText(nowMs - (camera.dueMs ?: nowMs))}".uppercase(), style = TenetType.label, color = colors.onAlert)
+                Text("${camera.phrase} return overdue · ${durationText(nowMs - (camera.dueMs ?: nowMs))}".uppercase(), style = TenetType.label, color = colors.onAlert)
             }
         }
         Column(Modifier.padding(TenetDimens.space4), verticalArrangement = Arrangement.spacedBy(TenetDimens.space3)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(TenetDimens.space3)) {
                 HazardDiamond(size = TenetDimens.diamondMd)
                 Column(Modifier.weight(1f)) {
-                    Text(camera.code.uppercase(), style = TenetType.headline, color = colors.ink)
-                    Text(camera.source.uppercase(), style = TenetType.recordLabel, color = colors.inkMuted)
+                    val disputed = camera.status == CustodyStatus.Disputed
+                    Text(if (disputed) camera.displayName.uppercase() else "You hold ${camera.displayName}", style = TenetType.headline, color = colors.ink)
+                    Text(
+                        codeLine(
+                            "Camera ${camera.code}",
+                            "Sealed source ${camera.source.substringBefore(" · ")}",
+                            camera.dueMs?.takeIf { !disputed }?.let { "Return by ${clockText(it)}" },
+                        ),
+                        style = TenetType.recordLabel, color = colors.inkMuted,
+                    )
                     Text("SEAL ${camera.sealNo}".uppercase(), style = TenetType.recordLabel, color = colors.inkMuted)
                 }
-            }
-            if (camera.status != CustodyStatus.Disputed) {
-                val due = camera.dueMs?.let { " · return by ${clockText(it)}" }.orEmpty()
-                Text("You hold ${camera.code} · sealed source ${camera.source.substringAfter(" · ")}$due", style = TenetType.body, color = colors.ink)
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(TenetDimens.space2), verticalArrangement = Arrangement.spacedBy(TenetDimens.space2)) {
                 CustodyStatusChip(camera.status)
@@ -133,16 +139,16 @@ fun Receipt(receipt: ReceiptRow, modifier: Modifier = Modifier) {
     val colors = Tenet.colors
     val small = TenetType.body.copy(fontSize = 14.sp, lineHeight = 20.sp)
     val verb = when (receipt.kind) {
-        HandoverKind.ISSUE -> "Issued to"
-        HandoverKind.RETURN -> "Returned to"
-        else -> "Handed to"
+        HandoverKind.ISSUE -> "Issued"
+        HandoverKind.RETURN -> "Returned"
+        else -> "Handed"
     }
     Column(
         modifier.fillMaxWidth().background(colors.bg100).dashedBorder(colors.line).padding(TenetDimens.space4),
         verticalArrangement = Arrangement.spacedBy(TenetDimens.space1),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(receipt.code.uppercase(), style = TenetType.label, color = colors.ink, modifier = Modifier.weight(1f))
+            Text(receipt.displayName.uppercase(), style = TenetType.label, color = colors.ink, modifier = Modifier.weight(1f))
             if (receipt.isSynced) {
                 Icon(Icons.Sharp.CheckCircle, contentDescription = null, tint = colors.ok, modifier = Modifier.padding(end = 4.dp))
                 Text("SYNCED", style = TenetType.recordLabel, color = colors.ok)
@@ -151,9 +157,13 @@ fun Receipt(receipt: ReceiptRow, modifier: Modifier = Modifier) {
                 Text("NOT SYNCED YET", style = TenetType.recordLabel, color = colors.pending)
             }
         }
-        Text("$verb ${receipt.toName}", style = TenetType.bodyStrong, color = colors.ink)
+        Text("$verb ${receipt.phrase} to ${receipt.toName}", style = TenetType.bodyStrong, color = colors.ink)
         Text(
-            listOfNotNull(receipt.acceptedMs?.let { "Signed ${clockText(it)}" }, receipt.sealNo?.let { "seal $it" }).joinToString(" · "),
+            listOfNotNull(
+                receipt.acceptedMs?.let { clockText(it) },
+                receipt.acceptedMs?.let { "signed by ${shortName(receipt.toName)} ✓" },
+                receipt.sealNo?.let { "seal $it" },
+            ).joinToString(" · "),
             style = small, color = colors.inkMuted,
         )
         if (receipt.matchCode.isNotEmpty()) {
@@ -170,7 +180,7 @@ fun PendingOfferBanner(offer: PendingOfferRow, nowMs: Long, onOpen: () -> Unit, 
         modifier.fillMaxWidth().background(colors.signalBg).border(TenetDimens.strokeControl, colors.signalEdge).padding(TenetDimens.space4),
         verticalArrangement = Arrangement.spacedBy(TenetDimens.space2),
     ) {
-        Text("OFFER WAITING · ${offer.code}".uppercase(), style = TenetType.label, color = colors.signalText)
+        Text("OFFER WAITING · ${offer.phrase}".uppercase(), style = TenetType.label, color = colors.signalText)
         Text(
             "${offer.toName} hasn't shown you their code yet. ${remainingText(offer.expiresMs, nowMs).replace("left", "until the offer expires")}.",
             style = TenetType.body, color = colors.ink,

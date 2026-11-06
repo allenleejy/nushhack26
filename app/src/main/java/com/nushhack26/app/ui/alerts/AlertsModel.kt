@@ -16,6 +16,7 @@ import com.nushhack26.app.data.repo.deliveredBy
 import com.nushhack26.app.data.repo.handoverNumber
 import com.nushhack26.app.sync.SyncStatus
 import com.nushhack26.app.ui.components.formatTime
+import com.nushhack26.app.ui.store.phrase
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
@@ -26,7 +27,7 @@ const val SIGNATURE_INVALID_TEXT = "a signature failed the check on this phone, 
 const val OVERDUE_CAVEAT = "newer handovers may not have synced"
 const val SEVERITY_WAIT_MS = 5 * 60_000L
 
-/** One card on the Alerts list, most serious first: fork, overdue, seal mismatch, refused, waiting, resolved. */
+/** One card on the Alerts list (each `itemCode` is the camera as a sentence names it: "Kestrel (C-12)"), most serious first: fork, overdue, seal mismatch, refused, waiting, resolved. */
 sealed interface AlertCard {
     val key: String
 
@@ -37,6 +38,8 @@ sealed interface AlertCard {
         val sentence: String,
         val signaturesValid: Boolean,
         val meta: String,
+        /** "Kestrel", for the short button label. */
+        val itemName: String = itemCode,
     ) : AlertCard { override val key get() = "fork-$alertId" }
 
     data class Overdue(val itemId: String, val itemCode: String, val sentence: String) : AlertCard {
@@ -78,7 +81,7 @@ fun resolutionFor(alert: AlertEntity, resolutions: List<ResolutionEntity>): Reso
 
 fun buildAlertCards(data: SafetyData, nowMs: Long): List<AlertCard> {
     val roster = data.roster
-    fun code(itemId: String?) = data.items.firstOrNull { it.id == itemId }?.code ?: "Unknown item"
+    fun code(itemId: String?) = data.items.firstOrNull { it.id == itemId }?.phrase ?: "Unknown item"
     fun detected(alert: AlertEntity) = alert.performedAt?.let { "Detected ${formatTime(it)}" } ?: "Detected by the server"
 
     val forks = mutableListOf<AlertCard>()
@@ -103,17 +106,18 @@ fun buildAlertCards(data: SafetyData, nowMs: Long): List<AlertCard> {
                     if (valid) SIGNATURES_VALID_TEXT else SIGNATURE_INVALID_TEXT,
                 signaturesValid = valid,
                 meta = "$itemCode · ${detected(alert)}",
+                itemName = data.items.firstOrNull { it.id == alert.itemId }?.displayName ?: itemCode,
             )
         }
     }
 
-    val overdue = data.items.mapNotNull { item -> overdueCard(item.id, item.code, data, nowMs) }
+    val overdue = data.items.mapNotNull { item -> overdueCard(item.id, item.phrase, data, nowMs) }
 
     val seals = data.alerts.filter { it.kind == AlertKind.SEAL_MISMATCH && it.closedAt == null }.map { alert ->
         val h = data.handovers.firstOrNull { it.id in alert.handoverIds }
         val item = data.items.firstOrNull { it.id == alert.itemId }
         val sentence = if (h?.sealNo != null && item != null) {
-            "${item.code} accepted by ${roster.nameOf(h.toPersonId)} with seal ${h.sealNo} (expected ${item.sealNo})"
+            "${item.phrase} accepted by ${roster.nameOf(h.toPersonId)} with seal ${h.sealNo} (expected ${item.sealNo})"
         } else "Seal mismatch on ${code(alert.itemId)}: ${alert.reason}"
         AlertCard.SealMismatch(alert.id, alert.itemId, code(alert.itemId), sentence, detected(alert))
     }

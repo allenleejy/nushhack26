@@ -16,6 +16,7 @@ import com.nushhack26.app.ui.alerts.resolutionFor
 import com.nushhack26.app.ui.alerts.shortName
 import com.nushhack26.app.ui.alerts.shortNameOf
 import com.nushhack26.app.ui.components.formatTime
+import com.nushhack26.app.ui.store.phrase
 
 const val DECISION_WAITING_TEXT = "Decision signed · not synced yet"
 
@@ -46,6 +47,10 @@ data class ForkUiState(
     val alertId: String = "",
     val itemId: String = "",
     val itemCode: String = "",
+    /** "Kestrel", or the code while it has no name. */
+    val itemName: String = "",
+    /** "Kestrel (C-12)". */
+    val camera: String = "",
     val headline: String = "",
     val evidence: String = "",
     val branches: List<BranchUi> = emptyList(),
@@ -85,6 +90,7 @@ fun buildForkState(
     if (alert == null || records.isEmpty()) return ForkUiState(loading = false, missing = true, alertId = alertId)
     val item = data.items.firstOrNull { it.id == alert.itemId }
     val itemCode = item?.code ?: "Unknown item"
+    val camera = item?.phrase ?: itemCode
     val resolution = resolutionFor(alert, data.resolutions)
     val number = records.firstNotNullOfOrNull { handoverNumber(it.id, data.handovers) }
     val after = handoverNumber(alert.forkPrevId, data.handovers)?.let { "H$it" } ?: "registration"
@@ -127,8 +133,10 @@ fun buildForkState(
         alertId = alert.id,
         itemId = alert.itemId.orEmpty(),
         itemCode = itemCode,
-        headline = "$itemCode · fork after $after",
-        evidence = if (!allOk) "One record has an invalid signature. It isn't proof against $giver." else "$giver signed two handovers of $itemCode that both follow $after · " +
+        itemName = item?.displayName ?: itemCode,
+        camera = camera,
+        headline = "$camera · fork after $after",
+        evidence = if (!allOk) "One record has an invalid signature. It isn't proof against $giver." else "$giver signed two handovers of $camera that both follow $after · " +
             if (allOk) SIGNATURES_VALID_TEXT else SIGNATURE_INVALID_TEXT,
         branches = branches,
         canDecide = me != null && AccessRules.maySignDecision(me),

@@ -98,7 +98,13 @@ fun IncomingOfferBannerContent(offer: IncomingOfferUi, nowMs: Long, modifier: Mo
                 Text(
                     buildAnnotatedString {
                         append("${offer.giverName} is handing you ")
-                        withStyle(SpanStyle(fontFamily = SpaceMono)) { append(offer.itemCode.uppercase()) }
+                        if (offer.itemName.isBlank() || offer.itemName == offer.itemCode) {
+                            withStyle(SpanStyle(fontFamily = SpaceMono)) { append(offer.itemCode.uppercase()) }
+                        } else {
+                            append("${offer.itemName} (")
+                            withStyle(SpanStyle(fontFamily = SpaceMono)) { append(offer.itemCode.uppercase()) }
+                            append(")")
+                        }
                     },
                     style = TenetType.bodyStrong,
                     color = colors.onSignal,

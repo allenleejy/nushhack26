@@ -14,7 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.Inventory2
-import androidx.compose.material.icons.sharp.QrCodeScanner
+import androidx.compose.material.icons.sharp.Contactless
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -67,7 +67,7 @@ fun StoreContent(
             if (readOnly) {
                 Text("As the server knows it", style = TenetType.body, color = colors.inkMuted)
             } else {
-                PrimaryButton("Receive return", onClick = onReceive, icon = Icons.Sharp.QrCodeScanner)
+                PrimaryButton("Receive return", onClick = onReceive, icon = Icons.Sharp.Contactless)
             }
         }
         when (state) {
@@ -110,8 +110,8 @@ private fun StoreItemRow(row: StoreRow, nowMs: Long, readOnly: Boolean, onIssue:
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(TenetDimens.space3)) {
             HazardDiamond(size = 40.dp)
             Column(Modifier.weight(1f)) {
-                Text(row.code.uppercase(), style = TenetType.title, color = colors.ink)
-                Text(row.source.uppercase(), style = TenetType.recordLabel, color = colors.inkMuted)
+                Text(row.displayName.uppercase(), style = TenetType.title, color = colors.ink)
+                Text(codeLine("Camera ${row.code}", "Source ${row.source}"), style = TenetType.recordLabel, color = colors.inkMuted)
             }
         }
         FlowRow(

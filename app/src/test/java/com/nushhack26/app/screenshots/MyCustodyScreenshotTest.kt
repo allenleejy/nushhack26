@@ -18,18 +18,18 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 private val out = HeldCamera(
-    "i1", "CAM-01", "Ir-192 · IR-7714", "S-40213", CustodyStatus.Out,
-    dueMs = SAMPLE_NOW + 21_480_000, startMs = SAMPLE_NOW - 7_200_000, synced = true,
+    "i1", "C-12", "IR-0457 · Ir-192", "S-40117", CustodyStatus.Out,
+    dueMs = SAMPLE_NOW + 21_480_000, startMs = SAMPLE_NOW - 7_200_000, synced = true, name = "Kestrel",
 )
 private val overdue = HeldCamera(
-    "i2", "CAM-02", "Ir-192 · IR-7722", "S-40288", CustodyStatus.Overdue,
-    dueMs = SAMPLE_NOW - 240_000, startMs = SAMPLE_NOW - 90_240, synced = false,
+    "i2", "C-07", "IR-0391 · Ir-192", "S-40102", CustodyStatus.Overdue,
+    dueMs = SAMPLE_NOW - 240_000, startMs = SAMPLE_NOW - 90_240, synced = false, name = "Osprey",
 )
 private val receipts = listOf(
-    ReceiptRow("h9", "CAM-05", HandoverKind.TRANSFER, "Daniel Lim", SAMPLE_NOW - 1_800_000, "S-40301", "48 21 07", SyncMark.WAITING),
-    ReceiptRow("h8", "CAM-04", HandoverKind.RETURN, "Store officer", SAMPLE_NOW - 86_400_000, "S-40299", "11 93 52", SyncMark.SYNCED),
+    ReceiptRow("h9", "C-12", HandoverKind.TRANSFER, "Tan Wei Ming", SAMPLE_NOW - 1_800_000, "S-40117", "48 21 07", SyncMark.WAITING, name = "Kestrel"),
+    ReceiptRow("h8", "C-04", HandoverKind.RETURN, "Siti Aminah", SAMPLE_NOW - 86_400_000, "S-40299", "11 93 52", SyncMark.SYNCED),
 )
-private val pending = listOf(PendingOfferRow("i5", "CAM-05", "Daniel Lim", SAMPLE_NOW + 42_000))
+private val pending = listOf(PendingOfferRow("i5", "C-15", "Tan Wei Ming", SAMPLE_NOW + 42_000, name = "Heron"))
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -47,7 +47,7 @@ class MyCustodyScreenshotTest {
 
     @Test
     fun disputed() = captureScreen("MyCustody_disputed") {
-        MyCustodyContent(MyCustodyUiState.Ready(SAMPLE_NOW, listOf(out.copy(itemId = "i3", code = "CAM-03", status = CustodyStatus.Disputed), out)))
+        MyCustodyContent(MyCustodyUiState.Ready(SAMPLE_NOW, listOf(out.copy(itemId = "i3", code = "C-15", name = "Heron", status = CustodyStatus.Disputed), out)))
     }
 
     @Test

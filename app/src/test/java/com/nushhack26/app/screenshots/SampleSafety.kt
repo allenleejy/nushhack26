@@ -45,7 +45,7 @@ object SampleSafety {
         val pub = b64(k.public.encoded)
         DeviceEntity("d-$person", person, pub, Signatures.keyFp(pub), "tee", performedAt = 0, createdBy = "u-$person", serverSeq = 1, syncStatus = SyncMark.SYNCED)
     }
-    val item = ItemEntity("i-c12", "C-12", "SRC-4471", "Ir-192", "S-40117", "Main store")
+    val item = ItemEntity("i-c12", "C-12", "SRC-4471", "Ir-192", "S-40117", "Main store", name = "Kestrel")
 
     private fun signed(h: HandoverEntity): HandoverEntity {
         val giver = h.fromPersonId?.let { keyPairs.getValue(it) }

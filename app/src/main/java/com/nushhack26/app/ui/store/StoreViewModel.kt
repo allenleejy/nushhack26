@@ -15,12 +15,17 @@ import kotlinx.coroutines.flow.stateIn
 data class StoreRow(
     val itemId: String,
     val code: String,
+    /** "IR-0457 · Ir-192": the source serial, then the isotope. */
     val source: String,
     val status: CustodyStatus,
     val holderName: String?,
     val dueMs: Long?,
     val synced: Boolean,
-)
+    /** "Kestrel"; empty until synced. */
+    val name: String = "",
+) {
+    val displayName: String get() = name.ifBlank { code }
+}
 
 sealed interface StoreUiState {
     data object Loading : StoreUiState
@@ -41,11 +46,12 @@ fun storeRows(board: CustodyBoard): List<StoreRow> = board.states
         StoreRow(
             itemId = s.item.id,
             code = s.item.code,
-            source = "${s.item.isotope} · ${s.item.sourceSerial}",
+            source = "${s.item.sourceSerial} · ${s.item.isotope}",
             status = s.status,
             holderName = s.holderId?.let { board.roster.person(it)?.name ?: "Unknown person" },
             dueMs = s.dueMs,
             synced = s.allSynced,
+            name = s.item.name,
         )
     }
     .sortedWith(compareBy({ statusOrder(it.status) }, { it.code }))

@@ -148,7 +148,7 @@ private fun AlertCardView(card: AlertCard, onAction: (AlertsAction) -> Unit) {
                 Text("SIGNATURE CHECK FAILED", style = TenetType.recordLabel.copy(fontWeight = FontWeight.Bold), color = colors.alertText)
             }
             PrimaryButton(
-                label = "Decide who holds ${card.itemCode}",
+                label = "Decide who holds ${card.itemName}",
                 onClick = { onAction(AlertsAction.OpenFork(card.alertId)) },
             )
         }

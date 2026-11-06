@@ -31,6 +31,7 @@ import com.nushhack26.app.ui.components.TextLinkButton
 import com.nushhack26.app.ui.store.CustodyStatusChip
 import com.nushhack26.app.ui.store.SkeletonRows
 import com.nushhack26.app.ui.store.clockText
+import com.nushhack26.app.ui.store.codeLine
 import com.nushhack26.app.ui.store.remainingText
 import com.nushhack26.app.ui.theme.Tenet
 import com.nushhack26.app.ui.theme.TenetDimens
@@ -91,9 +92,11 @@ private fun Header(header: TimelineHeader, nowMs: Long, onReportMissing: () -> U
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(TenetDimens.space3)) {
             HazardDiamond(size = TenetDimens.diamondMd)
             Column(Modifier.weight(1f)) {
-                Text(header.code.uppercase(), style = TenetType.headline, color = colors.ink)
-                Text(header.source.uppercase(), style = TenetType.recordLabel, color = colors.inkMuted)
-                Text("SEAL ${header.sealNo}".uppercase(), style = TenetType.recordLabel, color = colors.inkMuted)
+                Text(header.displayName.uppercase(), style = TenetType.headline, color = colors.ink)
+                Text(
+                    codeLine("Camera ${header.code}", "Source ${header.source}", "Seal ${header.sealNo}"),
+                    style = TenetType.recordLabel, color = colors.inkMuted,
+                )
             }
         }
         CustodyStatusChip(header.status)

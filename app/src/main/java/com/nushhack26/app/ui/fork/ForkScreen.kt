@@ -137,12 +137,12 @@ fun ForkContent(state: ForkUiState, modifier: Modifier = Modifier, onAction: (Fo
             when {
                 state.decision != null -> DecisionBanner(state.decision)
                 state.canDecide -> {
-                    Text("WHO HOLDS ${state.itemCode}?".uppercase(), style = TenetType.label, color = colors.ink)
+                    Text("WHO HOLDS ${state.itemName}?".uppercase(), style = TenetType.label, color = colors.ink)
                     SquareList(Modifier.testTag("fork_choices")) {
                         state.branches.forEachIndexed { index, branch ->
                             if (index > 0) ListDivider()
                             ListRow(
-                                title = "With ${branch.receiverName}",
+                                title = "${state.itemName} is with ${branch.receiverName}",
                                 supporting = "${branch.label} · ${branch.title} · ${branch.signedText}",
                                 selected = branch.handoverId == state.selectedId,
                                 onClick = { onAction(ForkAction.Choose(branch.handoverId)) },
@@ -152,7 +152,7 @@ fun ForkContent(state: ForkUiState, modifier: Modifier = Modifier, onAction: (Fo
                     NoteField(state.note) { onAction(ForkAction.Note(it)) }
                 }
                 else -> Text(
-                    "Only a radiation safety officer can decide who holds ${state.itemCode}.",
+                    "Only a radiation safety officer can decide who holds ${state.camera}.",
                     style = TenetType.body,
                     color = colors.inkMuted,
                 )
@@ -187,8 +187,8 @@ fun DecisionSheetContent(state: ForkUiState, modifier: Modifier = Modifier, onAc
         verticalArrangement = Arrangement.spacedBy(TenetDimens.space3),
     ) {
         Text("SIGN DECISION", style = TenetType.title, color = colors.ink)
-        Text(state.itemCode.uppercase(), style = TenetType.recordLabel, color = colors.inkMuted)
-        Text("${state.itemCode} is with ${chosen.receiverName}.", style = TenetType.bodyLg, color = colors.ink)
+        Text(state.camera.uppercase(), style = TenetType.recordLabel, color = colors.inkMuted)
+        Text("${state.itemName} is with ${chosen.receiverName}.", style = TenetType.bodyLg, color = colors.ink)
         others.forEach {
             Text("${it.label} (${it.title}) will be marked overruled. It stays in the chain.", style = TenetType.body, color = colors.inkMuted)
         }
