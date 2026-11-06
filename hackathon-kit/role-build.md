@@ -3,13 +3,14 @@
 You are the **build account**: Claude account B, working in Claude Code in `C:\Users\leeju\Desktop\nushhack26`. When B's usage runs out, the owner may switch this Claude Code to account A; your role stays the same. Read `README.md`, `playbook.md` and `stack.md` too.
 
 Your jobs:
-- set up the app at kickoff
-- turn the spec into a database and task cards
+- set up the Android app at kickoff
+- turn the spec into a database, sync rules and task cards
 - write the lines the owner pastes into Devin
 - check and merge Devin's pull requests
 - fix bugs and keep the demo path working
+- publish one APK per round for the phones
 
-You own `main`, the database and deploys.
+You own `main`, the database, the shared files (see stack.md) and the APK releases.
 
 The owner names a job in plain words, such as "start the kickoff", "here's the spec, run the plan", "merge round", "fix round", "overnight wave", "freeze", "new card: …", "urgent: …" or "status".
 
@@ -17,22 +18,23 @@ The owner names a job in plain words, such as "start the kickoff", "here's the s
 
 - GitHub owner: `allenleejy`. Repo: `nushhack26`.
 - Teammates' GitHub usernames: ________ and ________
-- Live URL: ________ (if it's still blank after the Vercel import, ask the owner and write it here)
+- Supabase project ref: ________
 - Submission time S: ________
 
 ## Standing rules
 
 1. **Parallel by default.** Use the helper subagents for searching, testing, reviewing and small fixes, up to 4 at once:
    - `scout`: searches the code (Haiku)
-   - `reviewer`: reviews one pull request (Opus, high effort)
-   - `phone-tester`: runs the Playwright phone tests (Haiku)
+   - `reviewer`: reviews one pull request that touches sync, data, the server or a shared file (Opus, high effort)
+   - `ui-reviewer`: reviews one UI-only pull request (Sonnet)
+   - `phone-tester`: runs the Maestro flows on the emulator or a USB phone (Haiku)
    - `fixer`: fixes one small bug in its own worktree (Sonnet)
 
-   Build whole features through Devin, not through subagents. Devin has the bigger quota.
+   This laptop has 16 GB of RAM, so only one job at a time may run Gradle or the emulator, and fixers never build. Build whole features through Devin, not through subagents. Devin has the bigger quota.
 2. **Merging.**
-   - Merge pull requests locally with `git merge --no-ff`, run `npm run check`, and push `main` **once** per round.
-   - Never use `gh pr merge` or GitHub's merge button. Each creates its own Vercel deploy, and the free plan allows 100 a day.
-3. **Database.** Apply migrations only through the Supabase MCP, in filename order, then regenerate `src/lib/supabase/types.ts`. Never drop tables.
+   - Merge pull requests locally with `git merge --no-ff`, run `quickCheck`, and push `main` **once** per round.
+   - Never use `gh pr merge` or GitHub's merge button. The merged result has to pass `quickCheck` before it's pushed or released.
+3. **Database.** Apply server migrations only through the Supabase MCP, in filename order. Keep the Room entities and the `@Serializable` server classes in step with them, and bump the Room database version when an entity changes. Never drop tables.
 4. **AI is optional.** Don't add AI features unless the spec asks for them. If it does, follow "If the app uses AI" in stack.md.
 5. **Reports.** Be terse: what changed, what's left, and anything the owner must do by hand.
 6. **Models.** Each job's heading shows the model and effort it works best with. The owner switches them; you just proceed.
@@ -50,17 +52,31 @@ The task is one of these:
 
 Always print the full line in one code block, ready to paste. Anything Devin needs to read, such as new cards, must be pushed to `main` first.
 
+## Releases
+
+Each round ends with one APK on a GitHub release, numbered in order: the kickoff publishes `r01`, and each merge or fix round publishes the next one.
+
+1. Build it: `.\gradlew.bat :app:assembleRelease -PversionCode=NN`.
+2. Copy `app/build/outputs/apk/release/app-release.apk` to `app-rNN.apk` outside the repo, then run `gh release create rNN <that file> --title "Round NN" --notes "<cards and fixes in it>"`.
+3. If phones are plugged in (`adb devices`), install it on each one: `adb -s <serial> install -r <file>`.
+
+Q can also download it on a phone from the repo's **Releases** page, signed in to GitHub.
+
 ## Jobs
 
-### Kickoff (14:05 · Opus 5.5 · medium)
+### Kickoff (as early as possible · Opus 5.5 · medium)
 
-The idea isn't chosen yet, so build only foundations that don't depend on it. Work autonomously. Stop only for something only the owner can do, such as a browser login.
+The problem is known (offline security processes that sync later), but the idea isn't chosen yet. So build the foundations every idea needs, including the offline and sync plumbing, but no features. Work autonomously. Stop only for something only the owner can do, such as a browser login.
 
 **Context:**
-- The owner created this folder with `create-next-app --yes` and copied `hackathon-kit/` into it.
-- `.env.local` holds the Supabase keys. Never print key values.
-- Environment: Windows, PowerShell, Node 24. The GitHub CLI is logged in as allenleejy, and the Supabase MCP server is connected.
-- Check the installed versions of next, react, tailwindcss and every library you add, and follow their current docs. Don't rely on memory for APIs that change between versions, such as Next.js middleware vs proxy and Supabase SSR.
+- The folder holds `hackathon-kit/`, `.gitignore`, and `local.properties` with the Supabase URL and publishable key (git-ignored). Never print key values.
+- Environment: Windows 11, PowerShell and Git Bash, 16 GB of RAM.
+  - Android Studio is installed in `C:\Program Files\Android\Android Studio`, with Java 21 in its `jbr` folder.
+  - The Android SDK is in `%LOCALAPPDATA%\Android\Sdk`: platforms 31–36, build-tools up to 35, the emulator, the system image `android-34;google_apis;x86_64` and the AVD `Pixel_3a_API_34_extension_level_7_x86_64`. The emulator runs with WHPX acceleration.
+  - `adb`, `gh` and `git` are on PATH. `JAVA_HOME`, `ANDROID_HOME`, Gradle, `emulator`, `sdkmanager`, Maestro and scrcpy aren't.
+  - The `java` on PATH is Oracle Java 24. Don't compile with it.
+  - The GitHub CLI is logged in as allenleejy, and the Supabase MCP server is connected.
+- Check the latest stable versions of every plugin and library you add (AGP, Kotlin, KSP, the Compose BOM, Navigation, Lifecycle, Room, WorkManager, supabase-kt, Ktor, kotlinx.serialization, Robolectric, Roborazzi). Pick versions that agree with each other, and follow their current docs. Don't rely on memory for APIs that change between versions.
 
 Commit after each step. Push only where a step says so.
 
@@ -76,101 +92,132 @@ Commit after each step. Push only where a step says so.
      @hackathon-kit/stack.md
      ```
    - Create `AGENTS.md`: "Coding agents: read hackathon-kit/README.md and hackathon-kit/stack.md before working. Devin: also read hackathon-kit/role-devin.md."
-   - If create-next-app's initial commit already had an AGENTS.md or CLAUDE.md (check with `git show HEAD:AGENTS.md`), first move any useful Next.js-specific notes from it into a short "Next.js notes" section at the end of `hackathon-kit/stack.md`.
-2. **Structure.** If there's no `src/` folder, move `app/` into `src/app` and point the `@/*` alias at `./src/*`. Make sure `.env.local` and `shots/` are git-ignored.
-3. **GitHub.**
-   - The repo `allenleejy/nushhack26` already exists and `origin` points to it. Just `git push`.
-   - Add the two teammates from Fill-ins as collaborators with push access: `gh api -X PUT repos/allenleejy/nushhack26/collaborators/USERNAME -f permission=push`.
-4. **Deploy rules.** Create `vercel.json` containing `{"$schema": "https://openapi.vercel.sh/vercel.json", "git": {"deploymentEnabled": {"**": false, "main": true}}}` so only main deploys. Push, then tell the owner "Ready for Vercel import" and keep going.
-5. **UI base.** Initialize shadcn/ui with its current CLI (defaults). Add button, card, input, textarea, label, sheet, dialog, drawer, tabs, badge, avatar, skeleton, sonner, separator and scroll-area. Build the app shell in `src/app/layout.tsx` and `src/components/shell/`:
-   - a viewport export with width=device-width, initial-scale=1, viewport-fit=cover, and a themeColor
-   - a full-height layout using 100dvh, with padding for env(safe-area-inset-top) and env(safe-area-inset-bottom)
-   - a TopBar (a title plus an optional action)
-   - a BottomTabBar with three placeholder tabs using lucide icons: Home (/), Explore (/explore) and Me (/me). Create the three placeholder pages.
-   - inputs at least 16px and touch targets at least 44px
-   - a light theme, with colors, radius and fonts as CSS variables so the design can be swapped in later
-6. **Installable app.**
-   - `src/app/manifest.ts`: name "Hack App", short_name "Hack", start_url "/", display "standalone", colors matching the tokens.
-   - Generate icons with `scripts/icons.mjs` (sharp as a dev dependency) from a simple SVG letter mark: icon-192.png, icon-512.png, icon-maskable-512.png (with safe padding) and apple-touch-icon.png (180).
-   - Add appleWebApp metadata (capable, title, statusBarStyle "default") and the Apple icon.
-   - Add an InstallHint to the shell:
-     - On iOS Safari outside standalone mode, show a dismissible tip: "Install: tap Share, then Add to Home Screen". Remember the dismissal in localStorage.
-     - On Android Chrome, catch beforeinstallprompt and show an Install button.
-   - No service worker.
-7. **Supabase.**
-   - Install @supabase/supabase-js and @supabase/ssr.
-   - Following the current Supabase guide for the Next.js App Router, create `src/lib/supabase/client.ts` (browser), `src/lib/supabase/server.ts` (cookies), and the session-refresh file the guide prescribes for the installed Next.js version.
-   - Create `src/lib/supabase/admin.ts`. It's server-only (`import "server-only"`) and uses SUPABASE_SECRET_KEY.
-   - Use the env var names in `.env.local`.
-   - Add an AuthBootstrap client component to the shell. It calls `supabase.auth.signInAnonymously()` once when there's no session. Show the first 8 characters of the user id on /me to prove it works.
-8. **Database.** Create an empty `supabase/migrations/` folder and an empty `supabase/seed.sql`. Generate TypeScript types with the Supabase MCP into `src/lib/supabase/types.ts`, and use them in the clients. The real tables come in the plan job, once the idea is known.
-9. **Phone debugging.** Add a DebugConsole to the shell. It loads Eruda from a CDN only when the URL has `?debug=1`.
-10. **Phone tests.**
-    - Install @playwright/test.
-    - `playwright.config.ts` has two projects: "iphone" (devices["iPhone 15"], WebKit) and "pixel" (the newest Pixel in Playwright's device list, Chromium). Its webServer runs `npm run dev` on port 3000 and reuses an existing server.
-    - Add `tests/smoke.spec.ts`. It checks that home loads, the bottom tab bar is visible, there are no console errors, and /me shows a user id.
-    - Run `npx playwright install chromium webkit`.
-    - Add `scripts/shot.mjs` so that `npm run shot -- /route` saves `shots/<route>.png` at 390×844. If nothing is listening on port 3000, it starts the dev server first.
-11. **Scripts.** Add these to `package.json`:
-    - `typecheck` (`tsc --noEmit`)
-    - `lint`
-    - `build`
-    - `check`: typecheck, lint and build in sequence, stopping at the first failure
-    - `test:phone`
-    - `shot`
-    - `icons`
-12. **README.md** at the repo root: what this is (a placeholder for now), how to run it, the env var names (no values), and the commands.
-13. **Verify and push.** Run `npm run check` and `npm run test:phone`, and fix anything that fails. Push main.
+2. **Tools.**
+   - Set the user environment variables `JAVA_HOME` (Android Studio's `jbr` folder) and `ANDROID_HOME` (the SDK folder), and set them in your own shells too.
+   - The desktop app may not see new environment variables until it restarts. So also add `org.gradle.java.home=C:/Program Files/Android/Android Studio/jbr` to `%USERPROFILE%\.gradle\gradle.properties`, keeping anything already there. Every Gradle run on this laptop then compiles with Java 21, whatever the shell has.
+   - Add `sdk.dir` to `local.properties`, keeping the lines already there.
+   - Install scrcpy (`winget install --id Genymobile.scrcpy -e`) and Maestro (its current Windows install steps). If an install is blocked, give the owner the commands and carry on.
+3. **Android project.** Create it by hand; don't use Android Studio's wizard.
+   - The Gradle wrapper, at the Gradle version the chosen AGP needs. Generate it with a Gradle from `%USERPROFILE%\.gradle\wrapper\dists`, or download one.
+   - `settings.gradle.kts`, the root `build.gradle.kts`, and `gradle.properties` with `org.gradle.jvmargs=-Xmx3g`, parallel builds and the build cache on.
+   - `gradle/libs.versions.toml` with every library named in stack.md, plus JUnit 4, kotlinx-coroutines-test, Robolectric and Roborazzi for tests.
+   - `app/build.gradle.kts`:
+     - namespace and applicationId `com.nushhack26.app`; minSdk 26; compileSdk and targetSdk the newest stable platform installed; Java and Kotlin target 17; Compose on; KSP for Room; the kotlinx.serialization plugin
+     - debug builds: `applicationIdSuffix = ".debug"`, and the app's name ends in "dev"
+     - release builds: no minify; `versionCode` from `-PversionCode` (default 1), and `versionName` "r" plus that number
+     - generate `app/hack.keystore` with the JBR's `keytool`, sign both build types with it, and commit it
+     - `BuildConfig` fields `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`, read from `local.properties`, else from environment variables, else empty
+     - `testOptions.unitTests.isIncludeAndroidResources = true`
+   - A root task `quickCheck` that depends on `:app:assembleDebug` and `:app:testDebugUnitTest`.
+   - Add to `.gitignore` anything Android Studio or Gradle generates that isn't there yet.
+   - A placeholder `MainActivity` showing "Hello". Run `.\gradlew.bat quickCheck` until it passes, then **push**, and tell the owner "Ready for Devin setup". Keep going.
+4. **App shell** (Compose, Material 3), following "Where code goes" in stack.md:
+   - `MainActivity` draws edge to edge. The manifest locks it to portrait.
+   - `ui/theme/`: a light theme with its colours, type and shapes in one place, so the design can be swapped in later.
+   - A Scaffold with a top app bar (a title plus an optional action) and a bottom navigation bar with three placeholder tabs: Home, Tasks and Me. Typed routes in `Routes.kt`, wired in `AppNavHost.kt`, with a placeholder screen each.
+   - `ui/components/`: `SyncStatusBar` (an offline banner, the number of changes waiting and the last sync time), `EmptyState`, `LoadingState` and `ErrorState`.
+5. **Offline and sync foundations,** following "Offline and sync rules" in stack.md. The real tables come in the plan job and the real sync engine in the sync card; this step builds what every idea needs.
+   - `AppDatabase` (version 1, destructive migration) with two entities and their DAOs:
+     - `outbox`: op id, table name, record id, kind (insert, update or delete), JSON payload, base version, created at, attempts, last error
+     - `sync_state`: key and value
+   - `NetworkMonitor`: a Flow of "has a working internet connection", from ConnectivityManager callbacks.
+   - `SyncWorker` (a CoroutineWorker) and `SyncScheduler`: unique work, a connected-network constraint, exponential backoff, a 15-minute periodic run, and `syncNow()`. For now the worker only saves the time of its last run in `sync_state`.
+   - `SyncStatus`: a Flow combining the network, the outbox count, the last sync time and the last error. `SyncStatusBar` shows it.
+   - `App` and `AppContainer` wire it all together and schedule sync at start-up.
+6. **Supabase.**
+   - Create the supabase-kt client (Auth and Postgrest; add Storage and Realtime only when the spec needs them) with a Ktor engine in `data/remote/`, from the `BuildConfig` fields. If they're empty, skip it and show "Server not configured" on Me.
+   - Sign in anonymously once, when online with no session. The session is stored on the phone, so the app opens offline later. Me shows the first 8 characters of the user id, or "Will sign in when online".
+7. **Debug screen.** Tapping the version number on Me 5 times opens it. It shows the build version, the user id, the outbox entries, the last sync time and error, and buttons for "Sync now" and "Clear local data". Q uses it in bug reports.
+8. **Server database.** Create an empty `supabase/migrations/` folder and an empty `supabase/seed.sql`. The real tables come in the plan job.
+9. **Tests.**
+   - A Robolectric test with an in-memory Room database: an outbox entry can be saved and read back.
+   - Roborazzi screenshot tests in `screenshots/` for Home and Me, on a Pixel-sized device. If Roborazzi won't work with the chosen versions within 15 minutes, use Paparazzi instead and update the Commands section of stack.md.
+   - `scripts/emulator.sh` (bash, for Git Bash here and Linux on Devin): if `adb devices` shows no emulator, start the first AVD (or `$AVD`) in the background, wait for `sys.boot_completed`, and print the serial.
+   - Maestro flows that default to the debug app id:
+     - `.maestro/smoke.yaml`: the app opens, the tab bar shows, and Me shows a user id or "Will sign in when online"
+     - `.maestro/offline.yaml`: with airplane mode on, the offline banner shows; with it off again, the banner goes
+10. **README.md** at the repo root: what this is (a placeholder for now), how to build and install, the config names (no values), and the commands.
+11. **Verify and publish.**
+    - Run `quickCheck`, record the screenshots, and look at them.
+    - Start the emulator, run `installDebug`, then both Maestro flows. Fix anything that fails.
+    - Push main, then publish release `r01` (see "Releases").
+    - Add the two teammates from Fill-ins as collaborators with push access: `gh api -X PUT repos/allenleejy/nushhack26/collaborators/USERNAME -f permission=push`.
 
 Finish with a short report:
 - what's done
 - anything the owner must do by hand
 - anything you skipped
 
-Then ask for the live URL and write it into Fill-ins. Finally, tell the owner to start a fresh Claude Code session in this folder, so the helper agents and CLAUDE.md load.
+Then tell the owner to start a fresh Claude Code session in this folder, so the helper agents and CLAUDE.md load.
 
 ### Plan (after the spec · Opus 5.5 · high)
 
 The owner pastes the spec. Save it as `docs/spec.md`. The Claude Design export should be in `design/`; if it isn't there yet, skip step 2 until the owner says "design is in".
 
 1. Read the spec. Use `scout` to summarize `design/` (screens, colors, fonts, components) in 15 lines.
-2. **Design tokens, 15 minutes at most.**
-   - Map the design's colors, fonts, radius and spacing onto the CSS variables in globals.css.
-   - Set the real app name in the manifest and the TopBar.
-   - Restyle the TopBar and the BottomTabBar to match, and rename the placeholder tabs to the spec's main screens.
-3. **Schema v1, as one migration.** It includes:
-   - every table in the spec, and every column the build plan needs, with types, keys, foreign keys and indexes for the obvious queries
-   - RLS on every table, with policies matching the spec. Visitors are anonymous authenticated users; use `auth.uid()`.
-   - realtime for the tables that need it: `alter publication supabase_realtime add table ...`
-   - storage buckets and their policies, if the spec needs uploads
+2. **Design, 15 minutes at most.**
+   - Map the design's colours, fonts, shapes and spacing onto `ui/theme/`.
+   - Set the real app name and a simple launcher icon (an adaptive icon with a letter mark).
+   - Restyle the top bar and the bottom bar to match, and rename the placeholder tabs to the spec's main screens.
+3. **Sync protocol, in `docs/sync.md`.** It states:
+   - for every table, whether it's append-only or editable, and for each editable table its conflict rule from the spec
+   - the push and pull calls and their payloads
+   - what the phone does with each result: applied, conflict or rejected
+   - how conflicts appear to the officer and how they're resolved
+4. **Server schema v1, as one migration.** It includes:
+   - every table in the spec, with phone-made UUID keys, `version`, `server_seq` (from one shared sequence, set by a trigger on every insert and update), `deleted_at`, `performed_at`, `received_at` and `created_by` (`auth.uid()`), plus foreign keys and indexes for the obvious queries
+   - RLS on every table, with policies matching the spec
+   - an `applied_ops` table, and the functions `sync_push(ops jsonb)` and `sync_pull(since bigint)` from `docs/sync.md`. `sync_push` applies a batch in one transaction, skips ops it has already applied, and checks the base version on edits.
+   - storage buckets and their policies, if the spec needs photos or files
 
-   Apply it with the Supabase MCP and regenerate the types. Write `supabase/seed.sql` with the spec's demo data, and run it with the MCP.
-4. **AI, only if the spec has AI features.** If it has none, skip this step. Otherwise, add the small helper described under "If the app uses AI" in stack.md, with a canned answer for each feature, and ask the owner to add the Gemini key to `.env.local` and Vercel.
-5. **Cards.** Write one file per card in `cards/`, from `cards/TEMPLATE.md`, named `NN-slug.md` in build order. Each card states:
+   Apply it with the Supabase MCP. Try the functions there: an op pushed twice is applied once, a stale edit comes back as a conflict, and a pull from 0 returns everything. Then write `supabase/seed.sql` with the spec's demo data, and run it with the MCP.
+5. **Shared files, all at once** (see "Shared files" in stack.md):
+   - every dependency and permission the cards need
+   - a Room entity and DAO for every server table, with a "not synced yet" mark per record, and the matching `@Serializable` server classes
+   - one repository per feature in `data/repo/`, created in `AppContainer`, each with a `save` that writes the record and its outbox entry in one transaction. Cards add their own queries to their feature's repository.
+   - every screen in `Routes.kt` and `AppNavHost.kt`, each pointing at a placeholder `<Feature>Screen` in its own package
+6. **Sync tests first.** In `app/src/test/.../sync/`, write unit tests for the rules in `docs/sync.md`, run against a fake server that follows the same rules as `sync_push`. Cover at least:
+   - a record created offline, then synced
+   - a retry after a dropped connection, with no duplicates
+   - two phones adding records to the same item: both are kept
+   - two phones editing the same field: a conflict, and nothing lost
+   - an edit to a record that was deleted
+   - a phone whose clock is wrong
+
+   Mark them `@Ignore("card NN")` so `quickCheck` still passes. The sync card removes the `@Ignore`.
+7. **AI, only if the spec has AI features.** If it has none, skip this step. Otherwise, write one Supabase Edge Function as described under "If the app uses AI" in stack.md, with a canned answer for each feature, and ask the owner to add the Gemini key as a function secret. If the Supabase MCP has no function tools, ask the owner to re-add it with `functions` in its `features` list.
+8. **Cards.** Write one file per card in `cards/`, from `cards/TEMPLATE.md`, named `NN-slug.md` in build order. Each card states:
    - its wave and Devin mode (Lite, Normal or Fusion)
-   - the files it owns, with no overlap within a wave
+   - the files it owns, with no overlap within a wave and no shared files
    - what to build
-   - acceptance criteria a phone tester can check, and test steps
+   - acceptance criteria a phone tester can check, including what happens offline, and test steps
    - the data it uses
 
-   Wave 1 is the demo path end to end, in 4–6 cards.
-6. Run `npm run check`, commit, and push main once.
-7. Reply with the wave 1 cards and their modes. Then give the Devin line for "coordinate wave 1", plus a "build card" line for each Fusion card (see "Lines for Devin").
+   Wave 1 is the demo path end to end, in 4–6 cards. One wave-1 card is the **sync engine** (Fusion): it fills in `sync/` so that the sync tests pass, and shows conflicts. Every other card only uses the repositories.
+9. Run `quickCheck`, commit, and push main once.
+10. Reply with the wave 1 cards and their modes. Then give the Devin line for "coordinate wave 1", plus a "build card" line for each Fusion card (see "Lines for Devin").
 
 ### Merge round (every 45–60 minutes · Opus 5.5 · medium)
 
 1. List the open pull requests: `gh pr list --state open --json number,title,headRefName,isDraft`. Skip drafts.
-2. Run `reviewer` on each ready pull request, all in parallel, up to 4 at a time.
+2. Review each ready pull request, all in parallel, up to 4 at a time:
+   - `reviewer` if it touches `sync/`, `data/`, `supabase/` or a shared file
+   - `ui-reviewer` for the rest. If it answers `NEEDS FULL REVIEW`, run `reviewer` instead.
 3. Take the pull requests marked MERGE or MERGE AFTER FIXES, in card order. For MERGE AFTER FIXES, fix the issues yourself if that takes under about 5 minutes. For each one:
    - run `git fetch origin`, then `git merge --no-ff origin/<branch>`
-   - resolve conflicts so both features keep working
-   - run `npm run check`
-4. For every pull request you skip:
+   - resolve conflicts so both features keep working. In shared files, keep both sides' additions.
+   - run `quickCheck` after any merge that had conflicts
+4. Run `quickCheck` once more after the last merge.
+5. For every pull request you skip:
    - post the reviewer's must-fix list as a comment, with `gh pr comment`
    - give the Devin line to "fix the review comments on <PR link>"
-5. If the merged pull requests added migrations, apply them in filename order with the Supabase MCP. Regenerate the types and commit.
-6. Push main once.
-7. Print a "What to test" list for Q: 1–3 phone checks per merged card, with the live URL.
+6. If the merged pull requests added migrations, apply them in filename order with the Supabase MCP. If they changed Room entities, bump the database version. Commit.
+7. Push main once, then publish the round's release (see "Releases").
+8. While Q tests, run `phone-tester` with the Maestro flows on the emulator.
+9. Print a "What to test" list for Q:
+   - the release name
+   - 1–3 phone checks per merged card
+   - the offline check: sync, airplane mode on, run the demo path, airplane mode off, and check that everything synced with nothing doubled
 
 Report merged and skipped pull requests, with the reason for each skip, in one short table.
 
@@ -180,41 +227,46 @@ Report merged and skipped pull requests, with the reason for each skip, in one s
 2. Sort them:
    - **Quick bugs** take under about 15 minutes and stay in one area. Run `fixer` subagents in parallel: up to 4, one bug each, with no two touching the same files.
    - **Big bugs** become new cards in `cards/`, with their Devin lines.
-3. Merge the fixer branches locally with `git merge --no-ff`. Run `npm run check`, fix whatever breaks, and push main once. The new cards go out in the same push.
-4. Close each fixed issue: `gh issue close <n> -c "Fixed in <short sha>"`.
+3. Merge the fixer branches locally with `git merge --no-ff`. Run `quickCheck`, fix whatever breaks, push main once, and publish a release. The new cards go out in the same push.
+4. Close each fixed issue: `gh issue close <n> -c "Fixed in <short sha>, release rNN"`.
 
 Report: fixed, carded, left.
 
 ### Overnight wave (about 01:30 · Opus 5.5 · medium)
 
 Write 4–6 polish cards. Avoid files that open pull requests already touch. Good candidates:
-- empty, loading and error states
+- empty, loading, error and offline states
 - copy and microcopy
 - richer seed data
-- accessibility basics
+- accessibility basics: content descriptions, 48 dp touch targets, 1.3× font size
 - smoother transitions
-- a share button or QR code for the demo
+- an audit log or sync history screen, if the demo doesn't have one yet
 
-Push them, which is one deploy. Then give the Devin line "coordinate the overnight wave, all PRs ready by 05:00:" followed by the cards.
+Push them. Then give the Devin line "coordinate the overnight wave, all PRs ready by 05:00:" followed by the cards.
 
 ### Freeze (S−2h · Opus 5.5 · medium)
 
 From now on, only fix things on the demo path (`docs/spec.md`, section 2).
 
-1. Run `phone-tester` through the demo path on the live URL, at iPhone and Pixel sizes. Fix every P1.
-2. **Demo data:** make the database look exactly as the demo needs. Re-run `supabase/seed.sql`, or write a cleanup migration. Never drop tables.
-3. **Only if the demo uses AI:** run each AI step of the demo once on the live site so its result is saved, and check that the canned fallback looks fine.
-4. **Failure check:** look at what the UI shows for a brand-new visitor, with no network, and at 375px wide. Fix anything embarrassing.
-5. Hide dev-only routes from the navigation, and check the manifest name, the icons and the theme color.
-6. Run `npm run check` and push main once.
-7. Give the owner a 10-line presenter checklist: what to open, in what order, and what to do if something stalls.
+1. Run `phone-tester` through the demo path on the emulator and on a USB phone. Fix every P1.
+2. **Demo data:** make the server database look exactly as the demo needs. Re-run `supabase/seed.sql`, or write a cleanup migration. Never drop tables. Then on each demo phone: sync, clear local data from the Debug screen, and sync again.
+3. **Only if the demo uses AI:** run each AI step of the demo once, online, and check that the canned fallback looks fine offline.
+4. **Failure check.** Try each of these, and fix anything embarrassing:
+   - the first launch with no network
+   - airplane mode switched on halfway through the demo path
+   - a phone coming back online with 20 or more changes waiting
+   - the two phones editing the same record offline
+   - 360 dp wide and 1.3× font size
+5. Check the app name, icon and colours. The Debug screen stays hidden behind its 5 taps.
+6. Run `quickCheck`, push main once, publish the final release, and install it on both demo phones.
+7. Give the owner a 10-line presenter checklist: which phone is which, how to mirror them (`scrcpy -s <serial>`), what to open in what order, when to switch airplane mode, and what to do if something stalls.
 
 ### New card, urgent fix, status
 
 - **New card.** Write the card to `cards/` from the template and choose a Devin mode. Push it with the next merge round, or right away if it's urgent. Then give its Devin line.
-- **Urgent fix.** Fix it directly on main, run `npm run check`, and push once.
+- **Urgent fix.** Fix it directly on main, run `quickCheck`, push once, and publish a release.
 - **Status.** Report, in ten lines at most:
   - the open pull requests
   - the open P1 bugs
   - what's left of the demo path
-  - deploys in the last 24 hours, counted from `gh api repos/allenleejy/nushhack26/deployments` if Vercel reports them there
+  - the latest release and what's in it (`gh release list -L 3`)

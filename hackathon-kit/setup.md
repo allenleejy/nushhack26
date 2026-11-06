@@ -7,13 +7,28 @@ Every step says where to click or what to type. Where a menu label may look slig
 - **Account B** is the build account (Claude Code). Use the account the Claude desktop app is signed into. Email: ________
 - **P** is the teammate on product and pitch; **Q** is the teammate on testing and data.
 
-**Important:** your user folder `C:\Users\leeju` is itself a git repository (it holds your DigiGallery history). Anything created inside it becomes part of that repository, so the hackathon project lives in `C:\hack`.
+**Where the project lives:** `C:\Users\leeju\Desktop\nushhack26`, which has its own git repository (`allenleejy/nushhack26` on GitHub). Your user folder `C:\Users\leeju` is also a git repository (it holds your DigiGallery history), but git uses the closest one, so work inside `nushhack26` stays in `nushhack26`.
 
 **When to do what**
+- **Part 0, now:** the switch to an Android app. Do this before the kickoff.
 - **Part 1, Thursday (about 30 minutes):** the Claude accounts, the claude.ai project and the timers.
-- **Part 2, Friday morning (about 60 minutes, done by 13:45):** Supabase, Vercel, Devin and the rest of the technical setup.
-- **Part 3, Friday 14:00:** the kickoff.
+- **Part 2, Friday morning (about 45 minutes):** Supabase, Devin, phones and the rest of the technical setup.
+- **Part 3, the kickoff.**
 - **Part 4, before you sleep (about 5 minutes):** re-arm the timers.
+
+---
+
+## Part 0: Switching to an Android app (Fri 6 Nov, about 15 minutes)
+
+On Friday afternoon we switched from a web app to a native Android app. Parts 1 to 3 below are updated for it. If you did Parts 1 and 2 before the switch, do these:
+
+1. **Update the design account's files.** In the `Claude A` window, open the **Hackathon** project. In its knowledge panel, delete the old kit files, then upload all seven `.md` files from `C:\Users\leeju\Desktop\nushhack26\hackathon-kit` (not the `templates` folder). If the design account already has a chat going, tell it: "We're building a native Android app now. Re-read role-design.md and playbook.md from the project files."
+2. **Supabase keys.** Do Part 2, step 1, items 6 and 7 if you haven't: you need the project URL and the publishable key. The kickoff reads them from `local.properties` (Part 3, step 1).
+3. **Devin.** Do Part 2, step 2, item 3: turn on Desktop mode.
+4. **Phones.** Do Part 2, step 3: USB debugging on both Android phones.
+5. **Skip Vercel.** We no longer need it. If you already imported the repo there, delete that Vercel project (**Settings → Delete Project**).
+
+Then go to Part 3.
 
 ---
 
@@ -49,10 +64,10 @@ In the `Claude A` window:
    ```
 3. Upload the kit:
    1. In the project's knowledge panel, click **+** (or **Add content**), then **Upload from device**.
-   2. Open `C:\Users\leeju\Desktop\nhackprep\hackathon-kit`.
+   2. Open `C:\Users\leeju\Desktop\nushhack26\hackathon-kit`.
    3. Select all seven `.md` files at the top level (not the `templates` folder) and upload them.
 
-**Already made the project before Thursday evening?** The kit changed on Thursday 5 Nov. Delete the old files from the project's knowledge panel and upload all seven again.
+**Uploaded the kit before Friday afternoon?** It changed for the Android switch. See Part 0.
 
 ### 4. Timers that open each 5-hour window on Friday (10 min)
 
@@ -82,9 +97,9 @@ Send `README.md` and `playbook.md` to P and Q, so they can read them tonight.
 
 ---
 
-## Part 2: Friday morning (about 60 minutes, done by 13:45)
+## Part 2: Friday morning (about 45 minutes)
 
-**No Claude messages before the timers.** Send nothing on Account A before 11:05, and nothing on Account B before 13:35. That includes the Claude desktop app, which is signed in to Account B. An early message starts that account's window early and breaks the stagger. Steps 1–6 don't use Claude. If you need Claude's help in the morning, use Account A after 11:05.
+**No Claude messages before the timers.** Send nothing on Account A before 11:05, and nothing on Account B before 13:35. That includes the Claude desktop app, which is signed in to Account B. An early message starts that account's window early and breaks the stagger. Steps 1–4 don't use Claude. If you need Claude's help in the morning, use Account A after 11:05.
 
 ### 1. Supabase (15 min)
 
@@ -101,68 +116,47 @@ Send `README.md` and `playbook.md` to P and Q, so they can read them tonight.
    - open the **Email** provider and turn off **Confirm email**
    - save
 5. Go to **Authentication → Rate Limits**, raise the anonymous sign-in limit from 30 to **300** per hour, and save. Everyone on the venue Wi-Fi shares one IP address.
-6. Click **Connect** at the top of the project page, then **App Frameworks → Next.js**. Copy the env lines it shows (the project URL and the publishable key) into your password manager.
-7. Go to **Project Settings → API Keys** and copy the **secret** key (it starts with `sb_secret_`) into the password manager. It's server-only: never give it to Devin.
+6. Click **Connect** at the top of the project page. Copy the **project URL** (`https://xxxx.supabase.co`) and the **publishable key** (it starts with `sb_publishable_`; older projects call it the anon key) into your password manager.
+7. Go to **Project Settings → API Keys** and copy the **secret** key (it starts with `sb_secret_`) into the password manager. It never goes into the app, the repo or Devin.
 8. Note the **project ref**: the `xxxx` in `https://xxxx.supabase.co`. ________
 
-### 2. Vercel (5 min)
+### 2. Devin (5 min)
 
-1. Go to https://vercel.com/signup and choose **Hobby**, then **Continue with GitHub** (as `allenleejy`).
-2. If your account settings show a team-wide **Deployment Protection** default, set it to off (None).
+1. Go to **Settings → Connections → GitHub** and click **Connect** or **Configure**. On GitHub's page, set **Repository access** to **All repositories** and save.
+2. In **Settings → Preferences**, make sure **Auto-approve child sessions** is **on**.
+3. In your organisation's settings, turn on **Desktop mode**. Devin needs it to see and tap the Android emulator.
+4. Find where Devin shows your usage and note when the daily allowance refreshes: ________
 
-### 3. Gemini key (1 min)
+### 3. Phones (10 min)
+
+You need two Android phones for the demo (the laptop's emulator can stand in for the second), plus USB cables, chargers and a phone hotspot in case the venue Wi-Fi fails. On each phone:
+
+1. **Developer options:** open **Settings → About phone** and tap **Build number** 7 times. On some phones it's under **Software information**.
+2. **USB debugging:** open **Settings → System → Developer options** (or search Settings for "Developer options") and turn on **USB debugging**.
+3. Plug the phone into the laptop and tap **Allow** on the "Allow USB debugging?" prompt. Tick **Always allow from this computer** first.
+4. **Installing APKs:** the first time you open a downloaded APK, the phone asks to allow installs from that app (Chrome or Files). Allow it.
+5. To download releases on the phone, sign in to GitHub in its browser. (The repo is private.)
+
+### 4. Gemini key (1 min)
 
 Make sure your Gemini API key is in your password manager. AI is optional for this app: the build account asks for the key only if the chosen idea has an AI feature. You don't need any other AI accounts.
 
-### 4. Devin (5 min)
+### 5. Fill in the blanks (2 min)
 
-1. Go to **Settings → Connections → GitHub** and click **Connect** or **Configure**. On GitHub's page, set **Repository access** to **All repositories** and save. Devin can then see the repo you create at the kickoff straight away.
-2. In **Settings → Preferences**, make sure **Auto-approve child sessions** is **on**.
-3. Find where Devin shows your usage and note when the daily allowance refreshes: ________
-
-Devin needs no other setup. Each session starts with a line that tells it to read the kit.
-
-### 5. Fill in the blanks and check devices (5 min)
-
-1. Open the build account's brief:
-   ```powershell
-   notepad C:\Users\leeju\Desktop\nhackprep\hackathon-kit\role-build.md
-   ```
-   Under **Fill-ins**, enter both teammates' GitHub usernames and the submission time if you know it. Save.
-2. Have at least one iPhone and one Android phone, chargers, and a phone hotspot in case the venue Wi-Fi fails.
-
-### 6. Optional 20-minute test (recommended)
-
-This proves the deploy path works before it matters.
-
+Open the build account's brief:
 ```powershell
-New-Item -ItemType Directory -Force C:\hack-test | Out-Null
-Set-Location C:\hack-test
-npx create-next-app@latest hello --yes
-Set-Location hello
-gh repo create hello-check --private --source . --remote origin --push
+notepad C:\Users\leeju\Desktop\nushhack26\hackathon-kit\role-build.md
 ```
+Under **Fill-ins**, enter both teammates' GitHub usernames, the Supabase project ref, and the submission time if you know it. Save.
 
-1. **Import:** at https://vercel.com/new, import `hello-check`, then click **Deploy**.
-2. **Turn off protection:** in the project, go to **Settings → Deployment Protection**, turn **Vercel Authentication** off, and save.
-3. **Test a teammate's commit:**
-   - On GitHub, go to **Settings → Collaborators → Add people** and add a teammate.
-   - Have them edit `README.md` on GitHub and commit to `main`.
-   - Vercel's **Deployments** tab should show a new deployment.
-4. **Test a Devin commit:** start a Devin session with: `Add the line "hello from devin" to README.md in allenleejy/hello-check and push it to main.` It should also deploy.
-5. **Test on a phone:** open the production URL (shown under **Domains**) on the iPhone, then tap **Share → Add to Home Screen**. It should open full screen.
-6. **Clean up:**
-   - Vercel: project **Settings → Delete Project**.
-   - GitHub: repo **Settings**, then **Danger Zone → Delete this repository**.
-
-### 7. Check that the timers ran
+### 6. Check that the timers ran
 
 1. Just after 11:05, open https://claude.ai/settings/usage in the `Claude A` window. **Current session** should show a reset in about 5 hours (about 16:05).
 2. Just after 13:35, do the same in your normal profile for Account B. It should reset at about 18:35.
 
 If an account shows no current session, its timer didn't run. Open https://claude.ai in that profile, start a new chat, and send `OK`. That starts the window by hand.
 
-### 8. Connect Claude Code to Supabase (5 min, after 13:35)
+### 7. Connect Claude Code to Supabase (5 min, after 13:35)
 
 This starts Claude Code with Account B, so wait until its timer has run.
 
@@ -183,39 +177,31 @@ If it asks you to log in, choose your Claude subscription and sign in as **Accou
 2. Type `/mcp` again; supabase should show as connected.
 3. Type `/exit`.
 
-### 9. Last checks before 13:45
+### 8. Last checks
 
 1. Make sure you'll be able to copy the problem statement and judging criteria as text.
 2. Charge everything.
 
 ---
 
-## Part 3: Friday 14:00 kickoff (about 10 minutes of your time)
+## Part 3: The kickoff (about 10 minutes of your time)
 
-### Step 1: Create the project and copy in the kit (PowerShell)
+### Step 1: Put the Supabase keys in `local.properties`
+
+In PowerShell:
 
 ```powershell
-New-Item -ItemType Directory -Force C:\hack | Out-Null
-Set-Location C:\hack
-npx create-next-app@latest hack-app --yes
-Set-Location hack-app
-Copy-Item -Path "C:\Users\leeju\Desktop\nhackprep\hackathon-kit" -Destination . -Recurse -Force
-notepad .env.local
+notepad C:\Users\leeju\Desktop\nushhack26\local.properties
 ```
 
-### Step 2: Fill in `.env.local`
-
-In Notepad, paste the block below, fill in the values from your password manager, and save.
+Notepad asks to create the file: click **Yes**. Paste the block below, fill in the values from your password manager, and save. The file is git-ignored, so the keys never reach GitHub.
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-SUPABASE_SECRET_KEY=
+SUPABASE_URL=
+SUPABASE_PUBLISHABLE_KEY=
 ```
 
-If Supabase's **Connect** panel named the key differently (for example `NEXT_PUBLIC_SUPABASE_ANON_KEY`), keep its name.
-
-### Step 3: Start the build account
+### Step 2: Start the build account
 
 1. Open `C:\Users\leeju\Desktop\nushhack26` in Claude Code, signed in as **Account B**.
 2. Choose **Opus 5.5** at **Medium** effort:
@@ -225,9 +211,9 @@ If Supabase's **Connect** panel named the key differently (for example `NEXT_PUB
    ```
    You are the build account. Read hackathon-kit/README.md, then start the kickoff.
    ```
-   This takes about 30–40 minutes.
+   This takes about 45–60 minutes. It may ask you to approve installing scrcpy and Maestro.
 
-### Step 4: Meanwhile, start the design account
+### Step 3: Meanwhile, start the design account
 
 In the `Claude A` window, start a new chat in the **Hackathon** project. Click the model name next to the send button, choose **Opus 5.5**, and set **Effort** to **High**. Then say:
 
@@ -239,41 +225,31 @@ Then paste both. P and Q join in.
 
 Keep High for the ideas and the spec. For the design brief, the pitch and rescopes, switch to **Medium** in the same menu.
 
-### Step 5: Import into Vercel
+### Step 4: Set up Devin
 
-Do this when the build account says "Ready for Vercel import".
-
-1. Go to https://vercel.com/new. Find `nushhack26` under **Import Git Repository** and click **Import**.
-2. Check that **Framework Preset** says Next.js.
-3. Open **Environment Variables** and paste this block into the first **Key** field. Vercel splits it into separate variables. Fill in the values.
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=
-   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-   SUPABASE_SECRET_KEY=
-   ```
-4. Click **Deploy**.
-5. Go to **Settings → Deployment Protection**, turn **Vercel Authentication** off, and save.
-6. Share the production URL (shown under **Domains**):
-   - Send it to the team chat. Q opens it on both phones.
-   - Tell the build account: `The live URL is <url>. Save it in Fill-ins.`
-
-### Step 6: Set up Devin
-
-Do this after the build account has pushed.
+Do this when the build account says "Ready for Devin setup".
 
 1. Start a new Devin session in **Normal** mode with:
    ```
    You are Devin on our hackathon team. Read hackathon-kit/README.md, hackathon-kit/role-devin.md and hackathon-kit/stack.md first. Then set up your environment for this repo: allenleejy/nushhack26.
    ```
-2. Approve the setup suggestion cards (the "blueprint").
+2. Approve the setup suggestion cards (the "blueprint"). They install the Android tools and an emulator.
 3. In the blueprint editor's **Secrets** tab, add:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (or the anon-key name you used)
+   - `SUPABASE_URL`
+   - `SUPABASE_PUBLISHABLE_KEY`
 
    **Don't** add the Supabase secret key.
-4. Let it build its snapshot.
+4. Let it build its snapshot. This takes about 5–15 minutes; you can watch it under **Settings → Environment → Snapshots**.
 
-### Step 7: Restart Claude Code once
+### Step 5: Install the first release on the phones
+
+When the build account publishes release `r01`, either:
+- plug each phone into the laptop and ask the build account to install it, or
+- on each phone, open https://github.com/allenleejy/nushhack26/releases, download the APK from the newest release, and open it.
+
+Q opens the app on both phones and checks that Me shows a user id.
+
+### Step 6: Restart Claude Code once
 
 When the kickoff finishes, start a fresh Claude Code session in `C:\Users\leeju\Desktop\nushhack26`. The helper agents and the project instructions load then. From now on, Claude Code knows it's the build account without being told.
 
@@ -299,9 +275,11 @@ For example, if Account A resets at 02:05, set 02:10. If Account B resets at 04:
 | Problem | What to do |
 |---|---|
 | A timer didn't run | Send `OK` in a new chat on that account. Its window starts then. |
-| A Vercel build fails | Open the deployment, then **Build Logs**, and copy the error into Claude Code. |
+| A Gradle build fails on the laptop | Copy the error into Claude Code. If it mentions Java 24 or "Unsupported class file", Gradle isn't using Android Studio's Java: ask the build account to check `org.gradle.java.home`. |
+| The laptop doesn't see a phone | Check `adb devices` in PowerShell. If it says "unauthorized", unlock the phone and tap **Allow**. Try another cable: some only charge. |
+| A phone won't install a new release ("App not installed") | Sync it, uninstall the app, then install the new APK. |
 | Supabase tools stop working in Claude Code | In PowerShell, run `claude`, type `/mcp`, choose **supabase**, then **Authenticate** again. Then start a fresh Claude Code session. |
 | Claude Code hits its usage limit | Switch it to the other account. See "The two Claude windows" in `playbook.md`. |
 | Devin can't see the repo | Go to **Settings → Connections → GitHub → Configure** and check the repo is included. |
-| Judges can't get in ("rate limit") | In Supabase, go to **Authentication → Rate Limits** and raise the limit. |
-| A changed environment variable doesn't show on the live site | Variables apply after one redeploy: open **Deployments**, then the latest deployment's **⋯** menu, then **Redeploy**. |
+| Devin's emulator won't start or is very slow | Fine: cards don't need it. Devin checks its work with builds, tests and screenshots. |
+| Phones can't sign in ("rate limit") | In Supabase, go to **Authentication → Rate Limits** and raise the limit. |

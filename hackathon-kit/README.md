@@ -2,6 +2,8 @@
 
 This folder holds everything our AI tools and our team need for the hackathon (Fri 6 Nov 14:00 to Sat 7 Nov 18:00: about 16–20 hours of building, then judging).
 
+We're building a **native Android app** (Kotlin and Jetpack Compose) that lets safety personnel keep completing security processes offline, and syncs their changes correctly when the network returns. The hackathon is sponsored by DSO, so correct sync, an audit trail and data security matter most.
+
 Give this same folder to every machine and tell it which role it plays. That's all the context it needs.
 
 ## If you're an AI reading this
@@ -25,8 +27,8 @@ Give this same folder to every machine and tell it which role it plays. That's a
 | Machine | Tool | Its job |
 |---|---|---|
 | **Design account** | Claude account A in claude.ai, plus Claude Design | Talks through the problem with the team, picks the idea, writes the spec, writes the Claude Design briefs, prepares the pitch. No code. |
-| **Build account** | Claude account B in Claude Code (folder `C:\Users\leeju\Desktop\nushhack26`) | Sets up the app at kickoff, turns the spec into a database and task cards, checks and merges Devin's work, fixes bugs, deploys |
-| **Devin** | Devin Max, cloud sessions | Builds the task cards in parallel, one pull request per card, including overnight |
+| **Build account** | Claude account B in Claude Code (folder `C:\Users\leeju\Desktop\nushhack26`) | Sets up the app at kickoff, turns the spec into a database, sync rules and task cards, checks and merges Devin's work, fixes bugs, and publishes one APK per round. It also runs the laptop's emulator and any phone plugged in by USB. |
+| **Devin** | Devin Max, cloud sessions | Builds the task cards in parallel, one pull request per card, including overnight. Each Devin has its own cloud machine with the Android tools. |
 
 How to start a session:
 - **Design account:** open a chat in the claude.ai **Hackathon** project and say: "You are the design account. Read your brief and work with me."
@@ -37,11 +39,11 @@ How to start a session:
 
 Devin is the team's builder, and it starts once there's a plan to build.
 
-1. **14:00–17:00: no Devin yet.** The design account works out the idea and the spec with the team. Meanwhile, the build account sets up the app, then turns the spec into a database and 4–6 task cards.
-2. **About 17:00: the first wave.** The build account gives you one line to paste into Devin. That Devin session starts one helper Devin per card. Each helper builds its card and opens a pull request, usually within 30–60 minutes. A hard card gets its own line instead: paste it into a separate Devin session set to Fusion mode.
+1. **14:00–17:00: no Devin yet.** The design account works out the idea and the spec with the team. Meanwhile, the build account sets up the Android app and its offline foundations, then turns the spec into a database, sync rules and 4–6 task cards.
+2. **About 17:00: the first wave.** The build account gives you one line to paste into Devin. That Devin session starts one helper Devin per card. Each helper builds its card and opens a pull request, usually within 30–60 minutes. The sync engine card, and any other hard card, gets its own line instead: paste it into a separate Devin session set to Fusion mode.
 3. **Every 45–60 minutes: a merge round.**
-   - The build account checks the pull requests, merges the good ones and updates the live link once.
-   - Q tests the live link on real phones.
+   - The build account checks the pull requests, merges the good ones and publishes one new APK.
+   - Q installs it on two Android phones and tests it, online and offline.
    - Small bugs go to the build account. Big ones become new cards for Devin's next wave.
 4. **Overnight:** Devin keeps building polish cards while you sleep.
 
@@ -52,10 +54,10 @@ In short: the design account decides **what** to build, the build account decide
 | File | Who reads it | What's in it |
 |---|---|---|
 | `README.md` | Everyone | This page |
-| `playbook.md` | Every machine, and you | How we work: the speed plan, subagents, which model for what, timeline, rules, bug reports, emergencies |
-| `stack.md` | Build account, Devin | Tech stack, folder layout, coding rules, environment variables, free-plan limits |
+| `playbook.md` | Every machine, and you | How we work: the speed plan, subagents, which model for what, timeline, rules, phone testing, bug reports, emergencies |
+| `stack.md` | Build account, Devin | Tech stack, commands, folder layout, shared files, offline and sync rules, coding rules, configuration, free-plan limits |
 | `role-design.md` | Design account | Its jobs, and how to do each one |
 | `role-build.md` | Build account | Its jobs, and how to do each one |
 | `role-devin.md` | Devin | Its jobs, and how to do each one |
-| `setup.md` | You | One-time setup: Thursday, Friday morning, the 14:00 kickoff |
-| `templates/` | Build account | Card and pull request templates, and the four Claude Code helper agents it installs at kickoff |
+| `setup.md` | You | One-time setup: Thursday, Friday morning, the kickoff |
+| `templates/` | Build account | Card and pull request templates, and the five Claude Code helper agents it installs at kickoff |
