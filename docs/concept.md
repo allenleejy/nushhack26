@@ -1,6 +1,6 @@
 # Concept: offline custody tokens
 
-6 Nov 2026. **Status:** concept, written before we choose the DSO or Singapore setting, so the items and roles here are deliberately generic. Updated with what authenticator-style codes add (5.8).
+6 Nov 2026. **Status:** concept, written before we choose the DSO or Singapore setting, so the items and roles here are deliberately generic. Updated with what authenticator-style codes add (5.8), the ways a handover can travel (5.9), the signing step (5.10), and more threats (6).
 Background research, with sources: `docs/research/brief.md` and the five track notes beside it.
 Tags where a claim matters: **fact** (primary source), **reported** (secondary source), **inference** (our reasoning), **general practice** (widely known, not sourced in our research).
 
@@ -67,6 +67,7 @@ Could this process run correctly with one book in one place? **No.** The item mo
 - the giver's phone time, and the receiver's phone time (both are only claims)
 - a **link to the previous record** (its hash), so the records form a chain
 - a sequence number for each phone
+- a one-time number and an expiry time for the offer, so a photographed or replayed offer can't be used later
 - **the giver's signature and the receiver's signature**
 
 That's a few hundred bytes, small enough for a single QR code (inference from QR capacity, which is roughly 2.9 KB at the largest size).
@@ -93,17 +94,17 @@ That's a few hundred bytes, small enough for a single QR code (inference from QR
 
 Example: store officer A gives E-104 to investigator B.
 
-1. **Offer.** A picks E-104 and B from the roster. A's phone signs an offer and shows it as a QR code. The QR carries the latest checkpoint plus every record since it, so B can see the history.
+1. **Offer.** A picks E-104 and B from the roster and confirms with a fingerprint or PIN. A's phone signs an offer and shows it as a QR code. The QR carries the latest checkpoint plus every record since it, so B can see the history. The offer names B, carries a one-time number, and expires after about 60 seconds.
 2. **B checks it, offline.** B's phone scans the offer and confirms:
    - the checkpoint is signed by the server
    - every later record is signed correctly and links to the one before
    - A really is the current holder according to those signatures
 3. **B ties it to the item.** B scans E-104's tag or seal. The phone checks that the number matches the item.
-4. **Acceptance.** B's phone signs the acceptance (offer plus seal number plus B's time) and shows it as a QR code. **Liability moves to B the moment B signs.**
-5. **A confirms.** A scans B's acceptance QR. Both phones now hold the complete record. A keeps it as a **receipt**, and B holds it as the **token**.
+4. **Acceptance.** B confirms with a fingerprint or PIN, and B's phone signs the acceptance (offer plus seal number plus B's time) and shows it as a QR code. **Liability moves to B the moment B signs.**
+5. **A confirms.** A scans B's acceptance QR. Both phones now hold the complete record. A keeps it as a **receipt**, and B holds it as the **token**. Both screens then show the same 6-digit match code, worked out from the record, and A and B check aloud that the codes match (5.10).
 6. Both phones put the record in their outbox, ready to sync.
 
-This needs no network and no radio, only two QR scans. **A physical handover is the one moment both phones are sure to be side by side**, so the token can always travel exactly the way the item does.
+With QR codes this needs no network and no radio, only two scans. Section 5.9 covers Bluetooth, Wi-Fi and NFC as alternatives. **A physical handover is the one moment both phones are sure to be side by side**, so the token can always travel exactly the way the item does.
 
 ### 4.3 If the handover is cut short
 
@@ -213,9 +214,42 @@ Step 1 is the same pattern our handover uses: scan a QR code once, then work off
 - Hand out each shared secret at enrolment, online, by scanning a QR code, as authenticator apps do.
 - A 6-digit code has a one-in-a-million chance of being guessed, and the supervisor's phone should limit the number of attempts.
 
+### 5.9 How the handover travels: light, radio or a tap
+
+The QR code is only the way the record gets from one phone to the other. **The security comes from the signatures inside it**, so the swap can use whichever way a site allows, and the same signed record travels each way. Think of a letter: the QR code is the envelope, and the signature is the seal on it. Anyone can photograph the envelope, but nobody can forge the seal without the key, which never leaves the giver's phone. Singapore already trusts QR codes for serious work in the same way: Singpass logins and the SGQR payment standard (general knowledge).
+
+The options on Android (general knowledge; check current documentation before building):
+
+| Method | How it works | Does it prove the two people are together? | Where it fits | Hackathon effort |
+|---|---|---|---|---|
+| **QR code** | One phone shows a code, the other's camera scans it | Mostly. The phones have to be within arm's length. | Sites that don't want radio signals. A QR code sends none, which matters where radio emissions are controlled. It does need a camera, and SAF high-security zones restrict camera phones (fact, 2013 fact sheet). | Low. **The hackathon build.** |
+| **Bluetooth or Wi-Fi (Google Nearby Connections)** | The phones find each other and connect directly over Bluetooth, Bluetooth Low Energy or a direct Wi-Fi link. No internet is needed, and the link is encrypted. | No. It works across a room, so the seal scan and the match code (5.10) show the people are together. | Most sites, as a "tap to hand over" convenience | Medium. Needs two real phones (the emulator can't do Bluetooth properly) and Bluetooth and nearby-device permissions. **Stretch goal.** |
+| **NFC tap, phone to phone** | One phone acts as a contactless card (host card emulation), and the other reads it | **Yes.** It only works within about 4 cm. | Sites that ban cameras. It feels like contactless payment. | Medium to high. Android removed its built-in phone-to-phone NFC sharing (Android Beam) in Android 10, so we'd write the card emulation ourselves. Testable only on real phones. **Next steps.** |
+
+**Pitch line:** *"The handover can travel by light, radio or a tap, whichever your site allows. It's the same signed record every way."*
+
+### 5.10 Making the handover visibly secure: the signing step
+
+A bare QR code looks casual. The handover screen should look and work like a careful signing step, and every part of it below has a real security purpose:
+
+1. **Who and what, up front.** A card shows the giver's and receiver's names and roles, the item, and the source and seal numbers. The QR code sits inside that card, never on its own.
+2. **A fingerprint signs.** The signing key is created so that it only works after a fingerprint or PIN (an Android Keystore key that requires the user to authenticate; general knowledge, check docs). The screen says *"Place your finger to sign this handover."* The person, not just the phone, agrees to each handover.
+3. **A 6-digit match code.** After the swap, both screens show the same code, for example `48 21 07`, worked out from the hash of the full signed record. The two people check aloud that the codes match. It's the same idea as matching the codes when pairing a Bluetooth device, or checking safety numbers in Signal. It proves both phones hold the identical record.
+4. **A countdown.** The offer shows "Valid for 0:58", so a photographed or relayed offer goes stale within a minute.
+5. **A verified state.** After signing, both screens show *"Signed by both · checked offline · 2 of 2 signatures valid"*, plus a short key fingerprint for anyone who wants to inspect it.
+
+**How to talk about it.** Never call it "foolproof": security people distrust that word on sight. Say this instead:
+
+> *"We don't claim nothing can go wrong. We claim nothing can go wrong silently, and when it does, the record shows exactly who did it."*
+
+**Attack it live.** The most convincing demo for a defence judge is the team trying to break its own system:
+- **A replayed QR:** scanning a photo of an earlier offer is refused, because it names a different receiver, has expired, and its one-time number is used up.
+- **A double handover:** at sync, the fork alert names who did it.
+- **Signing on someone else's phone:** the wrong fingerprint is refused, so nothing gets signed.
+
 ---
 
-## 6. Failure cases
+## 6. Failure cases and threats
 
 | Case | What happens |
 |---|---|
@@ -230,6 +264,12 @@ Step 1 is the same pattern our handover uses: scan a QR code once, then work off
 | A seal is broken or replaced | The custody check flags it for investigation |
 | A user's access was revoked while they were offline | The phone doesn't know yet. At sync, the server refuses records signed after the revocation and sets them aside for review (kit "Security extras"). |
 | The receiver refuses the item | No acceptance is signed, so the giver still holds it |
+| A photo of a handover QR on screen is replayed later | The offer names one receiver, one item and one previous record, carries a one-time number, and expires in about 60 seconds. Only the named receiver's key can accept it. A replayed acceptance is the same signed record, so the server just sees a harmless duplicate. |
+| Someone else signs on your phone, or a thief uses it | Signing needs a fingerprint or PIN every time (5.10). A lost phone is revoked, and its records are refused from its next sync. |
+| A fake phone pretends to be a team member | Every signature is checked against the roster of public keys saved at the last sync. An unknown key is rejected. |
+| Keys are pulled off a rooted phone | Keys are kept in secure hardware where the phone has it (Android StrongBox). In production, the server checks at enrolment that the key really is hardware-backed, using Android key attestation (general knowledge; check docs). |
+| A relay: someone streams the offer QR to a receiver who isn't there | The receiver must scan the item's seal, and the offer expires within seconds. An NFC tap (5.9) needs the phones within about 4 cm. |
+| Someone listens in on a Bluetooth or Wi-Fi handover | The records aren't secret; what matters is that nobody can change them, and the signatures guarantee that. Nearby Connections encrypts the link anyway. Sensitive details could also be encrypted to the receiver's public key. |
 
 ---
 
@@ -289,12 +329,16 @@ The five properties of "correct" sync (from `brief.md`):
 - the fork alert
 - the custody check
 - a supervisor's decision
+- the signing step (5.10): who-and-what card, fingerprint, match code, countdown
+- the live attacks (5.10): a replayed QR refused, a double handover named
 - stretch goal: the custody check over the radio (5.8)
+- stretch goal: handover over Bluetooth or Wi-Fi with Nearby Connections (5.9)
 
 **Out of scope:**
 - radio-based swapping (Bluetooth, local hotspot)
 - real hardware seals (printed QR codes stand in)
 - NFC tags that make a one-time code on every tap (5.8)
+- NFC phone-to-phone handover, and hardware key attestation (5.9, 6)
 - legal weight of digital signatures
 - multiple sites
 
@@ -302,7 +346,7 @@ The five properties of "correct" sync (from `brief.md`):
 1. Store officer A hands E-104 to investigator B. B scans the seal, then they swap two QR codes. B's phone shows *"You hold E-104"*, and A's shows a signed receipt.
 2. B hands E-104 to C in the field the same way. The store never saw it.
 3. Someone asks A where E-104 is. A shows B's signed receipt, and it's checked offline.
-4. A tampered phone tries to hand E-104 a second time from an old copy of the token.
+4. A tampered phone tries to hand E-104 a second time from an old copy of the token. Then someone scans a photo of an earlier offer QR, and it's refused: it has expired and names a different receiver.
 5. Phones reconnect. The server rebuilds A → B → C on the audit screen and raises a **red fork alert naming who did it**, backed by their own signature.
 6. The supervisor resolves it, and the decision joins the chain.
 
