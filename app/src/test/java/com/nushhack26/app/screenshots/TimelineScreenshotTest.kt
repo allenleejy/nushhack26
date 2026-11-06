@@ -101,7 +101,7 @@ class TimelineScreenshotTest {
                     TimelineNode.LocalFork(LOCAL_FORK),
                     TimelineNode.Fork(
                         listOf(
-                            listOf(entry("b", HandoverKind.TRANSFER, "Handed to Daniel Lim", "From Priya Nair", 30, sync = SyncMark.WAITING)),
+                            listOf(entry("b", HandoverKind.TRANSFER, "Handed to Daniel Lim", "From Priya Nair", 30, sync = SyncMark.WAITING).copy(keyWithdrawn = KeyWithdrawn(SAMPLE_NOW - 300_000, afterSigning = true))),
                             listOf(entry("c", HandoverKind.RETURN, "Returned to Store officer", "From Priya Nair", 20, sync = SyncMark.WAITING)),
                         ),
                     ),
@@ -145,7 +145,7 @@ class TimelineScreenshotTest {
                     listOf(
                         TimelineNode.Record(issue.copy(keyWithdrawn = KeyWithdrawn(SAMPLE_NOW - 300_000, afterSigning = true))),
                         TimelineNode.LocalFork(LOCAL_FORK),
-                        TimelineNode.Fork(listOf(listOf(transfer), listOf(entry("c", HandoverKind.TRANSFER, "Handed to Wei Ling", "From Priya Nair", 28)))),
+                        TimelineNode.Fork(listOf(listOf(transfer.copy(keyWithdrawn = KeyWithdrawn(SAMPLE_NOW - 300_000, afterSigning = true))), listOf(entry("c", HandoverKind.TRANSFER, "Handed to Wei Ling", "From Priya Nair", 28).copy(keyWithdrawn = KeyWithdrawn(SAMPLE_NOW - 300_000, afterSigning = false))))),
                     ),
                 ),
             )

@@ -430,7 +430,7 @@ class GiveViewModel(
             }
             val check = OfferChecker.checkAcceptance(code, offer, d.roster)
             if (!check.ok) {
-                val message = if (check.text.startsWith("Unknown signer")) check.text else "This isn't $name's acceptance of this offer."
+                val message = if (check.text.startsWith("Unknown signer") || check.text.contains("was withdrawn")) check.text else "This isn't $name's acceptance of this offer."
                 flowState.update { it.copy(scanError = message) }
                 return@launch
             }
@@ -492,7 +492,7 @@ class GiveViewModel(
             finishing = false
             val message = when {
                 check == null -> "Not a handover code."
-                check.text.startsWith("Unknown signer") -> check.text
+                check.text.startsWith("Unknown signer") || check.text.contains("was withdrawn") -> check.text
                 else -> "This isn't $name's acceptance of this offer."
             }
             flowState.update { if (viaTap) it.copy(tapError = message, tapped = false) else it.copy(relayError = message) }

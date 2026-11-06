@@ -26,10 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nushhack26.app.data.local.SyncMark
@@ -114,14 +111,9 @@ fun SigLine(sig: SigCheck, keyWithdrawn: KeyWithdrawn? = null) {
     }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(TenetDimens.space1)) {
         Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
-        Text(
-            buildAnnotatedString {
-                withStyle(SpanStyle(color = color)) { append(text) }
-                mark?.let { (words, tint) -> withStyle(SpanStyle(color = tint)) { append(" · " + words.replace(' ', '\u00A0')) } }
-            },
-            style = TenetType.recordLabel,
-        )
+        Text(text, style = TenetType.recordLabel, color = color)
     }
+    mark?.let { (words, tint) -> Text(words, style = TenetType.recordLabel, color = tint, modifier = Modifier.padding(start = 20.dp)) }
 }
 
 /** A fork only this phone knows about yet: a red label above the branches (docs/spec.md T). */
