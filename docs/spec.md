@@ -48,19 +48,19 @@
 1. **Sign-out, online (0:00–0:30).**
    - A (Siti): Store → **Issue** on C-12 → pick **Ravi Kumar** → due chip **+90 s** → **Sign** → fingerprint. A shows "Sent to Ravi's phone · waiting for Ravi to scan the seal and accept".
    - B (Ravi) is already showing the yellow banner: "Siti Aminah is handing you C-12". **Open** → the checklist turns green: signed by Siti, Siti holds C-12, made out to you, valid, not used before, authorised. **Scan the seal** → he scans the sticker → "Seal S-40117 matches C-12". The accept card says "This is sealed source IR-0457 (iridium-192). You're liable for it the moment you sign." → **Accept** → fingerprint.
-   - A moves to Done by itself. Both show "Signed by both" and the same match code, for example **48 21 07**. Siti and Ravi read it aloud. The presenter: "Online it's two fingerprints and the seal. Now watch what happens when the network goes."
+   - A moves to Done by itself. Both show the parcel label with the stamp landing: HANDED OVER on A, RECEIVED on B. The presenter: "Online it's two fingerprints and the seal, and both phones check both signatures. Now watch what happens when the network goes."
    - Wait until A's and B's sync bars show "All synced". **Airplane mode on: A, B and C.**
 2. **Shift change, offline (0:30–1:15).**
    - C (Wei Ming) picks up his phone. Its screen went off, so Tenet locked itself: "LOCKED · TAN WEI MING · R-2234". **Unlock** → fingerprint → it opens, still in airplane mode. The presenter: "No network and no login server. His fingerprint unlocks a key in the phone's secure chip, and the app checks that key's signature against his enrolment."
-   - B (Ravi): My custody → C-12 card → **Hand over**. The picker shows **Jun Lim greyed out: "Authorisation lapsed 3 Nov"**. The presenter: "Jun's authorisation lapsed on Tuesday, so even offline Ravi can't hand him a source." → **Tan Wei Ming** → **Sign** → fingerprint. B shows the offer card with "For Wei Ming only · single use · valid for 0:58".
-   - **The presenter invites a judge to photograph B's offer QR** with their own phone.
-   - C (Wei Ming): **Receive** → Ravi holds B to C (**tap**). C's checklist turns green with no network → scans the seal → accept card → fingerprint. B moves to Done by itself over the phone-to-phone link. Both show the same match code. The presenter: "No network, no codes: one tap and two fingerprints." C's home: "You hold C-12 · return by 14:31 · 1:02 left" (example times).
+   - B (Ravi): My custody → C-12 card → **Hand over**. The picker shows **Jun Lim greyed out: "Authorisation lapsed 3 Nov"**. The presenter: "Jun's authorisation lapsed on Tuesday, so even offline Ravi can't hand him a source." → **Tan Wei Ming** → **Sign** → fingerprint. B shows the pulsing tap target: "HOLD TO WEI MING'S PHONE" and "For Wei Ming only · single use · valid for 0:58".
+   - **The presenter invites a judge to photograph B's offer QR** with their own phone: B → **SHOW QR CODE INSTEAD**, the judge snaps it, then **USE TAP INSTEAD**.
+   - C (Wei Ming): **RECEIVE** tab → Ravi holds B to C (**tap**). Both screens punch, flood amber and buzz. C's checklist turns green with no network → scans the seal → accept card → fingerprint. B moves to Done by itself over the phone-to-phone link, and both stamps land. The presenter: "No network, no codes: one tap and two fingerprints." C's home: "You hold C-12 · return by 14:31 · 1:02 left" (example times).
    - B's home **still says "You hold C-12"**. The presenter: "Ravi's phone has been tampered with. It kept a copy of the token."
 3. **The cheat (1:15–1:40).**
-   - B (Ravi): C-12 → **Hand over** → **Siti Aminah (return to store)** → sign. A scans it: checklist green, because offline nobody can tell. Siti scans the **copied seal** → match → accept → fingerprint. B scans A's acceptance. A's Store shows C-12 "In store".
+   - B (Ravi): Kestrel → **Hand over** → **Siti Aminah (return to store)** → sign → tap B to A on A's **RECEIVE** tab: checklist green, because offline nobody can tell. Siti scans the **copied seal** → match → accept → fingerprint. B finishes by itself. A's Store shows Kestrel "In store".
    - The presenter: "Offline, nobody can tell. But Ravi has now signed two handovers of the same camera."
 4. **The replay (1:40–1:55).** By now the judge's photo is over a minute old.
-   - A (Siti): Store → **Receive return** → scans the judge's photo. Red screen: **"This is a copy. It can't be used."** ✗ Made out to Tan Wei Ming, not you · ✗ Expired 0:10 ago (example) · ✗ Ravi Kumar already handed C-12 to Siti Aminah at 14:31. This would be a second handover. · "Nothing was signed." The presenter: "Her phone also knows Ravi already handed this camera to her, so it would refuse even a fresh code."
+   - A (Siti): **RECEIVE** → **SCAN A QR CODE INSTEAD** → scans the judge's photo. Red screen: **"This is a copy. It can't be used."** ✗ Made out to Tan Wei Ming, not you · ✗ Expired 0:10 ago (example) · ✗ Ravi Kumar already handed C-12 to Siti Aminah at 14:31. This would be a second handover. · "Nothing was signed." The presenter: "Her phone also knows Ravi already handed this camera to her, so it would refuse even a fresh code."
 5. **Overdue (1:55–2:10).**
    - C (Wei Ming) alarms on its own with no network: red banner **"C-12 return overdue"**, sound, vibration and a notification.
    - D (Dr Tan) Alerts, amber card: "C-12 overdue · last holder the server knows: Ravi Kumar, signed 14:29 · newer handovers may not have synced."
@@ -100,10 +100,34 @@ Designed for a 412×915 dp Android phone, portrait. Times on screen are phone ti
 **Navigation by role** (three bottom tabs, as in `design/components/BottomNav`):
 - Not enrolled: Enrol, full screen, no tabs.
 - Enrolled but locked: Lock (L1), full screen over whatever was open, no tabs.
-- Store officer: **ITEMS** (the Store screen), **SCAN** (Receive, full screen), **OUTBOX**.
-- Radiographer: **CUSTODY** (My custody), **SCAN** (Receive, full screen), **OUTBOX**.
-- Radiation safety officer: **ITEMS** (the Store screen, read-only), **ALERTS** (where the app opens), **RECORDS** (the daily record).
-- **Me** opens from the menu icon at the left of the top app bar. Debug opens from Me.
+- Store officer: **ITEMS** (the Store screen), **RECEIVE**, **OUTBOX**.
+- Radiographer: **CUSTODY** (My custody), **RECEIVE**, **OUTBOX**.
+- Radiation safety officer: **ITEMS** (the Store screen, read-only), **ALERTS** (where the app opens), **DEVICES**.
+- The tabs sit side by side in a pager: swipe left and right, or tap the bar. The bar's amber cell slides with the swipe.
+- **RECEIVE** (icon `contactless`) is a tab with the bar while it waits for a tap. Once an offer arrives (R2 on), the bar hides, the swipe stops and the hazard band shows until DONE or close, which return to the first tab.
+- **Top app bar:** the Junction mark at the left on the tabs (the back arrow on pushed screens, a close icon in a handover), the title, then the `SyncChip` and a 36 dp square with the person's initials ("RK"), which opens **Me**. Debug opens from Me.
+
+**Motion** (`ui/theme/Motion.kt`). Nothing fades.
+- Tabs: the pager follows the finger; a tap on the bar scrolls in 280 ms, emphasized easing (0.2, 0, 0, 1).
+- A pushed screen slides in from the right in 260 ms while the one under it moves a quarter to the left; back slides it out to the right in 220 ms.
+- Steps inside Give and Receive slide left (forward) or right (back) in 220 ms.
+- Small things (chips, stepper, scanner brackets) take 150 ms.
+- With the phone's "Remove animations" on, everything jumps to its end state, but the haptics still fire.
+- This overrides `design/brand.md`'s 150–200 ms for whole screens, and the Receipt README's single 150 ms stamp: the stamp now falls (see Done below).
+
+**The tap moment** (`ui/components/TapPulse.kt`, `Flood.kt`), the same on both phones. Square, never round.
+- Waiting: a 160 dp amber square with the contactless icon breathes (1.00 to 1.04, 1400 ms) and sends out square rings (to 1.8×, 1400 ms). "HOLD TO WEI MING'S PHONE" / "Back to back, until both buzz."
+- Contact: a punch (spring to 1.18), a click, the rings turn to 45°, "LINKING…", then the amber floods the whole screen (380 ms), thuds, holds 100 ms and shrinks up into the hazard band (240 ms), revealing the next step.
+- Linked (the giver, waiting on the receiver): the same square in cyan, calmer: "LINKED" / "Wei Ming is scanning the seal and signing."
+- When tap can't work: a panel says why (NFC IS OFF, BLUETOOTH IS OFF, NEARBY DEVICES NOT ALLOWED, NO NFC ON THIS PHONE) with one button to fix it. The QR button stays below.
+
+**The scanner** (`ui/components/QrScanner.kt`) is an instrument: a bezel with a header ("SCANNER · SEAL", a status light, SEARCHING / LOCKED / REJECTED, the torch), amber corner brackets, a scan line sweeping every 1800 ms and a hazard band at its foot. A good code closes the brackets in cyan with a tick; a wrong one flashes them orange with a reject buzz.
+
+**Done: the parcel label** (`ui/components/ParcelLabel.kt`), on both phones at the end of every handover: warning tape top and bottom, the camera's name and code, an empty cell where the stamp lands, and FROM, TO, SEAL and RETURN BY cells. The stamp (RECEIVED / 13:02 / FROM RAVI on the receiver, HANDED OVER / 13:02 / TO WEI MING on the giver) falls from 2.2× in 260 ms, lands with a thud and sends a 6 dp ripple through the cells. Under the label: the sync line, then "VERIFY CODE 482 107 · same on both phones" in small muted type, then DONE. Nobody has to read the code aloud: both phones have already checked both signatures.
+
+**Camera names.** Each camera has a name people say (`items.name`: Kestrel for C-12, Osprey for C-07, Heron for C-15). In titles, the name leads and the codes follow with their words: "KESTREL", then "CAMERA C-12 · SOURCE IR-0457 · SEAL S-40117". In sentences: "Kestrel (C-12)". With no name, the code alone.
+
+**Dates** read DD.MM.YYYY everywhere ("valid to 30.06.2027", "lapsed 03.11.2026"). Times stay 24-hour HH:mm.
 
 Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `Receive`, `Timeline(itemId)`, `Alerts`, `Fork(alertId)`, `Outbox`, `Me`, `Debug`, `DailyRecord`, `ReportMissing(itemId)`. Enrol and Lock aren't routes: `AppScaffold` shows Enrol until the phone has an identity, and Lock over the app while it's locked.
 
@@ -134,7 +158,7 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
 
 ### E2 Me (`ui/me/`)
 - **Purpose:** who this phone is and how sync stands.
-- **Components:** name, role and staff number; the access card ("Authorised radiographer · valid to 30 Jun 2027 · access confirmed 14:02 · valid offline until Mon 14:02") with **LOCK NOW**; the key card ("Device key 3F:A9:12:7C · hardware-backed (TEE)"); the sync card (waiting count, last sync, last error, **Sync now**); the release version ("Release r07"), which opens Debug after 5 taps.
+- **Components:** the name, then one line with the role, staff number and authorisation ("RADIOGRAPHER · R-2210 · VALID TO 30.06.2027", or "· LAPSED 03.11.2026" in orange); the access card ("Access confirmed 14:02 · valid offline until Mon 14:02") with **LOCK NOW**; the key card ("Device key 3F:A9:12:7C · hardware-backed (TEE)"); the sync card (waiting count, last sync, last error, **Sync now**); the release version ("Release r07"), which opens Debug after 5 taps.
 - **Empty / loading / error:** "Server not configured" when there's no Supabase URL; "Will sign in when online"; the last sync error in red text.
 - **Waiting to sync:** the waiting count.
 
@@ -145,7 +169,7 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
   - one `ListRow` per waiting record, for example "HANDOVER · C-12 · RAVI → WEI MING · SIGNED 14:30" with a WAITING `SyncChip`, and its last error, if any, in `alert-text`
   - a **SYNC NOW** primary button
 - **Data:** `outbox` joined to the record it carries; `sync_state`.
-- **Empty:** "Nothing waiting. Every record on this phone has reached the server." with the last sync time.
+- **Empty:** "Every record has been synced." with the last sync time.
 - **Error:** the last sync error in words, for example "Can't reach the server. Records stay on this phone."
 
 ### E3 Debug (`ui/debug/`, hidden)
@@ -182,27 +206,29 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
 
 ### G Hand over (`ui/give/`, one route with steps)
 - **G1 Choose.** The camera (preselected), and the receiver from the roster. A store officer sees radiographers ("Issue to"). A radiographer sees "Hand to a colleague" (radiographers) and "Return to store" (store officers). On issue only, the due time chips **+90 s**, **+5 min**, **17:00**, **19:00**.
-  - **Authorisation:** receivers who may not take the camera (`sync.md` A.8) stay in the list, greyed out and not selectable, with the reason: "Jun Lim · authorisation lapsed 3 Nov".
+  - **Authorisation:** receivers who may not take the camera (`sync.md` A.8) stay in the list, greyed out and not selectable, with the reason: "Jun Lim · authorisation lapsed 03.11.2026".
   - **Empty:** "You don't hold this camera" (it isn't yours to give) / "No one on the roster can receive it. Sync once."
 - **G2 Review and sign.** The who-and-what card: giver → receiver with names and roles; "C-12 · sealed source IR-0457 (Ir-192) · seal S-40117"; due time. The primary button **Sign** with the line "Place your finger to sign this handover".
-  - **Online** (`sync.md` A.10): the line reads "Online · Wei Ming accepts on his phone, no codes to scan"; offline: "Offline · you'll swap QR codes".
+  - **Online** (`sync.md` A.10): the line reads "Online · Wei Ming accepts on his phone, no codes to scan"; offline: "Offline · hold your phone to Wei Ming's".
   - **Error:** "Fingerprint cancelled. Nothing was handed over."
 - **G3-online Sent.** The same card without a QR: "Sent to Wei Ming's phone", "Waiting for Wei Ming to scan the seal and accept · 2:58" counting down, a pulsing waiting mark, the text buttons **Show QR instead** (→ G3 with the same offer) and **Cancel offer**.
   - **Accepted:** goes straight to G5 by itself.
   - **Declined:** "Wei Ming declined. Nothing was handed over." with **Choose someone else**.
   - **Lost the network:** "Lost the network. Show the QR instead." and G3 opens by itself.
-- **G3 Offer QR.** The same card with the QR inside it, the line **"For Wei Ming only · single use · valid for 0:58"** counting down, "Waiting for Wei Ming to accept", the primary button **Scan acceptance**, and the text button **Cancel offer**. The screen stays awake at full brightness.
+- **G3 Tap** (offline, the default; stepper CHOOSE · TAP). The tap moment above, with "For Wei Ming only · single use · valid for 0:58" and "KESTREL · C-12 → WEI MING" under it. At the bottom **SHOW QR CODE INSTEAD** and **CANCEL OFFER**. After the tap, LINKED in cyan until the acceptance arrives over the link, then G5 by itself.
+- **G3 Offer QR** (the fallback, stepper CHOOSE · SHOW OFFER · SCAN ACCEPTANCE; **USE TAP INSTEAD** goes back). The same card with the QR inside it, the line **"For Wei Ming only · single use · valid for 0:58"** counting down, "Waiting for Wei Ming to accept", the primary button **Scan acceptance**, and the text button **Cancel offer**. The screen stays awake at full brightness.
   - **Expired:** "Offer expired. If Wei Ming already accepted, scan their code. Otherwise sign a new offer."
   - Debug builds: **Copy code**.
   - **Tap** (`sync.md` A.11, when NFC and Bluetooth are on): under the QR, "Or hold your phone to Wei Ming's" with a phone-to-phone icon. After the tap: "Tapped · waiting for Wei Ming to scan the seal and accept", and the phone moves to G5 by itself when the acceptance arrives.
 - **G4 Scan acceptance.** The viewfinder.
   - **Error:** "This isn't Wei Ming's acceptance of this offer." / "Not a handover code." / "Allow the camera to scan codes." with **Open settings**.
-- **G5 Done.** A green check, "Signed by both · checked offline · 2 of 2 signatures valid" (online: "Signed by both · sent through the server · 2 of 2 signatures checked on this phone"), the match code in large digits, "**48 21 07** · check that Wei Ming's screen shows the same", and "Receipt saved · not synced yet" (or "Synced").
+- **G5 Done.** The parcel label stamped HANDED OVER / 13:02 / TO WEI MING, "Receipt saved · not synced yet" (or "synced"), and the small verify code.
 
 ### R Receive (`ui/receive/`, one route with steps)
 - **R0 Incoming offer** (`ui/incoming/`, online only, `sync.md` A.10). A signal-yellow banner under the top bar on every screen except a handover: "**Siti Aminah is handing you C-12** · Scan its seal to accept" with **Open** and a countdown. The phone vibrates once when a new one arrives. Tapping it opens R2 for that offer (R1 is skipped).
   - **R2–R4** are the same, plus a text button **Decline** ("Declined. Siti still holds C-12.").
-- **R1 Scan the offer.** A viewfinder, a torch toggle, and "Point at the giver's code".
+- **R1 Tap** (the RECEIVE tab, stepper TAP · SCAN SEAL · SIGN). The tap moment above: "HOLD TO THE GIVER'S PHONE". At the bottom **SCAN A QR CODE INSTEAD**. No camera runs until that's pressed.
+- **R1 Scan the offer** (the fallback, stepper SCAN OFFER · SCAN SEAL · SIGN AND SHOW; **USE TAP INSTEAD** goes back). The scanner ("SCANNER · OFFER", the torch in its header) and "Point at the giver's code".
   - **Error:** "Not a handover code." / camera permission, as G4.
   - **Tap:** while R1 is open, "Or hold your phone to the giver's". A tap opens R2 at once with the same checks, and a "Linked to Siti's phone" mark appears when the Nearby link is up.
 - **R2 Checks.** "Checking offline…" (under a second), then one line per check, each ✓ or ✗:
@@ -211,18 +237,20 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
   3. "Made out to you"
   4. "Valid for 0:41"
   5. "Not used before"
-  6. "Authorised · radiographer · valid to 30 Jun 2027" (for a return: "Authorised · store officer")
+  6. "Authorised · radiographer · valid to 30.06.2027" (for a return: "Authorised · store officer")
 
   If all pass, the button is **Scan the seal**.
-  - **Refused (any ✗):** a red header **"This is a copy. It can't be used."** (or "This handover can't be accepted." when the code isn't a copy), the failed lines in red with reasons ("Made out to Tan Wei Ming, not you", "Expired 0:40 ago", "Already used on this phone", "Unknown signer. Sync this phone before accepting.", "You aren't authorised to hold sealed sources (lapsed 3 Nov)", "Ravi Kumar already handed C-12 to Tan Wei Ming at 14:30. This would be a second handover.", "Ravi Kumar's phone was withdrawn by the safety officer at 14:40."), and "Nothing was signed."
+  - **Refused (any ✗):** a red header **"This is a copy. It can't be used."** (or "This handover can't be accepted." when the code isn't a copy), the failed lines in red with reasons ("Made out to Tan Wei Ming, not you", "Expired 0:40 ago", "Already used on this phone", "Unknown signer. Sync this phone before accepting.", "You aren't authorised to hold sealed sources (lapsed 03.11.2026)", "Ravi Kumar already handed C-12 to Tan Wei Ming at 14:30. This would be a second handover.", "Ravi Kumar's phone was withdrawn by the safety officer at 14:40."), and "Nothing was signed."
 - **R3 Scan the seal.** "Scan the seal on camera C-12".
   - **Match:** "Seal S-40117 matches C-12" → **Next**.
   - **Mismatch:** "Seal S-40999 doesn't match C-12 (S-40117). Don't accept this camera." with no way on.
 - **R4 Accept.** The who-and-what card plus the statement "This is sealed source IR-0457 (iridium-192). You're liable for it the moment you sign." and the due time. The primary button **Accept**, with "Place your finger to accept".
   - **Error:** "Fingerprint cancelled. Nothing was signed. Ravi still holds C-12."
-- **R5 Acceptance QR.** The QR in the card, "Show this to Ravi", and the match code. After Ravi scans it, or on **Done**: "You hold C-12. Return by 14:31." and "Not synced yet".
-  - **Online:** no QR. "Sent to Ravi · ask him to check the match code", the match code, then the same "You hold C-12" line. If the acceptance can't be sent: "Couldn't reach the server. Show this to Ravi instead." with the acceptance QR.
-  - **Tapped:** no QR. "Sent to Siti's phone, no network", the match code, then "You hold C-12". If the link isn't up within 10 seconds: the acceptance QR with "Couldn't reach Siti's phone. Show this instead."
+- **R5 Acceptance QR** (QR fallback only). The QR in the card, "Show this to Ravi", and the small verify code. After Ravi scans it, or on **Done**: "You hold C-12. Return by 14:31." and "Not synced yet".
+  - **Online:** no QR. "Sent to Ravi", then Done. If the acceptance can't be sent: "Couldn't reach the server. Show this to Ravi instead." with the acceptance QR.
+  - **Tapped:** no QR, straight to Done. If the link isn't up within 10 seconds: the acceptance QR with "Couldn't reach Siti's phone. Show this instead."
+
+- **Done** (every path): the parcel label stamped RECEIVED / 13:02 / FROM RAVI, the sync line, the small verify code, and **DONE**, which returns to the first tab.
 
 ### T Timeline (`ui/timeline/`)
 - **Purpose:** the custody chain of one camera.

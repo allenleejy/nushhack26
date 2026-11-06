@@ -63,6 +63,10 @@ import java.util.concurrent.Executors
  * bundled model). Calls [onCode] with each new code's text; the same code again only after
  * 2 seconds. Asks for the camera permission itself. Debug builds add "Paste code", which
  * feeds the clipboard to [onCode], so flows can be tested on an emulator.
+ *
+ * Card 21 draws it as an instrument: [title] names what it scans in the bezel ("SCANNER · SEAL"),
+ * [onToggleTorch] puts the torch in the bezel (null hides it), and each increase of
+ * [rejectCount] flashes the brackets orange once (the caller found the code wrong).
  */
 @Composable
 fun QrScanner(
@@ -70,6 +74,9 @@ fun QrScanner(
     modifier: Modifier = Modifier,
     torchOn: Boolean = false,
     hint: String = "Point at the code",
+    title: String = "Scanner",
+    onToggleTorch: (() -> Unit)? = null,
+    rejectCount: Int = 0,
 ) {
     val context = LocalContext.current
     val inPreview = LocalInspectionMode.current

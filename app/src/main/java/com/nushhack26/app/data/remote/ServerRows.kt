@@ -67,6 +67,7 @@ data class ItemRow(
     @SerialName("seal_no") val sealNo: String,
     @SerialName("store_name") val storeName: String,
     @SerialName("server_seq") val serverSeq: Long? = null,
+    val name: String? = null,
 )
 
 @Serializable
@@ -151,7 +152,7 @@ fun DeviceRow.toEntity() = DeviceEntity(
     serverSeq = serverSeq, syncStatus = SyncMark.SYNCED, revokedAtMs = parseServerTime(revokedAt),
 )
 
-fun ItemRow.toEntity() = ItemEntity(id, code, sourceSerial, isotope, sealNo, storeName, serverSeq)
+fun ItemRow.toEntity() = ItemEntity(id, code, sourceSerial, isotope, sealNo, storeName, serverSeq, name.orEmpty())
 
 fun HandoverRow.toEntity() = HandoverEntity(
     id = id, itemId = itemId, kind = kind, prevId = prevId, prevHash = prevHash,

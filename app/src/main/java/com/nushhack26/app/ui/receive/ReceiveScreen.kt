@@ -52,9 +52,23 @@ import kotlinx.coroutines.launch
 private const val DECLINED_CLOSE_MS = 2_500L
 private val LINKED_STEPS = setOf(ReceiveStep.Checks, ReceiveStep.ScanSeal, ReceiveStep.Accept, ReceiveStep.Sending)
 
+/**
+ * R0–R5. As the RECEIVE tab ([asTab]): [active] is true only while the pager has settled on it,
+ * a new [session] starts a fresh receive, and [onFlowChange] says when an offer has arrived (the
+ * frame then hides the bottom bar and stops the swipe until [onDone]).
+ */
 @Composable
-fun ReceiveScreen(container: AppContainer, onDone: () -> Unit, relayedOfferId: String? = null) {
+fun ReceiveScreen(
+    container: AppContainer,
+    onDone: () -> Unit,
+    relayedOfferId: String? = null,
+    asTab: Boolean = false,
+    active: Boolean = true,
+    session: Int = 0,
+    onFlowChange: (Boolean) -> Unit = {},
+) {
     val viewModel: ReceiveViewModel = viewModel(
+        key = if (asTab) "receive-tab-$session" else null,
         factory = viewModelFactory {
             initializer {
                 ReceiveViewModel(
@@ -66,8 +80,10 @@ fun ReceiveScreen(container: AppContainer, onDone: () -> Unit, relayedOfferId: S
     )
     val state by viewModel.state.collectAsStateWithLifecycle()
     val tapLink = container.tapLink
-    val onR1 = state.step == ReceiveStep.ScanOffer && relayedOfferId == null
+    val onR1 = state.step == ReceiveStep.ScanOffer && relayedOfferId == null && active
     val tapReady = rememberTapReady(tapLink, active = onR1)
+    val inFlow = state.step !in setOf(ReceiveStep.Loading, ReceiveStep.Unavailable, ReceiveStep.ScanOffer)
+    LaunchedEffect(inFlow) { onFlowChange(inFlow) }
     tapLink.rememberTapReader(enabled = onR1 && tapReady && !state.rosterEmpty) { payload ->
         viewModel.onTapped(payload.offer) { tapLink.join(payload).asTapSession() }
     }

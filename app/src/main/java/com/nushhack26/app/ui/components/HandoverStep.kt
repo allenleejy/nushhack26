@@ -42,11 +42,29 @@ enum class HandoverRole { Giver, Receiver }
 private val giverSteps = listOf("Choose", "Show offer", "Scan acceptance")
 private val receiverSteps = listOf("Scan offer", "Scan seal", "Sign and show")
 
-/** Three square boxes. [currentStep] is 1–3; 4 means all done. */
+/** The step labels for each way of handing over (docs/spec.md section 3, G and R). */
+object HandoverSteps {
+    val giverTap = listOf("Choose", "Tap")
+    val giverOnline = listOf("Choose", "Send")
+    val giverQr = giverSteps
+    val receiverTap = listOf("Tap", "Scan seal", "Sign")
+    val receiverOnline = listOf("Open", "Scan seal", "Sign")
+    val receiverQr = receiverSteps
+}
+
+/** The QR fallback's three steps for [role]. [currentStep] is 1–3; 4 means all done. */
 @Composable
-fun HandoverStepper(role: HandoverRole, currentStep: Int, modifier: Modifier = Modifier) {
+fun HandoverStepper(role: HandoverRole, currentStep: Int, modifier: Modifier = Modifier) =
+    HandoverStepper(if (role == HandoverRole.Giver) giverSteps else receiverSteps, currentStep, modifier)
+
+/**
+ * Two or three square boxes, labelled by the flow (docs/spec.md section 3): tap is
+ * CHOOSE · TAP for the giver and TAP · SCAN SEAL · SIGN for the receiver. [currentStep] is
+ * 1-based; one past the last means all done.
+ */
+@Composable
+fun HandoverStepper(steps: List<String>, currentStep: Int, modifier: Modifier = Modifier) {
     val colors = Tenet.colors
-    val steps = if (role == HandoverRole.Giver) giverSteps else receiverSteps
     Row(modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(TenetDimens.space2)) {
         steps.forEachIndexed { index, label ->
             val number = index + 1

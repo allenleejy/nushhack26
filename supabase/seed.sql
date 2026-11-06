@@ -9,11 +9,11 @@ insert into public.people (id, name, role, staff_no, nea_reg_no, enrol_code_hash
   ('a0000000-0000-4000-8000-000000000005', 'Dr Tan Mei Ling', 'rso',           'O-3001', null,           encode(extensions.digest('904372', 'sha256'), 'hex'))
 on conflict (id) do nothing;
 
-insert into public.items (id, code, source_serial, isotope, seal_no, store_name) values
-  ('b0000000-0000-4000-8000-000000000012', 'C-12', 'IR-0457', 'Ir-192', 'S-40117', 'Tuas Store 1'),
-  ('b0000000-0000-4000-8000-000000000007', 'C-07', 'IR-0391', 'Ir-192', 'S-40102', 'Tuas Store 1'),
-  ('b0000000-0000-4000-8000-000000000015', 'C-15', 'SE-0112', 'Se-75',  'S-40125', 'Tuas Store 1')
-on conflict (id) do nothing;
+insert into public.items (id, code, name, source_serial, isotope, seal_no, store_name) values
+  ('b0000000-0000-4000-8000-000000000012', 'C-12', 'Kestrel', 'IR-0457', 'Ir-192', 'S-40117', 'Tuas Store 1'),
+  ('b0000000-0000-4000-8000-000000000007', 'C-07', 'Osprey',  'IR-0391', 'Ir-192', 'S-40102', 'Tuas Store 1'),
+  ('b0000000-0000-4000-8000-000000000015', 'C-15', 'Heron',   'SE-0112', 'Se-75',  'S-40125', 'Tuas Store 1')
+on conflict (id) do update set name = excluded.name where public.items.name is null;
 
 -- Each camera starts with a server-made register record: in store with Siti (docs/sync.md A.2).
 insert into public.handovers (id, item_id, kind, to_person_id, record_hash, status)

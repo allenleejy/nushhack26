@@ -93,7 +93,12 @@ data class ItemEntity(
     val sealNo: String,
     val storeName: String,
     val serverSeq: Long? = null,
-)
+    /** The name people say ("Kestrel"); empty until synced. Display only, never signed. */
+    val name: String = "",
+) {
+    /** The name if it has one, else the code: "Kestrel", or "C-12". */
+    val displayName: String get() = name.ifBlank { code }
+}
 
 /** One link in a camera's custody chain. The signed fields never change once complete. */
 @Entity(tableName = "handovers", indices = [Index("itemId"), Index("prevId"), Index("nonce")])
