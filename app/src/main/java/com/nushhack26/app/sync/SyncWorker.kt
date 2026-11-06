@@ -17,6 +17,9 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
     override suspend fun doWork(): Result {
         val container = (applicationContext as App).container
         val syncState = container.database.syncStateDao()
+        // The server refuses every sync until the phone enrols. Retrying would back off for
+        // minutes and hold up the sync that enrolment asks for, so there's nothing to do yet.
+        if (container.identity.current() == null) return Result.success()
         return try {
             container.syncEngine.run()
             Result.success()
