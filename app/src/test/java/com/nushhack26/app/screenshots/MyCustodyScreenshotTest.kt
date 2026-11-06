@@ -46,6 +46,11 @@ class MyCustodyScreenshotTest {
     }
 
     @Test
+    fun disputed() = captureScreen("MyCustody_disputed") {
+        MyCustodyContent(MyCustodyUiState.Ready(SAMPLE_NOW, listOf(out.copy(itemId = "i3", code = "CAM-03", status = CustodyStatus.Disputed), out)))
+    }
+
+    @Test
     fun pendingOffer() = captureScreen("MyCustody_pending_offer") {
         MyCustodyContent(MyCustodyUiState.Ready(SAMPLE_NOW, listOf(out), pending, receipts))
     }

@@ -107,7 +107,12 @@ fun CustodyCard(camera: HeldCamera, nowMs: Long, onHandOver: () -> Unit, onOpen:
                 if (!camera.synced) NotSyncedMark()
             }
             camera.dueMs?.let { CountdownBar(it, camera.startMs, nowMs) }
-            if (overdue) {
+            if (camera.status == CustodyStatus.Disputed) {
+                Text(
+                    "Two handovers claim this camera. Keep it safe until a supervisor decides who holds it.",
+                    style = TenetType.body, color = colors.alertText,
+                )
+            } else if (overdue) {
                 DangerButton("Hand back to store", onClick = onHandOver, modifier = Modifier.fillMaxWidth(), icon = Icons.Sharp.SwapHoriz)
             } else {
                 SecondaryButton("Hand over", onClick = onHandOver, modifier = Modifier.fillMaxWidth(), icon = Icons.Sharp.SwapHoriz)

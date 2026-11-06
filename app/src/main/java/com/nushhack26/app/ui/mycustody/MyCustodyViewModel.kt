@@ -78,7 +78,10 @@ class MyCustodyViewModel(repository: CustodyRepository, identity: IdentityReposi
 
 fun myCustody(board: CustodyBoard, offers: List<PendingOfferEntity>, personId: String): MyCustodyUiState.Ready {
     val held = board.states
-        .filter { it.holderId == personId && (it.status == CustodyStatus.Out || it.status == CustodyStatus.Overdue) }
+        .filter { s ->
+            (s.holderId == personId && (s.status == CustodyStatus.Out || s.status == CustodyStatus.Overdue)) ||
+                (s.status == CustodyStatus.Disputed && s.forkBranches.any { it.toPersonId == personId || it.fromPersonId == personId })
+        }
         .map { s ->
             HeldCamera(
                 itemId = s.item.id, code = s.item.code, source = "${s.item.isotope} · ${s.item.sourceSerial}",
@@ -86,7 +89,7 @@ fun myCustody(board: CustodyBoard, offers: List<PendingOfferEntity>, personId: S
                 synced = s.allSynced,
             )
         }
-        .sortedWith(compareBy({ it.dueMs ?: Long.MAX_VALUE }, { it.code }))
+        .sortedWith(compareBy({ it.status != CustodyStatus.Disputed }, { it.dueMs ?: Long.MAX_VALUE }, { it.code }))
     val code = { itemId: String -> board.roster.items.firstOrNull { it.id == itemId }?.code ?: board.states.firstOrNull { it.item.id == itemId }?.item?.code ?: itemId }
     val name = { id: String? -> board.roster.person(id)?.name ?: "Unknown person" }
     val pending = offers
