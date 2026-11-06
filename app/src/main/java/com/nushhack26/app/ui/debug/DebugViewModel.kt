@@ -8,6 +8,7 @@ import com.nushhack26.app.crypto.Signatures
 import com.nushhack26.app.data.local.OutboxEntry
 import com.nushhack26.app.data.repo.Identity
 import com.nushhack26.app.ui.components.SignResult
+import com.nushhack26.app.nearby.TapAvailability
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -28,9 +29,17 @@ data class DebugUiState(
     val outbox: List<OutboxEntry> = emptyList(),
     val tampered: Boolean = false,
     val testSigning: String? = null,
+    val tapAvailability: TapAvailability = TapAvailability.NoNfc,
+    val tapServing: Boolean = false,
+    val tapReading: Boolean = false,
+    val tapLog: List<String> = emptyList(),
+    val tapPayload: String? = null,
 )
 
 sealed interface DebugAction {
+    data object GrantTapPermissions : DebugAction
+    data object ToggleTapServe : DebugAction
+    data object ToggleTapRead : DebugAction
     data object SyncNow : DebugAction
     data object ClearLocalData : DebugAction
     data class SetTampered(val on: Boolean) : DebugAction
@@ -67,6 +76,7 @@ class DebugViewModel(private val container: AppContainer) : ViewModel() {
             DebugAction.ClearLocalData -> viewModelScope.launch { container.clearLocalData() }
             is DebugAction.SetTampered -> viewModelScope.launch { container.identity.setTampered(action.on) }
             DebugAction.TestSigning -> Unit
+            DebugAction.GrantTapPermissions, DebugAction.ToggleTapServe, DebugAction.ToggleTapRead -> Unit
         }
     }
 
