@@ -1,7 +1,33 @@
-# The app opens: Enrol on a fresh install ("Who are you?"), or the role's first tab once enrolled.
+# The app opens: Enrol on a fresh install ("JOIN YOUR TEAM"), the lock screen ("LOCKED")
+# on an enrolled phone that locked itself, or the role's first tab once unlocked.
 # Run: maestro test .maestro/smoke.yaml   (release build: -e APP_ID=com.nushhack26.app)
 appId: ${APP_ID || "com.nushhack26.app.debug"}
 ---
 - launchApp
-- assertVisible:
-    text: '(?i)(who are you\?|custody|items|alerts)'
+- extendedWaitUntil:
+    visible:
+      text: '(?i)(join your team|locked|store|cameras|custody|alerts|outbox)'
+    timeout: 20000
+# Fresh install: Enrol shows its two fields and the key button.
+- runFlow:
+    when:
+      visible: "JOIN YOUR TEAM"
+    commands:
+      - assertVisible: "Staff number"
+      - assertVisible: "Enrolment code"
+      - assertVisible:
+          text: "(?i)create my signing key.*"
+# Enrolled and locked: the lock screen shows who it belongs to.
+- runFlow:
+    when:
+      visible: "LOCKED"
+    commands:
+      - assertVisible: "Unlock"
+# Enrolled and unlocked: a tab screen is up.
+- runFlow:
+    when:
+      visible:
+        text: '(?i)(store|cameras|my custody|all cameras accounted for|outbox)'
+    commands:
+      - assertVisible:
+          text: '(?i)(store|cameras|my custody|alerts|outbox|records|devices)'
