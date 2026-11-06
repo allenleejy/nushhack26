@@ -1,0 +1,119 @@
+/* Tenet — generated from tokens.json */
+@font-face { font-family: 'Space Mono'; font-weight: 400; font-style: normal; font-display: swap; src: url('fonts/space_mono_regular.ttf') format('truetype'); }
+@font-face { font-family: 'Space Mono'; font-weight: 700; font-style: normal; font-display: swap; src: url('fonts/space_mono_bold.ttf') format('truetype'); }
+@font-face { font-family: 'Space Grotesk'; font-weight: 400; font-style: normal; font-display: swap; src: url('fonts/space_grotesk_regular.ttf') format('truetype'); }
+@font-face { font-family: 'Space Grotesk'; font-weight: 500; font-style: normal; font-display: swap; src: url('fonts/space_grotesk_medium.ttf') format('truetype'); }
+@font-face { font-family: 'Space Grotesk'; font-weight: 700; font-style: normal; font-display: swap; src: url('fonts/space_grotesk_bold.ttf') format('truetype'); }
+@font-face { font-family: 'Material Symbols Sharp'; font-weight: 100 700; font-style: normal; font-display: block; src: url('fonts/material-symbols-sharp.woff2') format('woff2'); }
+
+:root, [data-theme="field"] {
+  --bg-000: #262522;
+  --bg-100: #302f2b;
+  --bg-200: #3b3a35;
+  --line: #4a4842;
+  --line-strong: #8f8c83;
+  --ink: #f4f1e8;
+  --ink-muted: #c2beb2;
+  --ink-disabled: #77746b;
+  --signal: #f2b81f;
+  --on-signal: #1f1e1b;
+  --signal-edge: #f2b81f;
+  --signal-text: #f2b81f;
+  --signal-bg: #4a3b12;
+  --ok: #66d2ee;
+  --ok-bg: #1d3a42;
+  --alert: #ff6a4d;
+  --alert-text: #ff8066;
+  --on-alert: #1f1e1b;
+  --alert-bg: #44241d;
+  --pending: #d2cec3;
+  --focus: #f2b81f;
+  --qr-ground: #ffffff;
+  --qr-ink: #000000;
+  --inverse: #f4f1e8;
+  --on-inverse: #1f1e1b;
+  --inverse-action: #6b5200;
+  --inverse-ok: #00677f;
+  --elevation-0: none;
+  --elevation-sheet: 0 -8px 24px rgba(0, 0, 0, 0.5);
+}
+[data-theme="daylight"] {
+  --bg-000: #e7e8e3;
+  --bg-100: #ffffff;
+  --bg-200: #f2f2ee;
+  --line: #d3d5cf;
+  --line-strong: #6e737c;
+  --ink: #0e0f11;
+  --ink-muted: #4c5159;
+  --ink-disabled: #a3a7ad;
+  --signal: #f2b81f;
+  --on-signal: #0e0f11;
+  --signal-edge: #0e0f11;
+  --signal-text: #6b5200;
+  --signal-bg: #fcefc8;
+  --ok: #006e8a;
+  --ok-bg: #dcf0f5;
+  --alert: #bf3412;
+  --alert-text: #bf3412;
+  --on-alert: #ffffff;
+  --alert-bg: #fbe4dc;
+  --pending: #4c5159;
+  --focus: #0e0f11;
+  --qr-ground: #ffffff;
+  --qr-ink: #000000;
+  --inverse: #1f1e1b;
+  --on-inverse: #f4f1e8;
+  --inverse-action: #f2b81f;
+  --inverse-ok: #66d2ee;
+  --elevation-0: none;
+  --elevation-sheet: 0 -4px 16px rgba(14, 15, 17, 0.18);
+}
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --radius-none: 0px;
+  --target-min: 48px;
+  --target-row: 64px;
+  --target-primary: 72px;
+  --icon-md: 24px;
+  --icon-lg: 32px;
+  --qr-min: 280px;
+  --cut-md: 16px;
+  --cut-sm: 8px;
+  --tab-width: 36px;
+  --diamond-md: 48px;
+  --diamond-lg: 96px;
+  --app-bar: 64px;
+  --nav-bar: 80px;
+  --field-height: 64px;
+  --code-cell: 48px;
+  --handle: 32px;
+  --stroke-hairline: 1px;
+  --stroke-control: 2px;
+  --stroke-focus: 3px;
+  --stripe-width: 8px;
+  --stripe-band: 12px;
+  --hatch-line: 3px;
+  --hatch-pitch: 10px;
+  --stroke-stamp: 3px;
+  --angle-stripe: 45deg;
+  --angle-text: -90deg;
+  --angle-stamp: -9deg;
+  --font-mono: "Space Mono", "Roboto Mono", ui-monospace, monospace;
+  --font-sans: "Space Grotesk", Roboto, system-ui, sans-serif;
+}
+.readout-xl { font-family: var(--font-mono); font-size: 64px; line-height: 64px; font-weight: 700; text-transform: uppercase; }
+.headline { font-family: var(--font-mono); font-size: 28px; line-height: 32px; font-weight: 700; text-transform: uppercase; }
+.title { font-family: var(--font-mono); font-size: 20px; line-height: 24px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; }
+.label { font-family: var(--font-mono); font-size: 16px; line-height: 20px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.record { font-family: var(--font-mono); font-size: 16px; line-height: 24px; font-weight: 400; text-transform: uppercase; }
+.record-label { font-family: var(--font-mono); font-size: 13px; line-height: 16px; font-weight: 400; letter-spacing: 0.06em; text-transform: uppercase; }
+.code-lg { font-family: var(--font-mono); font-size: 36px; line-height: 40px; font-weight: 700; letter-spacing: 0.04em; }
+.body-lg { font-family: var(--font-sans); font-size: 18px; line-height: 26px; font-weight: 400; }
+.body { font-family: var(--font-sans); font-size: 16px; line-height: 24px; font-weight: 400; }
+.body-strong { font-family: var(--font-sans); font-size: 16px; line-height: 24px; font-weight: 700; }

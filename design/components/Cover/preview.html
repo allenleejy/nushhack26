@@ -1,0 +1,56 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../../tokens.css"><link rel="stylesheet" href="../bundle.css"><script>(function(){var m=/[?&]theme=(\w+)/.exec(location.search);document.documentElement.setAttribute("data-theme",m?m[1]:"field");})();</script><title>Cover</title>
+<style>
+  html, body { margin: 0; background: var(--bg-000); }
+  .cv { position: relative; width: 960px; height: 288px; overflow: hidden; background: var(--bg-000); }
+  .cv svg { position: absolute; inset: 0; width: 960px; height: 288px; }
+  .signal { fill: var(--signal); }
+  .ink { fill: var(--ink); }
+  .steel { fill: var(--line-strong); }
+  .ok { fill: var(--ok); }
+  .alert { fill: var(--alert); }
+  .cut { stroke: var(--bg-000); stroke-width: 12px; }
+  .r-sm { rx: var(--radius-none); }
+  .txt { position: absolute; left: 48px; bottom: 40px; max-width: 440px; }
+  .name { font-family: var(--font-mono); font-weight: 700; font-size: 120px; line-height: 0.92; letter-spacing: -0.02em; color: var(--ink); margin: 0; }
+  .tag { font-family: var(--font-sans); font-size: 14px; line-height: 20px; color: var(--ink-muted); margin: 16px 0 0; }
+</style>
+</head>
+<body>
+<div class="cv">
+  <svg viewBox="0 0 960 288" aria-hidden="true">
+    <!--
+      blocks: signal 192x216 (space-6 multiples), line-strong 96x168, ink 120x96, ok 48 (space-12), alert 32 (space-8)
+      arrangement: one tall yellow slab bleeding off the top with satellites; ink bleeds off the right, steel off the bottom
+      pattern: hazard stripes cut from the ground across the slab's foot ("loud, signage" row): the system's one accent is radiation-sign yellow edged in black
+      steps and radii: stripe pitch space-6 (24), stripe width space-3 (12); every corner radius-none (square)
+    -->
+    <defs>
+      <clipPath id="foot"><rect x="624" y="168" width="192" height="48"/></clipPath>
+    </defs>
+    <rect class="steel r-sm" x="504" y="120" width="96" height="192"/>
+    <rect class="signal r-sm" x="624" y="-8" width="192" height="224"/>
+    <g clip-path="url(#foot)">
+      <line class="cut" x1="600" y1="240" x2="672" y2="144"/>
+      <line class="cut" x1="624" y1="240" x2="696" y2="144"/>
+      <line class="cut" x1="648" y1="240" x2="720" y2="144"/>
+      <line class="cut" x1="672" y1="240" x2="744" y2="144"/>
+      <line class="cut" x1="696" y1="240" x2="768" y2="144"/>
+      <line class="cut" x1="720" y1="240" x2="792" y2="144"/>
+      <line class="cut" x1="744" y1="240" x2="816" y2="144"/>
+      <line class="cut" x1="768" y1="240" x2="840" y2="144"/>
+      <line class="cut" x1="792" y1="240" x2="864" y2="144"/>
+    </g>
+    <rect class="ink r-sm" x="840" y="48" width="132" height="96"/>
+    <rect class="ok r-sm" x="840" y="168" width="48" height="48"/>
+    <rect class="alert r-sm" x="904" y="168" width="32" height="32"/>
+  </svg>
+  <div class="txt">
+    <p class="name">Tenet</p>
+    <p class="tag">Signed custody that keeps working without a network.</p>
+  </div>
+</div>
+</body>
+</html>

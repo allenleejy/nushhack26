@@ -22,3 +22,5 @@ shots/
 *.log
 .DS_Store
 Thumbs.db
+
+Claude outputs/

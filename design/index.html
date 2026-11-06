@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" data-theme="field">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tenet Design System</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg-000); color: var(--ink); font-family: var(--font-sans); }
+.top { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 16px; justify-content: space-between; padding: 12px 24px; background: var(--bg-100); border-bottom: 2px solid var(--line-strong); }
+.top b { font-family: var(--font-mono); font-size: 20px; text-transform: uppercase; }
+.top nav { display: flex; gap: 16px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 13px; text-transform: uppercase; }
+.top a { color: var(--ink); }
+.tg { display: flex; border: 2px solid var(--ink); }
+.tg button { font-family: var(--font-mono); font-weight: 700; text-transform: uppercase; background: transparent; color: var(--ink); border: 0; padding: 8px 14px; min-height: 40px; cursor: pointer; }
+.tg button[aria-pressed="true"] { background: var(--signal); color: var(--on-signal); }
+main { max-width: 1400px; margin: 0 auto; padding: 24px; }
+.cover { width: 100%; aspect-ratio: 960 / 288; border: 0; display: block; margin-bottom: 8px; }
+h2 { font-family: var(--font-mono); text-transform: uppercase; font-size: 18px; letter-spacing: .06em; border-bottom: 2px solid var(--signal-edge); padding-bottom: 8px; margin: 40px 0 16px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 16px; }
+.card { background: var(--bg-100); border: 2px solid var(--line); display: flex; flex-direction: column; }
+.card header { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 16px 0; }
+.card h3 { margin: 0; font-family: var(--font-mono); text-transform: uppercase; font-size: 15px; }
+.card header a { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; color: var(--signal-text); }
+.card p { margin: 6px 16px 10px; font-size: 14px; line-height: 20px; color: var(--ink-muted); }
+.card iframe { width: 100%; border: 0; border-top: 2px solid var(--line); background: var(--bg-000); }
+.note { color: var(--ink-muted); max-width: 760px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="top"><b>Tenet design system</b>
+<nav><a href="README.md">Start here</a><a href="brand.md">Brand book</a><a href="tokens.json">Tokens</a><a href="android/README.md">Android</a></nav>
+<div class="tg" role="group" aria-label="Theme"><button type="button" data-t="field" aria-pressed="true">Field</button><button type="button" data-t="daylight" aria-pressed="false">Daylight</button></div></div>
+<main>
+<iframe class="cover" title="Cover" data-src="components/Cover/preview.html"></iframe>
+<p class="note">Every component, rendered live from <code>tokens.css</code> and <code>components/bundle.css</code>. Switch theme at the top right. Open this file in a browser; if previews don't load from disk, run <code>python3 -m http.server</code> in this folder and visit <code>http://localhost:8000</code>.</p>
+<section><h2>Actions</h2><div class="grid"><article class="card"><header><h3>Button</h3><a href="components/Button/README.md">Guidelines</a></header><p>The one primary action per screen (amber, cut corner, 72dp), plus secondary, danger, text and hatched-out disabled buttons.</p>
+<iframe title="Button preview" data-src="components/Button/preview.html" style="height:400px" loading="lazy"></iframe></article></div></section><section><h2>Status</h2><div class="grid"><article class="card"><header><h3>CountdownBar</h3><a href="components/CountdownBar/README.md">Guidelines</a></header><p>Time left before an item is due back at the store, shown as a bar under the custody label.</p>
+<iframe title="CountdownBar preview" data-src="components/CountdownBar/preview.html" style="height:250px" loading="lazy"></iframe></article><article class="card"><header><h3>HazardBand</h3><a href="components/HazardBand/README.md">Guidelines</a></header><p>The system&#x27;s two 45° patterns: stripes, which mean attention, and hatching, which means not available.</p>
+<iframe title="HazardBand preview" data-src="components/HazardBand/preview.html" style="height:350px" loading="lazy"></iframe></article><article class="card"><header><h3>OfflineBanner</h3><a href="components/OfflineBanner/README.md">Guidelines</a></header><p>A full-width strip under the top app bar that says whether this phone can reach the server and how many records are waiting.</p>
+<iframe title="OfflineBanner preview" data-src="components/OfflineBanner/preview.html" style="height:270px" loading="lazy"></iframe></article><article class="card"><header><h3>SyncChip</h3><a href="components/SyncChip/README.md">Guidelines</a></header><p>A compact label showing where one record, or this phone&#x27;s outbox, stands against the server.</p>
+<iframe title="SyncChip preview" data-src="components/SyncChip/preview.html" style="height:140px" loading="lazy"></iframe></article></div></section><section><h2>Custody</h2><div class="grid"><article class="card"><header><h3>CustodyCard</h3><a href="components/CustodyCard/README.md">Guidelines</a></header><p>The answer to &quot;who holds this item right now?&quot; for one item, drawn as a hazard label: the hero of the home screen and the item detail screen.</p>
+<iframe title="CustodyCard preview" data-src="components/CustodyCard/preview.html" style="height:740px" loading="lazy"></iframe></article><article class="card"><header><h3>ForkAlert</h3><a href="components/ForkAlert/README.md">Guidelines</a></header><p>The warning label a supervisor sees when the server finds two handovers from the same giver that both follow the same record: the double handover the system can&#x27;t stop offline but can prove.</p>
+<iframe title="ForkAlert preview" data-src="components/ForkAlert/preview.html" style="height:490px" loading="lazy"></iframe></article><article class="card"><header><h3>HazardDiamond</h3><a href="components/HazardDiamond/README.md">Guidelines</a></header><p>A square turned 45° carrying the figure 7, the UN dangerous-goods class for radioactive material.</p>
+<iframe title="HazardDiamond preview" data-src="components/HazardDiamond/preview.html" style="height:190px" loading="lazy"></iframe></article><article class="card"><header><h3>RecordPanel</h3><a href="components/RecordPanel/README.md">Guidelines</a></header><p>A summary panel set like a printed form, for the supervisor&#x27;s audit and export screens: the daily location record, the movements in and out of storage, today&#x27;s counts.</p>
+<iframe title="RecordPanel preview" data-src="components/RecordPanel/preview.html" style="height:280px" loading="lazy"></iframe></article><article class="card"><header><h3>TimelineRow</h3><a href="components/TimelineRow/README.md">Guidelines</a></header><p>One record in an item&#x27;s custody chain, newest at the bottom, inside a bg-100 list with 2dp line dividers and square corners.</p>
+<iframe title="TimelineRow preview" data-src="components/TimelineRow/preview.html" style="height:490px" loading="lazy"></iframe></article></div></section><section><h2>Handover</h2><div class="grid"><article class="card"><header><h3>HandoverStep</h3><a href="components/HandoverStep/README.md">Guidelines</a></header><p>The parts of the handover flow: a three-step stepper, the seal check result, and the QR panel that carries an offer or an acceptance between two phones.</p>
+<iframe title="HandoverStep preview" data-src="components/HandoverStep/preview.html" style="height:740px" loading="lazy"></iframe></article><article class="card"><header><h3>LiabilityLine</h3><a href="components/LiabilityLine/README.md">Guidelines</a></header><p>The block that marks the moment liability moves.</p>
+<iframe title="LiabilityLine preview" data-src="components/LiabilityLine/preview.html" style="height:240px" loading="lazy"></iframe></article><article class="card"><header><h3>RadioCheck</h3><a href="components/RadioCheck/README.md">Guidelines</a></header><p>The six-digit check a supervisor runs over the radio, offline, to confirm that a holder&#x27;s phone has an item&#x27;s latest custody record.</p>
+<iframe title="RadioCheck preview" data-src="components/RadioCheck/preview.html" style="height:780px" loading="lazy"></iframe></article><article class="card"><header><h3>Receipt</h3><a href="components/Receipt/README.md">Guidelines</a></header><p>The giver&#x27;s proof that a handover happened, and the one place the system breaks its own 0°/45° rule.</p>
+<iframe title="Receipt preview" data-src="components/Receipt/preview.html" style="height:320px" loading="lazy"></iframe></article></div></section><section><h2>Inputs</h2><div class="grid"><article class="card"><header><h3>TextField</h3><a href="components/TextField/README.md">Guidelines</a></header><p>A square input with its label above, for the few things a person types: a seal number that won&#x27;t scan, a note, a search.</p>
+<iframe title="TextField preview" data-src="components/TextField/preview.html" style="height:540px" loading="lazy"></iframe></article></div></section><section><h2>Navigation</h2><div class="grid"><article class="card"><header><h3>BottomNav</h3><a href="components/BottomNav/README.md">Guidelines</a></header><p>Three destinations along the bottom of the top-level screens.</p>
+<iframe title="BottomNav preview" data-src="components/BottomNav/preview.html" style="height:240px" loading="lazy"></iframe></article><article class="card"><header><h3>TopAppBar</h3><a href="components/TopAppBar/README.md">Guidelines</a></header><p>The bar at the top of every screen: where you are, a way back, and this phone&#x27;s sync state.</p>
+<iframe title="TopAppBar preview" data-src="components/TopAppBar/preview.html" style="height:270px" loading="lazy"></iframe></article></div></section><section><h2>Containers</h2><div class="grid"><article class="card"><header><h3>BottomSheet</h3><a href="components/BottomSheet/README.md">Guidelines</a></header><p>A panel that slides up over the current screen for a short choice: picking the receiver for a handover, choosing why a seal was replaced, confirming a report.</p>
+<iframe title="BottomSheet preview" data-src="components/BottomSheet/preview.html" style="height:540px" loading="lazy"></iframe></article><article class="card"><header><h3>ListRow</h3><a href="components/ListRow/README.md">Guidelines</a></header><p>A tappable row in a square list: people on the roster, items in the store, records in the outbox.</p>
+<iframe title="ListRow preview" data-src="components/ListRow/preview.html" style="height:380px" loading="lazy"></iframe></article></div></section><section><h2>Feedback</h2><div class="grid"><article class="card"><header><h3>EmptyState</h3><a href="components/EmptyState/README.md">Guidelines</a></header><p>What a list shows when there&#x27;s nothing in it yet: what will appear, how to get it, and one action.</p>
+<iframe title="EmptyState preview" data-src="components/EmptyState/preview.html" style="height:400px" loading="lazy"></iframe></article><article class="card"><header><h3>LoadingSkeleton</h3><a href="components/LoadingSkeleton/README.md">Guidelines</a></header><p>Placeholders while a server-only view loads (the supervisor&#x27;s chain from all phones, today&#x27;s records), and a segmented bar while records send.</p>
+<iframe title="LoadingSkeleton preview" data-src="components/LoadingSkeleton/preview.html" style="height:380px" loading="lazy"></iframe></article><article class="card"><header><h3>Snackbar</h3><a href="components/Snackbar/README.md">Guidelines</a></header><p>A brief message at the bottom of the screen, above the primary action, that confirms an event or offers one follow-up.</p>
+<iframe title="Snackbar preview" data-src="components/Snackbar/preview.html" style="height:300px" loading="lazy"></iframe></article></div></section>
+</main>
+<script>
+function load(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.querySelectorAll('iframe[data-src]').forEach(function (f) { f.src = f.dataset.src + '?theme=' + theme; });
+  document.querySelectorAll('.tg button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.t === theme ? 'true' : 'false'); });
+}
+document.querySelectorAll('.tg button').forEach(function (b) { b.addEventListener('click', function () { load(b.dataset.t); }); });
+load('field');
+</script>
+</body>
+</html>
