@@ -125,12 +125,13 @@ fun ForkContent(state: ForkUiState, modifier: Modifier = Modifier, onAction: (Fo
             verticalArrangement = Arrangement.spacedBy(TenetDimens.space4),
         ) {
             ForkHeader(state)
+            if (state.canDecide && state.decision == null && state.leaseExpired) NoticeBanner(AccessRules.LEASE_EXPIRED_TEXT)
             Row(
                 Modifier.fillMaxWidth().height(IntrinsicSize.Min).border(TenetDimens.strokeControl, colors.lineStrong),
             ) {
                 state.branches.forEachIndexed { index, branch ->
                     if (index > 0) Box(Modifier.width(TenetDimens.strokeControl).fillMaxHeight().background(colors.lineStrong))
-                    BranchCell(branch, Modifier.weight(1f))
+                    BranchCell(branch, Modifier.weight(1f).fillMaxHeight())
                 }
             }
             when {
@@ -156,7 +157,6 @@ fun ForkContent(state: ForkUiState, modifier: Modifier = Modifier, onAction: (Fo
                     color = colors.inkMuted,
                 )
             }
-            if (state.canDecide && state.decision == null && state.leaseExpired) NoticeBanner(AccessRules.LEASE_EXPIRED_TEXT)
             if (state.error != null) NoticeBanner(state.error, problem = true)
         }
         if (state.canDecide && state.decision == null) {

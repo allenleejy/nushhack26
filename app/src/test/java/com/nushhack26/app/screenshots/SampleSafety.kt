@@ -86,7 +86,8 @@ object SampleSafety {
         id = "a-seal", kind = AlertKind.SEAL_MISMATCH, itemId = item.id, handoverIds = listOf("h-seal"),
         reason = "seal mismatch", performedAt = at(12, 10), serverSeq = 6,
     )
-    private val hSeal = h1.copy(id = "h-seal", sealNo = "S-40999", status = ServerStatus.ACCEPTED)
+    /** Stands in for the seal-mismatch record; kept out of the synced chain so C-12 custody stays the demo's. */
+    private val hSeal = h1.copy(id = "h-seal", sealNo = "S-40999", serverSeq = null)
 
     val roster = Roster(listOf(siti, ravi, weiMing, drTan, jun), devices, listOf(item))
 

@@ -35,7 +35,7 @@ data class BranchUi(
     val sealOk: Boolean,
     val giver: SignatureLineUi,
     val receiver: SignatureLineUi,
-    /** The server's status, or CHOSEN / OVERRULED once decided. */
+    /** CHOSEN or OVERRULED once decided; nothing before, so neither branch looks favoured. */
     val statusText: String?,
 )
 
@@ -111,7 +111,7 @@ fun buildForkState(
             statusText = when {
                 resolution != null && resolution.chosenHandoverId == h.id -> "Chosen"
                 resolution != null -> "Overruled"
-                else -> h.status
+                else -> null
             },
         )
     }

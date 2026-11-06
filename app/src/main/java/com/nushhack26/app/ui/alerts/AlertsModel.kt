@@ -139,7 +139,7 @@ private fun overdueCard(itemId: String, itemCode: String, data: SafetyData, nowM
     val head: HandoverEntity = when (custody.status) {
         CustodyStatus.Overdue -> custody.head
         CustodyStatus.Disputed -> custody.forkBranches
-            .map { branchHead(it, data.handovers) }
+            .flatMap { branchHeads(it, data.handovers) }
             .filter { (it.kind == HandoverKind.ISSUE || it.kind == HandoverKind.TRANSFER) && (it.dueMs ?: Long.MAX_VALUE) < nowMs }
             .maxByOrNull { it.acceptedMs ?: 0 }
         else -> null
@@ -154,19 +154,23 @@ private fun overdueCard(itemId: String, itemCode: String, data: SafetyData, nowM
     )
 }
 
-/** Follows a branch's synced records to its last one. */
-private fun branchHead(start: HandoverEntity, handovers: List<HandoverEntity>): HandoverEntity {
+/** Follows a branch's synced records to every record at its end. */
+private fun branchHeads(start: HandoverEntity, handovers: List<HandoverEntity>): List<HandoverEntity> {
     val synced = handovers.filter {
         it.itemId == start.itemId && it.serverSeq != null && !it.hiddenByTamper &&
             it.status != ServerStatus.OVERRULED && it.status != ServerStatus.ORPHAN
     }
     val children = synced.groupBy { it.prevId }
-    var head = start
+    val heads = mutableListOf<HandoverEntity>()
     val seen = mutableSetOf<String>()
-    while (seen.add(head.id)) {
-        head = children[head.id].orEmpty().maxByOrNull { it.acceptedMs ?: 0 } ?: break
+    val stack = ArrayDeque(listOf(start))
+    while (stack.isNotEmpty()) {
+        val h = stack.removeLast()
+        if (!seen.add(h.id)) continue
+        val next = children[h.id].orEmpty()
+        if (next.isEmpty()) heads += h else next.forEach(stack::addLast)
     }
-    return head
+    return heads
 }
 
 /** The server's refusal reason (docs/sync.md D.3), in words. */
