@@ -100,11 +100,19 @@ fun GiveScreen(container: AppContainer, itemId: String, onDone: () -> Unit) {
     LaunchedEffect(waitingOn) {
         if (waitingOn != null) lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) { viewModel.watchRelay() }
     }
+    val tapLink = container.tapLink
+    val tapReady = rememberTapReady(tapLink, active = state.step == GiveStep.Offer)
+    // Serves the offer by tap while G3 shows it; once tapped, it keeps serving past the expiry
+    // so an acceptance signed in time still arrives.
+    val serving = state.offer?.payload?.takeIf { tapReady && state.step == GiveStep.Offer && (!state.offerExpired || state.tapped) }
+    LaunchedEffect(serving) {
+        if (serving != null) tapLink.serve(serving).collect { viewModel.onTapEvent(it) }
+    }
     val sign = rememberSignPrompt()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    GiveContent(state) { action ->
+    GiveContent(state.copy(tapReady = tapReady)) { action ->
         when (action) {
             GiveAction.Sign -> scope.launch {
                 val subtitle = viewModel.prepareSign() ?: return@launch
@@ -370,6 +378,8 @@ private fun ErrorBox(text: String) {
     }
 }
 
+private fun tappedText(name: String) = "Tapped · waiting for $name to scan the seal and accept"
+
 private fun countdown(seconds: Long): String = "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"
 
 @Composable
@@ -387,16 +397,22 @@ private fun OfferStep(state: GiveUiState, onAction: (GiveAction) -> Unit) {
                     style = TenetType.bodyLg, color = colors.ink,
                 )
             }
+            if (state.tapped) TapLine(tappedText(name))
         } else {
             QrPanel(offer.payload, caption = "Offer · ${summary.itemCode}", instruction = "Ask $name to scan this code.")
+            when {
+                state.tapped -> TapLine(tappedText(name))
+                state.tapReady -> TapLine("Or hold your phone to $name's")
+            }
             val left = state.secondsLeft
             Text(
                 "For $name only · single use · valid for ${countdown(left)}",
                 style = TenetType.bodyStrong, color = colors.ink,
             )
-            Text("Waiting for $name to accept", style = TenetType.body, color = colors.inkMuted)
+            if (!state.tapped) Text("Waiting for $name to accept", style = TenetType.body, color = colors.inkMuted)
         }
     }
+    state.tapError?.let { ErrorBox(it) }
     Row(horizontalArrangement = Arrangement.spacedBy(TenetDimens.space2), verticalAlignment = Alignment.CenterVertically) {
         if (state.offerExpired) TextLinkButton("Sign a new offer", onClick = { onAction(GiveAction.SignNewOffer) })
         else TextLinkButton("Cancel offer", onClick = { onAction(GiveAction.CancelOffer) })
@@ -437,8 +453,11 @@ private fun DoneStep(state: GiveUiState) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(TenetDimens.space3)) {
         Icon(Icons.Sharp.CheckCircle, contentDescription = null, tint = colors.ok, modifier = Modifier.size(TenetDimens.iconLg))
         Text(
-            if (done.viaServer) "Signed by both · sent through the server · 2 of 2 signatures checked on this phone"
-            else "Signed by both · checked offline · 2 of 2 signatures valid",
+            when {
+                done.viaTap -> "Signed by both · tapped, no network"
+                done.viaServer -> "Signed by both · sent through the server · 2 of 2 signatures checked on this phone"
+                else -> "Signed by both · checked offline · 2 of 2 signatures valid"
+            },
             style = TenetType.bodyStrong, color = colors.ink)
     }
     Column(

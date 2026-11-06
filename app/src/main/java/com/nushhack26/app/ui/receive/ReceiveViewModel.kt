@@ -84,6 +84,12 @@ data class ReceiveUiState(
     val fallbackText: String? = null,
     /** The Declined screen's lines. */
     val declinedText: String? = null,
+    /** R1: NFC and Bluetooth are on with the permissions, so the tap line shows. Set by the screen. */
+    val tapReady: Boolean = false,
+    /** The offer came by tap and the Nearby link to the giver's phone is up. */
+    val linked: Boolean = false,
+    /** R5 Tapped: the acceptance went back over the tap link. */
+    val sentTap: Boolean = false,
 ) {
     val refusedHeader: String
         get() = if (looksLikeCopy) "This is a copy. It can't be used." else "This handover can't be accepted."
@@ -126,6 +132,9 @@ class ReceiveViewModel(
     private var scannedSeal: String? = null
     private var ticker: Job? = null
     private var relayClosed = false
+    /** The tap link to the giver's phone, from R1 until the acceptance is sent or the offer refused. */
+    private var tap: TapSession? = null
+    private var tapWatch: Job? = null
 
     init {
         viewModelScope.launch { load() }
@@ -187,7 +196,27 @@ class ReceiveViewModel(
         }
     }
 
+    /**
+     * R1 tap (docs/sync.md A.11): the tapped offer goes down the same path as a scanned code,
+     * and [join] brings the link up in the background while the checks run.
+     */
+    fun onTapped(offerText: String, join: () -> TapSession) = onOfferScanned(offerText, join)
+
+    /** Closes the tap link. Safe to call more than once. */
+    fun closeTap() {
+        tapWatch?.cancel()
+        tapWatch = null
+        tap?.close()
+        tap = null
+        if (_state.value.linked) _state.update { it.copy(linked = false) }
+    }
+
+    override fun onCleared() {
+        closeTap()
+    }
+
     private fun restart() {
+        closeTap()
         ticker?.cancel()
         offer = null
         item = null
@@ -198,7 +227,7 @@ class ReceiveViewModel(
         }
     }
 
-    private fun onOfferScanned(text: String) {
+    private fun onOfferScanned(text: String, join: (() -> TapSession)? = null) {
         if (_state.value.step != ReceiveStep.ScanOffer) return
         val scanned = QrPayloads.parse(text) as? ScannedCode.Offer
         if (scanned == null) {
@@ -206,6 +235,14 @@ class ReceiveViewModel(
             return
         }
         _state.update { it.copy(step = ReceiveStep.Checking, message = null) }
+        if (join != null) {
+            closeTap()
+            val session = join()
+            tap = session
+            tapWatch = viewModelScope.launch {
+                session.linked.collect { up -> if (tap === session) _state.update { it.copy(linked = up) } }
+            }
+        }
         viewModelScope.launch { startChecks(scanned) }
     }
 
@@ -218,6 +255,7 @@ class ReceiveViewModel(
         giver = roster.person(scanned.offer.fromPersonId)
         val result = check()
         if (result == null) {
+            closeTap()
             if (relayedOfferId != null) {
                 closeRelayed()
                 _state.update { it.copy(step = ReceiveStep.Unavailable, message = "Not a handover code.") }
@@ -251,7 +289,11 @@ class ReceiveViewModel(
             )
         }
         // A refused relayed offer: nothing stored or sent, but the giver isn't left waiting.
-        if (!result.passed) closeRelayed()
+        // A refused tapped one: the link closes and nothing goes back.
+        if (!result.passed) {
+            closeRelayed()
+            closeTap()
+        }
         return result
     }
 
@@ -354,6 +396,7 @@ class ReceiveViewModel(
         val acceptance = QrPayloads.acceptance(record)
         val matchCode = Canonical.matchCode(record.recordHash)
         val relayedId = relayedOfferId
+        val session = tap
         if (relayedId != null && relay != null) {
             relayClosed = true
             _state.update {
@@ -364,6 +407,17 @@ class ReceiveViewModel(
             _state.update {
                 if (sent) it.copy(step = ReceiveStep.Done, sentOnline = true)
                 else it.copy(step = ReceiveStep.ShowAcceptance, fallbackText = "Couldn't reach the server. Show this to $who instead.")
+            }
+        } else if (session != null) {
+            _state.update {
+                it.copy(step = ReceiveStep.Sending, signing = false, message = null, acceptanceQr = acceptance, matchCode = matchCode)
+            }
+            val sent = session.send(acceptance)
+            closeTap()
+            val who = giver?.name?.let(::shortName) ?: "the giver"
+            _state.update {
+                if (sent) it.copy(step = ReceiveStep.Done, sentTap = true)
+                else it.copy(step = ReceiveStep.ShowAcceptance, fallbackText = "Couldn't reach $who's phone. Show this instead.")
             }
         } else {
             _state.update {
