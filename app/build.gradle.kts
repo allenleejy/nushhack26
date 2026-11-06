@@ -47,12 +47,12 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
-            resValue("string", "app_name", "NUSH Hack dev")
+            resValue("string", "app_name", "Countersign dev")
             signingConfig = signingConfigs.getByName("hack")
         }
         release {
             isMinifyEnabled = false
-            resValue("string", "app_name", "NUSH Hack")
+            resValue("string", "app_name", "Countersign")
             signingConfig = signingConfigs.getByName("hack")
         }
     }
@@ -105,6 +105,15 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
+
+    // Signing behind a fingerprint, and the QR swap (docs/sync.md A.1 and A.3).
+    implementation(libs.androidx.biometric)
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.mlkit.barcode.scanning)
+    implementation(libs.zxing.core)
 
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)

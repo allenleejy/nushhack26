@@ -1,14 +1,7 @@
-# The app opens, the tab bar shows, and Me shows a user id or "Will sign in when online".
+# The app opens: Enrol on a fresh install ("Who are you?"), or the role's first tab once enrolled.
 # Run: maestro test .maestro/smoke.yaml   (release build: -e APP_ID=com.nushhack26.app)
 appId: ${APP_ID || "com.nushhack26.app.debug"}
 ---
 - launchApp
-- assertVisible: "Home"
-- assertVisible: "Tasks"
-- assertVisible: "Me"
-- tapOn: "Me"
-- assertVisible: "Signed in as"
 - assertVisible:
-    text: "User .*|Will sign in when online"
-- assertVisible:
-    text: "Version .*"
+    text: "Who are you\\?|Store|My custody|Alerts"
