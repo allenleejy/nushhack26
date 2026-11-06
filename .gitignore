@@ -22,3 +22,10 @@ shots/
 *.log
 .DS_Store
 Thumbs.db
+
+# More Android Studio and Gradle output
+.navigation/
+output.json
+*.hprof
+app/release/
+app/debug/
