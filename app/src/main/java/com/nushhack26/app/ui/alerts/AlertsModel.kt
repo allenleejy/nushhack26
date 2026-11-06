@@ -99,7 +99,7 @@ fun buildAlertCards(data: SafetyData, nowMs: Long): List<AlertCard> {
                 alertId = alert.id,
                 itemCode = itemCode,
                 personName = name,
-                sentence = "$name signed two handovers of $itemCode after $after · " +
+                sentence = if (!valid) "One record has an invalid signature. It isn't proof against $name." else "$name signed two handovers of $itemCode after $after · " +
                     if (valid) SIGNATURES_VALID_TEXT else SIGNATURE_INVALID_TEXT,
                 signaturesValid = valid,
                 meta = "$itemCode · ${detected(alert)}",
@@ -113,7 +113,7 @@ fun buildAlertCards(data: SafetyData, nowMs: Long): List<AlertCard> {
         val h = data.handovers.firstOrNull { it.id in alert.handoverIds }
         val item = data.items.firstOrNull { it.id == alert.itemId }
         val sentence = if (h?.sealNo != null && item != null) {
-            "${item.code} accepted by ${roster.nameOf(h.toPersonId)} with seal ${h.sealNo}. The store record says ${item.sealNo}."
+            "${item.code} accepted by ${roster.nameOf(h.toPersonId)} with seal ${h.sealNo} (expected ${item.sealNo})"
         } else "Seal mismatch on ${code(alert.itemId)}: ${alert.reason}"
         AlertCard.SealMismatch(alert.id, alert.itemId, code(alert.itemId), sentence, detected(alert))
     }
@@ -149,7 +149,7 @@ private fun overdueCard(itemId: String, itemCode: String, data: SafetyData, nowM
     return AlertCard.Overdue(
         itemId = itemId,
         itemCode = itemCode,
-        sentence = "$itemCode overdue ${formatDuration(nowMs - due)} · last signed holder the server knows: " +
+        sentence = "$itemCode overdue ${formatDuration(nowMs - due)} · last holder the server knows: " +
             "${data.roster.nameOf(head.toPersonId)}$signed · $OVERDUE_CAVEAT",
     )
 }

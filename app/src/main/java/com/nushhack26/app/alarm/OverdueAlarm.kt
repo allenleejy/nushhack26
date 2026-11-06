@@ -100,7 +100,6 @@ object OverdueAlarm {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
             .setVibrate(VIBRATION)
-            .setOnlyAlertOnce(true)
             .setAutoCancel(true)
             .setContentIntent(open)
             .build()

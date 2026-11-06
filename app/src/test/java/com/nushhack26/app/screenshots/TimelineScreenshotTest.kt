@@ -98,7 +98,7 @@ class TimelineScreenshotTest {
     fun error() = captureScreen("Timeline_error") { TimelineContent(TimelineUiState.Error(LOCAL_DB_ERROR)) }
 
     @Test
-    @Config(qualifiers = NARROW)
+    @Config(qualifiers = NARROW_CUSTODY)
     fun narrowLargeText() {
         RuntimeEnvironment.setFontScale(1.3f)
         captureScreen("Timeline_360dp_font130") {

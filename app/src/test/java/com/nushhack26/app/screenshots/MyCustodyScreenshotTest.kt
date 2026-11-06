@@ -67,7 +67,7 @@ class MyCustodyScreenshotTest {
     fun error() = captureScreen("MyCustody_error") { MyCustodyContent(MyCustodyUiState.Error(LOCAL_DB_ERROR)) }
 
     @Test
-    @Config(qualifiers = NARROW)
+    @Config(qualifiers = NARROW_CUSTODY)
     fun narrowLargeText() {
         RuntimeEnvironment.setFontScale(1.3f)
         captureScreen("MyCustody_360dp_font130") {

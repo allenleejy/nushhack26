@@ -98,7 +98,7 @@ private fun Patch(text: String, ink: Color, ground: Color) {
 fun SigLine(sig: SigCheck) {
     val colors = Tenet.colors
     val (text, icon, color) = when (sig) {
-        SigCheck.Valid -> Triple("SIGNATURES CHECK OUT", Icons.Sharp.Verified, colors.ok)
+        SigCheck.Valid -> Triple("BOTH SIGNED ✓", Icons.Sharp.Verified, colors.ok)
         SigCheck.Invalid -> Triple("SIGNATURE DOESN'T MATCH", Icons.Sharp.GppBad, colors.alertText)
         SigCheck.UnknownKey -> Triple("KEY NOT ON THIS PHONE YET", Icons.Sharp.HelpOutline, colors.pending)
         SigCheck.Unsigned -> Triple("STORE REGISTER", Icons.Sharp.Verified, colors.inkMuted)

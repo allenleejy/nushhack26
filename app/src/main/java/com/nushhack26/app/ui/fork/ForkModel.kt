@@ -128,7 +128,7 @@ fun buildForkState(
         itemId = alert.itemId.orEmpty(),
         itemCode = itemCode,
         headline = "$itemCode · fork after $after",
-        evidence = "$giver signed two handovers of $itemCode that both follow $after · " +
+        evidence = if (!allOk) "One record has an invalid signature. It isn't proof against $giver." else "$giver signed two handovers of $itemCode that both follow $after · " +
             if (allOk) SIGNATURES_VALID_TEXT else SIGNATURE_INVALID_TEXT,
         branches = branches,
         canDecide = me != null && AccessRules.maySignDecision(me),

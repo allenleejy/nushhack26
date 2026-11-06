@@ -76,7 +76,7 @@ class EnrolViewModel(private val container: AppContainer) : ViewModel() {
                 fail("Fingerprint cancelled. Nothing was created.")
                 return@launch
             }
-            when (val outcome = container.enrolRepository.enrol(staffNo, code, key, BuildConfig.VERSION_NAME)) {
+            when (val outcome = container.enrolRepository.enrol(staffNo, code, key, "r${BuildConfig.VERSION_CODE}")) {
                 is EnrolOutcome.Enrolled -> _state.update {
                     it.copy(
                         busy = false,

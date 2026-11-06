@@ -90,7 +90,7 @@ fun CustodyCard(camera: HeldCamera, nowMs: Long, onHandOver: () -> Unit, onOpen:
                 horizontalArrangement = Arrangement.spacedBy(TenetDimens.space2),
             ) {
                 Icon(Icons.Sharp.Alarm, contentDescription = null, tint = colors.onAlert)
-                Text("OVERDUE. RETURN THIS CAMERA NOW", style = TenetType.label, color = colors.onAlert)
+                Text("${camera.code} return overdue · ${durationText(nowMs - (camera.dueMs ?: nowMs))}".uppercase(), style = TenetType.label, color = colors.onAlert)
             }
         }
         Column(Modifier.padding(TenetDimens.space4), verticalArrangement = Arrangement.spacedBy(TenetDimens.space3)) {
@@ -101,6 +101,10 @@ fun CustodyCard(camera: HeldCamera, nowMs: Long, onHandOver: () -> Unit, onOpen:
                     Text(camera.source.uppercase(), style = TenetType.recordLabel, color = colors.inkMuted)
                     Text("SEAL ${camera.sealNo}".uppercase(), style = TenetType.recordLabel, color = colors.inkMuted)
                 }
+            }
+            if (camera.status != CustodyStatus.Disputed) {
+                val due = camera.dueMs?.let { " · return by ${clockText(it)}" }.orEmpty()
+                Text("You hold ${camera.code} · sealed source ${camera.source.substringAfter(" · ")}$due", style = TenetType.body, color = colors.ink)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(TenetDimens.space2)) {
                 CustodyStatusChip(camera.status)

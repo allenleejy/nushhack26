@@ -49,7 +49,7 @@ class StoreScreenshotTest {
     fun error() = captureScreen("Store_error") { StoreContent(StoreUiState.Error(LOCAL_DB_ERROR), readOnly = false) }
 
     @Test
-    @Config(qualifiers = NARROW)
+    @Config(qualifiers = NARROW_CUSTODY)
     fun narrowLargeText() {
         RuntimeEnvironment.setFontScale(1.3f)
         captureScreen("Store_360dp_font130") {
@@ -59,4 +59,4 @@ class StoreScreenshotTest {
 }
 
 /** The smallest phone we support; pair with font scale 1.3. */
-const val NARROW = "w360dp-h780dp-xxhdpi"
+const val NARROW_CUSTODY = "w360dp-h780dp-xxhdpi"
