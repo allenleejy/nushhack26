@@ -38,7 +38,7 @@ import com.nushhack26.app.ui.theme.TenetDimens
 import com.nushhack26.app.ui.theme.TenetType
 
 const val OUTBOX_OFFLINE_TEXT = "Can't reach the server. Records stay on this phone."
-const val OUTBOX_EMPTY_TEXT = "Nothing waiting. Every record on this phone has reached the server."
+const val OUTBOX_EMPTY_TEXT = "Every record has been synced."
 
 sealed interface OutboxAction {
     data object SyncNow : OutboxAction
