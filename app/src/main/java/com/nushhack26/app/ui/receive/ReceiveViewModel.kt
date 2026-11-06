@@ -20,6 +20,7 @@ import com.nushhack26.app.data.repo.IdentityRepository
 import com.nushhack26.app.data.repo.ReceiveRepository
 import com.nushhack26.app.data.repo.RelayOutcome
 import com.nushhack26.app.data.repo.RelayRepository
+import com.nushhack26.app.nearby.TapAvailability
 import com.nushhack26.app.ui.components.SignResult
 import com.nushhack26.app.ui.components.SyncChipState
 import kotlinx.coroutines.CoroutineScope
@@ -49,6 +50,8 @@ data class HandoverSummary(
     val receiverRole: String,
     val kind: String,
     val dueMs: Long?,
+    /** The name people say ("Kestrel"); empty if the camera has none yet. */
+    val itemName: String = "",
 ) {
     val giverShortName: String get() = shortName(giverName)
 }
@@ -90,7 +93,31 @@ data class ReceiveUiState(
     val linked: Boolean = false,
     /** R5 Tapped: the acceptance went back over the tap link. */
     val sentTap: Boolean = false,
+    /** R1: the person chose SCAN A QR CODE INSTEAD. */
+    val qrMode: Boolean = false,
+    /** Each one flashes the offer scanner orange (a code that isn't an offer). */
+    val offerRejects: Int = 0,
+    /** Each one flashes the seal scanner orange (a seal that doesn't match). */
+    val sealRejects: Int = 0,
+    /** When the receiver signed: the stamp's time on the parcel label. */
+    val signedAtMs: Long? = null,
+    /** Set by the screen: whether tap can work on this phone right now. */
+    val tapAvailability: TapAvailability = TapAvailability.Ready,
+    /** Set by the screen: the RECEIVE tab, so R1 has no Cancel. */
+    val asTab: Boolean = false,
+    /** Set by the screen: false while the tab isn't settled, so no camera runs. */
+    val cameraOn: Boolean = true,
+    /** Set by the screen: the phones touched; R1 stays on the pulse until the flood covers it. */
+    val tapContact: Boolean = false,
 ) {
+    /** R1 shows the scanner: chosen, or the phone has no NFC. */
+    val scanningQr: Boolean
+        get() = qrMode || tapAvailability == TapAvailability.NoNfc
+
+    /** "482 107": the match code's six digits, grouped in threes, the same on both phones. */
+    val verifyCode: String?
+        get() = matchCode?.filter(Char::isDigit)?.takeIf { it.isNotEmpty() }?.chunked(3)?.joinToString(" ")
+
     val refusedHeader: String
         get() = if (looksLikeCopy) "This is a copy. It can't be used." else "This handover can't be accepted."
 }
@@ -107,6 +134,12 @@ sealed interface ReceiveAction {
     data object Done : ReceiveAction
     data object Decline : ReceiveAction
     data object Close : ReceiveAction
+    data object UseQr : ReceiveAction
+    data object UseTap : ReceiveAction
+    /** The tap flood covers the screen: R1 can give way to the checks. Handled by the screen. */
+    data object Flooded : ReceiveAction
+    /** Back from Settings: check NFC and Bluetooth again. Handled by the screen. */
+    data object RefreshTap : ReceiveAction
 }
 
 class ReceiveViewModel(
@@ -192,7 +225,9 @@ class ReceiveViewModel(
             }
             ReceiveAction.Done -> _state.update { it.copy(step = ReceiveStep.Done) }
             ReceiveAction.Decline -> decline()
-            ReceiveAction.Accept, ReceiveAction.Close -> Unit
+            ReceiveAction.UseQr -> _state.update { it.copy(qrMode = true, message = null) }
+            ReceiveAction.UseTap -> _state.update { it.copy(qrMode = false, message = null) }
+            ReceiveAction.Accept, ReceiveAction.Close, ReceiveAction.Flooded, ReceiveAction.RefreshTap -> Unit
         }
     }
 
@@ -200,7 +235,10 @@ class ReceiveViewModel(
      * R1 tap (docs/sync.md A.11): the tapped offer goes down the same path as a scanned code,
      * and [join] brings the link up in the background while the checks run.
      */
-    fun onTapped(offerText: String, join: () -> TapSession) = onOfferScanned(offerText, join)
+    fun onTapped(offerText: String, join: () -> TapSession) {
+        if (_state.value.step == ReceiveStep.ScanOffer) _state.update { it.copy(qrMode = false) }
+        onOfferScanned(offerText, join)
+    }
 
     /** Closes the tap link. Safe to call more than once. */
     fun closeTap() {
@@ -223,7 +261,10 @@ class ReceiveViewModel(
         giver = null
         scannedSeal = null
         _state.update {
-            ReceiveUiState(ReceiveStep.ScanOffer, torchOn = it.torchOn, rosterEmpty = roster.devices.isEmpty(), nowMs = clock())
+            ReceiveUiState(
+                ReceiveStep.ScanOffer, torchOn = it.torchOn, rosterEmpty = roster.devices.isEmpty(), nowMs = clock(),
+                qrMode = it.qrMode, offerRejects = it.offerRejects,
+            )
         }
     }
 
@@ -231,7 +272,7 @@ class ReceiveViewModel(
         if (_state.value.step != ReceiveStep.ScanOffer) return
         val scanned = QrPayloads.parse(text) as? ScannedCode.Offer
         if (scanned == null) {
-            _state.update { it.copy(message = "Not a handover code.") }
+            _state.update { it.copy(message = "Not a handover code.", offerRejects = it.offerRejects + 1) }
             return
         }
         _state.update { it.copy(step = ReceiveStep.Checking, message = null) }
@@ -260,7 +301,7 @@ class ReceiveViewModel(
                 closeRelayed()
                 _state.update { it.copy(step = ReceiveStep.Unavailable, message = "Not a handover code.") }
             } else {
-                _state.update { it.copy(step = ReceiveStep.ScanOffer, message = "Not a handover code.") }
+                _state.update { it.copy(step = ReceiveStep.ScanOffer, message = "Not a handover code.", offerRejects = it.offerRejects + 1) }
             }
             return
         }
@@ -349,7 +390,12 @@ class ReceiveViewModel(
         }
         val line = OfferChecker.checkSeal(seal, camera)
         scannedSeal = if (line.ok) seal.sealNo else null
-        _state.update { it.copy(message = null, seal = SealResult(line.ok, seal.sealNo, camera.sealNo, line.text)) }
+        _state.update {
+            it.copy(
+                message = null, seal = SealResult(line.ok, seal.sealNo, camera.sealNo, line.text),
+                sealRejects = if (line.ok) it.sealRejects else it.sealRejects + 1,
+            )
+        }
     }
 
     /**
@@ -382,9 +428,10 @@ class ReceiveViewModel(
             _state.update { it.copy(signing = false, message = cancelledText()) }
             return
         }
+        val signedAt = clock()
         val record = runCatching {
             withContext(Dispatchers.Default) {
-                val accepted = HandoverBuilder.acceptance(scanned.offer, id.deviceId, seal, clock())
+                val accepted = HandoverBuilder.acceptance(scanned.offer, id.deviceId, seal, signedAt)
                 HandoverBuilder.complete(accepted, deviceKeys().sign(Canonical.acceptanceString(accepted)))
                     .copy(syncStatus = SyncMark.WAITING)
             }
@@ -395,6 +442,7 @@ class ReceiveViewModel(
         withContext(Dispatchers.IO) { repo.saveAccepted(scanned.proof, record) }
         val acceptance = QrPayloads.acceptance(record)
         val matchCode = Canonical.matchCode(record.recordHash)
+        _state.update { it.copy(signedAtMs = signedAt) }
         val relayedId = relayedOfferId
         val session = tap
         if (relayedId != null && relay != null) {
@@ -456,7 +504,7 @@ class ReceiveViewModel(
             itemCode = camera.code, sourceSerial = camera.sourceSerial, isotope = camera.isotope, sealNo = camera.sealNo,
             giverName = giver?.name ?: "Unknown signer", giverRole = giver?.role.orEmpty(),
             receiverName = receiver?.name ?: identity?.name.orEmpty(), receiverRole = receiver?.role ?: identity?.role.orEmpty(),
-            kind = h.kind, dueMs = h.dueMs,
+            kind = h.kind, dueMs = h.dueMs, itemName = camera.name,
         )
     }
 }

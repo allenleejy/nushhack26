@@ -1,6 +1,16 @@
 package com.nushhack26.app.ui.receive
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,8 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.sharp.FlashlightOff
-import androidx.compose.material.icons.sharp.FlashlightOn
 import androidx.compose.material.icons.sharp.PersonOff
 import androidx.compose.material.icons.sharp.QrCodeScanner
 import androidx.compose.material3.Text
@@ -18,7 +26,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -27,8 +39,19 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.nushhack26.app.AppContainer
 import com.nushhack26.app.ui.components.EmptyState
 import com.nushhack26.app.ui.components.ErrorState
-import com.nushhack26.app.ui.components.HandoverRole
+import com.nushhack26.app.nearby.TapAvailability
 import com.nushhack26.app.ui.components.HandoverStepper
+import com.nushhack26.app.ui.components.HandoverSteps
+import com.nushhack26.app.ui.components.ParcelField
+import com.nushhack26.app.ui.components.ParcelLabel
+import com.nushhack26.app.ui.components.TapOffPanel
+import com.nushhack26.app.ui.components.TapPhase
+import com.nushhack26.app.ui.components.TapPulse
+import com.nushhack26.app.ui.components.formatTime
+import com.nushhack26.app.ui.components.rememberHaptics
+import com.nushhack26.app.ui.theme.LocalReduceMotion
+import com.nushhack26.app.ui.theme.TenetMotion
+import androidx.compose.ui.unit.IntOffset
 import com.nushhack26.app.ui.components.LoadingState
 import com.nushhack26.app.ui.components.PrimaryButton
 import com.nushhack26.app.ui.components.QrPanel
@@ -80,13 +103,18 @@ fun ReceiveScreen(
     )
     val state by viewModel.state.collectAsStateWithLifecycle()
     val tapLink = container.tapLink
+    val availability by tapLink.available.collectAsStateWithLifecycle()
     val onR1 = state.step == ReceiveStep.ScanOffer && relayedOfferId == null && active
     val tapReady = rememberTapReady(tapLink, active = onR1)
     val inFlow = state.step !in setOf(ReceiveStep.Loading, ReceiveStep.Unavailable, ReceiveStep.ScanOffer)
     LaunchedEffect(inFlow) { onFlowChange(inFlow) }
+    // The phones touched: R1 holds the pulse until the flood covers the screen, then the checks show.
+    var tapContact by remember(viewModel) { mutableStateOf(false) }
     tapLink.rememberTapReader(enabled = onR1 && tapReady && !state.rosterEmpty) { payload ->
+        if (!viewModel.state.value.qrMode) tapContact = true
         viewModel.onTapped(payload.offer) { tapLink.join(payload).asTapSession() }
     }
+    ReceiveHaptics(state)
     DisposableEffect(viewModel) { onDispose { viewModel.closeTap() } }
     val sign = rememberSignPrompt()
     val scope = rememberCoroutineScope()
@@ -96,7 +124,10 @@ fun ReceiveScreen(
             onDone()
         }
     }
-    ReceiveContent(state.copy(tapReady = tapReady && onR1)) { action ->
+    val shown = state.copy(
+        tapReady = tapReady && onR1, tapAvailability = availability, asTab = asTab, cameraOn = active, tapContact = tapContact,
+    )
+    ReceiveContent(shown) { action ->
         when (action) {
             ReceiveAction.Accept -> scope.launch {
                 if (!viewModel.prepareAccept()) return@launch
@@ -108,9 +139,25 @@ fun ReceiveScreen(
                 viewModel.finishAccept(result)
             }
             ReceiveAction.Close -> onDone()
+            ReceiveAction.Flooded -> tapContact = false
+            ReceiveAction.RefreshTap -> tapLink.refresh()
             else -> viewModel.onAction(action)
         }
     }
+}
+
+/** Ticks as each check line appears, rejects a refusal or a wrong seal, confirms a matching seal. Fires with animations off too. */
+@Composable
+private fun ReceiveHaptics(state: ReceiveUiState) {
+    val haptics = rememberHaptics()
+    LaunchedEffect(state.revealedLines) {
+        if (state.step == ReceiveStep.Checks && state.revealedLines in 1..state.lines.size) haptics.tick()
+    }
+    val refused = state.step == ReceiveStep.Checks && state.lines.isNotEmpty() && state.revealedLines >= state.lines.size && !state.passed
+    LaunchedEffect(refused) { if (refused) haptics.reject() }
+    LaunchedEffect(state.sealRejects) { if (state.sealRejects > 0) haptics.reject() }
+    val sealMatches = state.step == ReceiveStep.ScanSeal && state.seal?.matches == true
+    LaunchedEffect(sealMatches) { if (sealMatches) haptics.confirm() }
 }
 
 /** Stateless: draws one step of the receiver's flow. */
@@ -123,15 +170,70 @@ fun ReceiveContent(state: ReceiveUiState, modifier: Modifier = Modifier, onActio
     }
 }
 
+/** Where a step sits in the flow, so a step change slides the right way. One page per step the person sees. */
+private fun page(step: ReceiveStep): Int = when (step) {
+    ReceiveStep.ScanOffer -> 0
+    ReceiveStep.Checking, ReceiveStep.Checks -> 1
+    ReceiveStep.ScanSeal -> 2
+    ReceiveStep.Accept -> 3
+    ReceiveStep.Sending -> 4
+    ReceiveStep.ShowAcceptance -> 5
+    ReceiveStep.Done -> 6
+    ReceiveStep.Declined -> 7
+    else -> -1
+}
+
+private fun stepNumber(step: ReceiveStep): Int = when (step) {
+    ReceiveStep.ScanOffer, ReceiveStep.Checking, ReceiveStep.Checks -> 1
+    ReceiveStep.ScanSeal -> 2
+    ReceiveStep.Accept, ReceiveStep.Sending, ReceiveStep.ShowAcceptance -> 3
+    else -> 4
+}
+
 @Composable
 private fun StepFrame(state: ReceiveUiState, modifier: Modifier, onAction: (ReceiveAction) -> Unit) {
-    val stepNumber = when (state.step) {
-        ReceiveStep.ScanOffer, ReceiveStep.Checking, ReceiveStep.Checks -> 1
-        ReceiveStep.ScanSeal -> 2
-        ReceiveStep.Accept, ReceiveStep.Sending, ReceiveStep.ShowAcceptance -> 3
-        else -> 4
+    // Until the flood covers the screen, a tap still shows R1's pulse.
+    val shown = if (state.tapContact) state.copy(step = ReceiveStep.ScanOffer, message = null) else state
+    val steps = when {
+        shown.relayed -> HandoverSteps.receiverOnline
+        shown.scanningQr -> HandoverSteps.receiverQr
+        else -> HandoverSteps.receiverTap
     }
+    val reduce = LocalReduceMotion.current
     Column(modifier.fillMaxSize()) {
+        if (shown.step != ReceiveStep.Declined) {
+            HandoverStepper(
+                steps,
+                stepNumber(shown.step),
+                Modifier.padding(start = TenetDimens.space4, end = TenetDimens.space4, top = TenetDimens.space4),
+            )
+        }
+        AnimatedContent(
+            targetState = shown,
+            contentKey = { page(it.step) },
+            transitionSpec = {
+                val from = page(initialState.step)
+                val to = page(targetState.step)
+                // The flood already revealed the checks, so they don't slide in under it as well.
+                if (reduce || initialState.tapContact || from == to) {
+                    EnterTransition.None togetherWith ExitTransition.None
+                } else {
+                    val forward = if (to > from) 1 else -1
+                    val spec = tween<IntOffset>(TenetMotion.STEP_MS, easing = TenetMotion.Emphasized)
+                    slideInHorizontally(spec) { it * forward } togetherWith slideOutHorizontally(spec) { -it * forward }
+                }
+            },
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            label = "receive step",
+        ) { pageState ->
+            StepPage(pageState, onAction)
+        }
+    }
+}
+
+@Composable
+private fun StepPage(state: ReceiveUiState, onAction: (ReceiveAction) -> Unit) {
+    Column(Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -140,7 +242,6 @@ private fun StepFrame(state: ReceiveUiState, modifier: Modifier, onAction: (Rece
                 .padding(TenetDimens.space4),
             verticalArrangement = Arrangement.spacedBy(TenetDimens.space4),
         ) {
-            if (state.step != ReceiveStep.Declined) HandoverStepper(HandoverRole.Receiver, stepNumber)
             if (state.linked && state.step in LINKED_STEPS) {
                 LinkedMark("Linked to ${state.summary?.giverShortName ?: "the giver"}'s phone")
             }
@@ -171,6 +272,31 @@ private fun StepFrame(state: ReceiveUiState, modifier: Modifier, onAction: (Rece
     }
 }
 
+/** The scanner, or its empty frame while the tab isn't settled, so no camera runs mid-swipe. */
+@Composable
+private fun Scanner(
+    state: ReceiveUiState,
+    title: String,
+    hint: String,
+    rejectCount: Int,
+    onCode: (String) -> Unit,
+    onAction: (ReceiveAction) -> Unit,
+) {
+    if (!state.cameraOn) {
+        Box(Modifier.fillMaxWidth().aspectRatio(1f).background(Tenet.colors.bg200))
+        return
+    }
+    QrScanner(
+        onCode = onCode,
+        torchOn = state.torchOn,
+        hint = hint,
+        title = title,
+        onToggleTorch = { onAction(ReceiveAction.ToggleTorch) },
+        rejectCount = rejectCount,
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
 @Composable
 private fun ScanOfferBody(state: ReceiveUiState, onAction: (ReceiveAction) -> Unit) {
     if (state.rosterEmpty) {
@@ -184,18 +310,22 @@ private fun ScanOfferBody(state: ReceiveUiState, onAction: (ReceiveAction) -> Un
         )
         return
     }
-    QrScanner(
-        onCode = { onAction(ReceiveAction.OfferScanned(it)) },
-        torchOn = state.torchOn,
-        hint = "Point at the giver's code",
-        modifier = Modifier.fillMaxWidth(),
-    )
-    if (state.tapReady) TapLine("Or hold your phone to the giver's")
-    SecondaryButton(
-        if (state.torchOn) "Torch off" else "Torch on",
-        onClick = { onAction(ReceiveAction.ToggleTorch) },
-        icon = if (state.torchOn) Icons.Sharp.FlashlightOff else Icons.Sharp.FlashlightOn,
-    )
+    when {
+        state.scanningQr && !state.tapContact -> {
+            Scanner(
+                state, title = "Scanner · offer", hint = "Point at the giver's code", rejectCount = state.offerRejects,
+                onCode = { onAction(ReceiveAction.OfferScanned(it)) }, onAction = onAction,
+            )
+            if (state.tapReady) TapLine("Or hold your phone to the giver's")
+        }
+        state.tapContact || state.tapAvailability == TapAvailability.Ready -> TapPulse(
+            phase = if (state.tapContact) TapPhase.Contact else TapPhase.Waiting,
+            title = "HOLD TO THE GIVER'S PHONE",
+            subtitle = "Back to back, until both buzz.",
+            onFlooded = { onAction(ReceiveAction.Flooded) },
+        )
+        else -> TapOffPanel(state.tapAvailability, onResume = { onAction(ReceiveAction.RefreshTap) })
+    }
 }
 
 @Composable
@@ -213,23 +343,23 @@ private fun ChecksBody(state: ReceiveUiState) {
 
 @Composable
 private fun ScanSealBody(state: ReceiveUiState, onAction: (ReceiveAction) -> Unit) {
-    val code = state.summary?.itemCode.orEmpty()
+    val summary = state.summary
+    val code = summary?.itemCode.orEmpty()
     val seal = state.seal
-    if (seal == null) {
-        QrScanner(
-            onCode = { onAction(ReceiveAction.SealScanned(it)) },
-            torchOn = state.torchOn,
-            hint = "Scan the seal on camera $code",
-            modifier = Modifier.fillMaxWidth(),
-        )
-        SecondaryButton(
-            if (state.torchOn) "Torch off" else "Torch on",
-            onClick = { onAction(ReceiveAction.ToggleTorch) },
-            icon = if (state.torchOn) Icons.Sharp.FlashlightOff else Icons.Sharp.FlashlightOn,
-        )
-    } else {
+    if (seal != null) {
         SealCheckRow(seal.matches, code, seal.scanned, seal.expected)
         Text(seal.text, style = TenetType.bodyLg, color = if (seal.matches) Tenet.colors.ink else Tenet.colors.alertText)
+    }
+    // A wrong seal keeps the scanner up: it flashes orange, and the right seal can still be scanned.
+    if (seal?.matches != true) {
+        Scanner(
+            state,
+            title = "Scanner · seal",
+            hint = "Scan the seal on ${summary?.let(::cameraInSentence) ?: "the camera"}",
+            rejectCount = state.sealRejects,
+            onCode = { onAction(ReceiveAction.SealScanned(it)) },
+            onAction = onAction,
+        )
     }
 }
 
@@ -248,29 +378,35 @@ private fun ShowBody(state: ReceiveUiState) {
     val qr = state.acceptanceQr ?: return
     state.fallbackText?.let { Text(it, style = TenetType.bodyLg, color = Tenet.colors.ink) }
     QrPanel(qr, caption = "Acceptance · ${summary.itemCode}", instruction = "Show this to ${summary.giverShortName}")
-    state.matchCode?.let { MatchCode(it, summary.giverShortName) }
+    state.verifyCode?.let { VerifyLine(it) }
 }
 
+/** Every path ends here: the parcel label stamped RECEIVED, the sync line, then the small verify code. */
 @Composable
 private fun DoneBody(state: ReceiveUiState) {
     val summary = state.summary ?: return
-    if (state.sentTap) {
-        Text("Sent to ${summary.giverShortName}'s phone, no network", style = TenetType.bodyLg, color = Tenet.colors.ink)
-        state.matchCode?.let { MatchCode(it, summary.giverShortName) }
-        DoneLabel(summary, matchCode = null, header = "Accepted · tapped, no network")
-    } else if (state.sentOnline) {
-        Text("Sent to ${summary.giverShortName} · ask them to check the match code", style = TenetType.bodyLg, color = Tenet.colors.ink)
-        state.matchCode?.let { MatchCode(it, summary.giverShortName) }
-        DoneLabel(summary, matchCode = null, header = "Accepted · sent through the server")
-    } else {
-        DoneLabel(summary, state.matchCode)
-    }
-    SyncChip(state.recordSync)
-    Text(
-        if (state.recordSync == SyncChipState.Synced) "Synced" else "Not synced yet",
-        style = TenetType.body,
-        color = Tenet.colors.inkMuted,
+    ParcelLabel(
+        itemName = summary.itemName,
+        itemCode = summary.itemCode,
+        fields = listOf(
+            ParcelField("From", summary.giverName),
+            ParcelField("To", summary.receiverName),
+            ParcelField("Seal", summary.sealNo),
+            ParcelField("Return by", summary.dueMs?.let(::formatTime) ?: "No return time"),
+        ),
+        stampWord = "Received",
+        stampTime = formatTime(state.signedAtMs ?: state.nowMs),
+        stampLine = "From ${summary.giverShortName}",
     )
+    Row(horizontalArrangement = Arrangement.spacedBy(TenetDimens.space3), verticalAlignment = Alignment.CenterVertically) {
+        SyncChip(state.recordSync)
+        Text(
+            if (state.recordSync == SyncChipState.Synced) "Synced" else "Not synced yet",
+            style = TenetType.body,
+            color = Tenet.colors.inkMuted,
+        )
+    }
+    state.verifyCode?.let { VerifyLine(it) }
 }
 
 @Composable
@@ -299,9 +435,23 @@ private fun LeaveActions(state: ReceiveUiState, onAction: (ReceiveAction) -> Uni
 
 @Composable
 private fun BottomActions(state: ReceiveUiState, onAction: (ReceiveAction) -> Unit) {
+    if (state.tapContact) return
     val code = state.summary?.itemCode.orEmpty()
     when (state.step) {
-        ReceiveStep.ScanOffer, ReceiveStep.Checking -> TextLinkButton("Cancel", onClick = { onAction(ReceiveAction.Close) })
+        ReceiveStep.ScanOffer -> {
+            if (!state.rosterEmpty) {
+                when {
+                    !state.scanningQr -> SecondaryButton(
+                        "Scan a QR code instead",
+                        onClick = { onAction(ReceiveAction.UseQr) },
+                        icon = Icons.Sharp.QrCodeScanner,
+                    )
+                    state.tapAvailability != TapAvailability.NoNfc -> TextLinkButton("Use tap instead", onClick = { onAction(ReceiveAction.UseTap) })
+                }
+            }
+            if (!state.asTab) TextLinkButton("Cancel", onClick = { onAction(ReceiveAction.Close) })
+        }
+        ReceiveStep.Checking -> TextLinkButton("Cancel", onClick = { onAction(ReceiveAction.Close) })
         ReceiveStep.Checks -> {
             val allShown = state.revealedLines >= state.lines.size
             if (allShown && state.passed) {
@@ -332,7 +482,8 @@ private fun BottomActions(state: ReceiveUiState, onAction: (ReceiveAction) -> Un
             LeaveActions(state, onAction)
         }
         ReceiveStep.ShowAcceptance -> PrimaryButton("Done", onClick = { onAction(ReceiveAction.Done) })
-        ReceiveStep.Done, ReceiveStep.Declined -> PrimaryButton("Close", onClick = { onAction(ReceiveAction.Close) })
+        ReceiveStep.Done -> PrimaryButton("Done", onClick = { onAction(ReceiveAction.Close) })
+        ReceiveStep.Declined -> PrimaryButton("Close", onClick = { onAction(ReceiveAction.Close) })
         else -> Unit
     }
 }
