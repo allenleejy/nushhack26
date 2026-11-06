@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Who Holds the Source?</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: one reading column set like a custody record. Mono record labels, square "slips", and radiation-signage yellow and magenta used only as markers. */
+:root {
+  --bg: #F4F4EF;
+  --surface: #FFFFFF;
+  --fg: #16181D;
+  --muted: #545963;
+  --line: #D6D6CC;
+  --sign: #F2C200;
+  --sign-ink: #16181D;
+  --sign-bg: #FFF5C7;
+  --mag: #A3136B;
+  --mag-bg: #F7E6F0;
+  --ok: #1D7447;
+  --ok-bg: #E4F2EA;
+  --alert: #BE2D27;
+  --alert-bg: #FBE9E8;
+  --display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111317; --surface: #1A1D23; --fg: #ECEDEF; --muted: #A4A9B3; --line: #30343C;
+    --sign: #F5CB2E; --sign-ink: #16181D; --sign-bg: #3A3216; --mag: #E772BD; --mag-bg: #38182C;
+    --ok: #52C48F; --ok-bg: #15301F; --alert: #FF6E64; --alert-bg: #3B1C1B;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111317; --surface: #1A1D23; --fg: #ECEDEF; --muted: #A4A9B3; --line: #30343C;
+  --sign: #F5CB2E; --sign-ink: #16181D; --sign-bg: #3A3216; --mag: #E772BD; --mag-bg: #38182C;
+  --ok: #52C48F; --ok-bg: #15301F; --alert: #FF6E64; --alert-bg: #3B1C1B;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--body);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+}
+img, svg { max-width: 100%; }
+a { color: var(--mag); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--mag); outline-offset: 2px; }
+.wrap {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+p, li { max-width: 68ch; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+h1, h2 { font-family: var(--display); font-weight: 800; letter-spacing: .005em; line-height: 1.02; }
+h1 { font-size: clamp(3rem, 9vw, 5.6rem); text-transform: uppercase; }
+h2 { font-size: clamp(2rem, 5vw, 3rem); text-transform: uppercase; }
+h3 { font-size: 1.15rem; font-weight: 600; line-height: 1.35; }
+.label {
+  font-family: var(--mono); font-size: .76rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted);
+}
+code, .mono { font-family: var(--mono); font-size: .92em; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* Header */
+.top { padding-block: 40px 28px; border-bottom: 1px solid var(--line); }
+.top .mark { display: flex; align-items: center; gap: 14px; }
+.trefoil { width: 46px; height: 46px; flex: none; }
+.trefoil rect { fill: var(--sign); }
+.trefoil path, .trefoil circle { fill: var(--mag); }
+.lede { font-size: clamp(1.1rem, 2.4vw, 1.3rem); color: var(--fg); max-width: 60ch; margin: 18px 0 0; }
+.meta { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px 18px; }
+
+/* Summary slip */
+.slip {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 20px 22px;
+}
+.slip.dashed { border-style: dashed; }
+.slip h3 { margin-bottom: 8px; }
+.summary { margin-top: 28px; display: grid; gap: 14px; }
+.summary ol { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; }
+
+/* Part nav */
+.partnav { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 6px; }
+.partnav a {
+  font-family: var(--mono); font-size: .78rem; text-decoration: none; color: var(--fg);
+  border: 1px solid var(--line); background: var(--surface); padding: 5px 9px;
+}
+.partnav a:hover { border-color: var(--fg); }
+
+/* Sections */
+section { padding-block: 56px 8px; }
+.part-head { display: grid; gap: 10px; margin-bottom: 22px; }
+.part-tag {
+  justify-self: start; font-family: var(--mono); font-size: .76rem; letter-spacing: .09em; text-transform: uppercase;
+  background: var(--sign); color: var(--sign-ink); padding: 3px 8px; font-weight: 500;
+}
+.stack { display: grid; gap: 16px; }
+.stack > * { margin: 0; }
+blockquote.statement {
+  margin: 0; padding: 22px 24px; background: var(--surface); border: 1px solid var(--line);
+  font-size: clamp(1.15rem, 2.6vw, 1.45rem); line-height: 1.45;
+}
+blockquote.statement mark { background: var(--sign-bg); color: inherit; padding: 0 3px; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+th, td { text-align: left; vertical-align: top; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+th { font-family: var(--mono); font-size: .74rem; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); font-weight: 500; background: var(--bg); }
+td.yes { color: var(--ok); font-weight: 600; }
+td.no { color: var(--muted); }
+tr.ours td { background: var(--sign-bg); }
+.wide-table table { min-width: 640px; }
+
+/* Grid of cards */
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.grid > * { min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); padding: 16px 18px; display: grid; gap: 6px; align-content: start; }
+.card p { margin: 0; }
+
+/* Steps */
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: s; }
+ol.steps li {
+  counter-increment: s; display: grid; grid-template-columns: 2.2rem 1fr; gap: 12px; align-items: start;
+  background: var(--surface); border: 1px solid var(--line); padding: 14px 16px; max-width: none;
+}
+ol.steps li::before {
+  content: counter(s); font-family: var(--display); font-weight: 800; font-size: 1.6rem; line-height: 1; color: var(--mag);
+}
+
+/* Quote and callouts */
+.pull { font-size: 1.2rem; line-height: 1.45; border-top: 2px solid var(--fg); border-bottom: 1px solid var(--line); padding-block: 16px; margin: 0; max-width: 60ch; }
+.note { font-size: .92rem; color: var(--muted); }
+.chip { display: inline-block; font-family: var(--mono); font-size: .72rem; padding: 1px 6px; border: 1px solid currentColor; letter-spacing: .04em; vertical-align: 1px; }
+.chip.fact { color: var(--ok); }
+.chip.rep { color: var(--mag); }
+.chip.inf { color: var(--muted); }
+
+/* Diagrams */
+.diagram { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); padding: 14px; }
+.diagram svg { display: block; width: 100%; min-width: 620px; height: auto; }
+.d-box { fill: var(--bg); stroke: var(--fg); stroke-width: 1.5; }
+.d-box.store { fill: var(--sign-bg); }
+.d-box.bad { stroke: var(--alert); stroke-width: 2.5; fill: var(--alert-bg); }
+.d-t { fill: var(--fg); font-family: var(--body); font-size: 15px; font-weight: 600; }
+.d-s { fill: var(--muted); font-family: var(--mono); font-size: 12px; }
+.d-m { fill: var(--mag); font-family: var(--mono); font-size: 12px; }
+.d-a { fill: var(--alert); font-family: var(--mono); font-size: 12px; font-weight: 500; }
+.d-line { stroke: var(--fg); stroke-width: 1.6; fill: none; }
+.d-line.bad { stroke: var(--alert); stroke-width: 2.2; }
+.d-head { fill: var(--fg); }
+.d-head.bad { fill: var(--alert); }
+.d-off { fill: none; stroke: var(--muted); stroke-dasharray: 4 4; }
+
+/* Simulator */
+.sim { display: grid; gap: 16px; }
+.sim-controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.sim-controls button, .btn {
+  font: 500 .92rem var(--body); padding: 9px 13px; min-height: 44px; cursor: pointer;
+  border: 1px solid var(--fg); background: var(--surface); color: var(--fg);
+}
+.sim-controls button.next { background: var(--fg); color: var(--bg); }
+.sim-controls button:disabled { cursor: not-allowed; opacity: .45; }
+.sim-controls button.done { border-color: var(--ok); color: var(--ok); opacity: 1; background: var(--ok-bg); }
+.sim-controls .reset { margin-left: auto; border-style: dashed; }
+.narration { background: var(--sign-bg); border: 1px solid var(--line); padding: 14px 16px; min-height: 4.6em; }
+.narration .clock { font-family: var(--mono); font-weight: 500; margin-right: 6px; }
+.phones { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.phone { background: var(--surface); border: 1.5px solid var(--fg); border-radius: 18px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.phone-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.phone-name { font-weight: 600; }
+.pill { font-family: var(--mono); font-size: .7rem; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+.pill.on { background: var(--ok-bg); color: var(--ok); }
+.pill.off { background: var(--bg); color: var(--muted); border: 1px dashed var(--muted); }
+.holds { font-size: .95rem; padding: 6px 8px; background: var(--bg); }
+.holds.yes { background: var(--sign-bg); font-weight: 600; }
+.alarm { background: var(--alert-bg); color: var(--alert); font-weight: 600; padding: 6px 8px; font-size: .92rem; }
+.recs { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-family: var(--mono); font-size: .78rem; }
+.recs li { display: flex; justify-content: space-between; gap: 6px; border-bottom: 1px dotted var(--line); padding-bottom: 3px; max-width: none; }
+.recs .st { color: var(--muted); white-space: nowrap; }
+.recs .st.wait { color: var(--mag); }
+.server { background: var(--surface); border: 1.5px solid var(--fg); padding: 16px; display: grid; gap: 10px; }
+.server .recs { font-size: .82rem; }
+.server .recs li.forked { color: var(--alert); }
+.s-alert { padding: 10px 12px; font-size: .94rem; }
+.s-alert.alert { background: var(--alert-bg); color: var(--alert); font-weight: 600; }
+.s-alert.warn { background: var(--sign-bg); }
+.s-alert.ok { background: var(--ok-bg); color: var(--ok); }
+.empty { color: var(--muted); font-size: .9rem; font-style: italic; }
+
+/* Five properties */
+.props { display: grid; gap: 10px; }
+.prop { display: grid; grid-template-columns: 2.4rem 1fr; gap: 12px; background: var(--surface); border: 1px solid var(--line); padding: 14px 16px; }
+.prop .n { font-family: var(--display); font-weight: 800; font-size: 1.7rem; line-height: 1; color: var(--mag); }
+.prop p { margin: 4px 0 0; }
+
+footer { margin-top: 64px; border-top: 1px solid var(--line); padding-block: 26px 48px; }
+.sources { font-size: .9rem; display: grid; gap: 4px; padding-left: 1.2em; }
+.sources li { max-width: none; overflow-wrap: anywhere; }
+
+@media (max-width: 520px) {
+  body { font-size: 1rem; }
+  .slip { padding: 16px; }
+  .sim-controls .reset { margin-left: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .phone, .server { transition: border-color .2s ease; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="mark">
+      <svg class="trefoil" viewBox="0 0 100 100" aria-hidden="true">
+        <rect x="0" y="0" width="100" height="100"></rect>
+        <circle cx="50" cy="50" r="8"></circle>
+        <path d="M70 84.64 A40 40 0 0 1 30 84.64 L44 60.39 A12 12 0 0 0 56 60.39 Z"></path>
+        <path d="M10 50 A40 40 0 0 1 30 15.36 L44 39.61 A12 12 0 0 0 38 50 Z"></path>
+        <path d="M70 15.36 A40 40 0 0 1 90 50 L62 50 A12 12 0 0 0 56 39.61 Z"></path>
+      </svg>
+      <span class="label">NUSH Hack 2026 · sponsor: DSO National Laboratories</span>
+    </div>
+    <h1 style="margin-top:18px">Who holds the source?</h1>
+    <p class="lede">An app that lets radiation workers hand over radioactive sources with no network, where both people sign every handover, and the records still add up to one true chain when the phones reconnect.</p>
+    <div class="meta">
+      <span class="label">Item: camera C-12 · source IR-0457 (example)</span>
+      <span class="label">Reading time: about 15 minutes</span>
+    </div>
+
+    <div class="summary">
+      <div class="slip">
+        <h3>In 30 seconds</h3>
+        <ol>
+          <li>The challenge asks for an app where <strong>safety personnel</strong> keep doing <strong>security processes</strong> offline, and the changes <strong>sync correctly</strong> later.</li>
+          <li>We picked a real process with those exact words in its rulebook: the <strong>safety and security of radioactive sources</strong>, carried by radiation workers to shipyards and plants.</li>
+          <li>Singapore's rules record a source leaving and returning to its store, and its location once a day. <strong>Nobody records who holds it in between, and nobody signs for it.</strong> That gap is where sources have gone missing.</li>
+          <li>Our app makes <strong>both people sign every handover</strong> on their phones, swapped by QR code with no network. It raises an alarm when a source is overdue, and at sync it <strong>proves who made any double handover</strong>.</li>
+        </ol>
+      </div>
+    </div>
+
+    <nav class="partnav" aria-label="Parts of this page">
+      <a href="#p0">0 · The challenge</a>
+      <a href="#p1">1 · Why offline is hard</a>
+      <a href="#p2">2 · Why defence cares</a>
+      <a href="#p3">3 · The setting</a>
+      <a href="#p4">4 · What went wrong</a>
+      <a href="#p5">5 · What exists</a>
+      <a href="#p6">6 · Our solution</a>
+      <a href="#p7">7 · Try it</a>
+      <a href="#p8">8 · Why it's correct</a>
+      <a href="#p9">9 · Why it's new and useful</a>
+      <a href="#p10">10 · Limits</a>
+      <a href="#p11">11 · Demo and judging</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- PART 0 -->
+<section id="p0">
+  <div class="part-head">
+    <span class="part-tag">Part 0</span>
+    <h2>The challenge, word by word</h2>
+  </div>
+  <div class="stack">
+    <blockquote class="statement">"Build an app that lets <mark>safety personnel</mark> keep completing <mark>security processes</mark> <mark>offline</mark> and <mark>syncs their changes correctly</mark> when internet access returns."</blockquote>
+    <p>Each highlighted phrase is a requirement. A good answer names a real person, a real process, a real reason they're offline, and a real way the sync can go wrong.</p>
+    <div class="table-wrap wide-table">
+      <table>
+        <thead><tr><th>Phrase</th><th>What it requires</th><th>Our answer</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Safety personnel</strong></td><td>A real role whose job is safety</td><td>The <strong>radiation safety officer</strong> (reg 19), <strong>registered radiation workers</strong>, and the <strong>store officer</strong> who issues sources</td></tr>
+          <tr><td><strong>Security processes</strong></td><td>A real procedure that protects something</td><td>The <strong>security of radioactive sources</strong>: signing a source out, carrying it, passing it on, returning it, and knowing where it is every day</td></tr>
+          <tr><td><strong>Offline</strong></td><td>A real reason they can't reach the system</td><td>Handovers happen inside steel tanks and hulls, at sea, and in plant areas where phones are restricted</td></tr>
+          <tr><td><strong>Syncs their changes correctly</strong></td><td>Records from many devices become one truth</td><td>Handovers made on different phones at different times rebuild into <strong>one checked chain</strong>. Nothing is lost or doubled, and a false handover is caught.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- PART 1 -->
+<section id="p1">
+  <div class="part-head">
+    <span class="part-tag">Part 1</span>
+    <h2>Why "offline" is the hard part</h2>
+  </div>
+  <div class="stack">
+    <p>Saving data on a phone with no network is easy. Phones have done it for years. The hard part starts when <strong>more than one person</strong> records the same thing on <strong>different phones</strong>. Each phone now holds its own copy, and the copies can disagree.</p>
+    <p>If everyone could reach one shared database at the moment they act, there would be nothing to sync. The database would simply refuse a second checkout of the same item. Offline work breaks that, because the person acting can't reach the one true record.</p>
+    <div class="slip dashed">
+      <h3>The one-book test</h3>
+      <p style="margin:0">Could this process run correctly with <strong>one paper book in one place</strong>? If yes, it doesn't need a syncing app. A key register at a single cabinet passes the test, so it doesn't need one. Radioactive sources fail it: they leave the store, travel, and change hands far from any book.</p>
+    </div>
+    <p>Every existing approach gets two of these three properties and gives up the third:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Approach</th><th>Works offline</th><th>One true record</th><th>Others can see it</th></tr></thead>
+        <tbody>
+          <tr><td>One paper book in one place</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No, you have to walk to it</td></tr>
+          <tr><td>An always-online system</td><td class="no">No</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+          <tr><td>An offline app that uploads later</td><td class="yes">Yes</td><td class="no">No, copies clash silently</td><td class="yes">Later</td></tr>
+          <tr class="ours"><td><strong>Our app</strong></td><td class="yes">Yes</td><td class="yes">Yes, every clash caught and proven at sync</td><td class="yes">At the next sync</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Computer scientists know this trade-off as the CAP theorem: while copies are apart, you can't have every property at every instant. Our honest promise is this. While offline, each phone shows how out of date it is. When copies meet, every clash is caught and resolved correctly, and none is silently overwritten.</p>
+  </div>
+</section>
+
+<!-- PART 2 -->
+<section id="p2">
+  <div class="part-head">
+    <span class="part-tag">Part 2</span>
+    <h2>Why defence cares about this</h2>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <span class="label">Offline by design</span>
+      <p>MINDEF runs classified work on a system "not connected to the Internet". Physical separation is how it contained the 2017 I-net breach. <span class="chip fact">fact</span></p>
+      <p>SAF camps require camera phones to be left in lockers before entering high-security "Red Zones". <span class="chip fact">fact</span></p>
+    </div>
+    <div class="card">
+      <span class="label">Offline by accident</span>
+      <p>On 8 Oct 2024, a Singtel outage degraded the 995 and 999 emergency lines for about 4 hours, with about half of calls getting through. <span class="chip fact">fact</span></p>
+      <p>The regulator, IMDA, said the impact "could have been very serious". <span class="chip rep">reported</span></p>
+    </div>
+    <div class="card">
+      <span class="label">DSO's own mission</span>
+      <p>DSO's National Security Office works to protect critical infrastructure and counter chemical, biological, radiological and nuclear (CBRN) threats. <span class="chip fact">fact</span></p>
+      <p>A lost or stolen radioactive source is exactly that kind of threat. Keeping every source accounted for is the prevention side of it.</p>
+    </div>
+  </div>
+  <p style="margin-top:16px">For a defence engineer, syncing is a <strong>controlled crossing</strong> between a disconnected place and the system of record. The questions they'll ask are these: who authorised each step, what is logged, and what happens when two records disagree. Our design is built to answer them.</p>
+</section>
+
+<!-- PART 3 -->
+<section id="p3">
+  <div class="part-head">
+    <span class="part-tag">Part 3</span>
+    <h2>The setting: radioactive sources at work</h2>
+  </div>
+  <div class="stack">
+    <h3>What a sealed source is</h3>
+    <p>A sealed source is a small capsule of radioactive material sealed inside metal. Its radiation passes through steel, so industry uses it like an X-ray. If it's lost, whoever finds and handles it can be seriously injured. If it's stolen, it could be misused in a "dirty bomb". That's why the international rulebook is called the <em>Code of Conduct on the <strong>Safety and Security</strong> of Radioactive Sources</em> (IAEA), which uses both of the challenge's words.</p>
+
+    <h3>Where it's used: industrial radiography</h3>
+    <p>To check a weld in a ship hull, a pipeline or a pressure tank, a radiographer takes a <strong>radiography camera</strong> to the site. The camera is a shielded container with the source inside. The radiographer cordons off the area, places film behind the weld, winds the source out to expose the film, then winds it back. When the job ends, the camera goes back to a secure store.</p>
+    <p>This happens in Singapore. NEA's licence forms list shipyards and refineries as kinds of business, and industrial radiography as a purpose <span class="chip rep">reported</span>. Handling and transporting sources needs a separate NEA licence (L6A) <span class="chip rep">reported</span>.</p>
+
+    <h3>What the rules require today</h3>
+    <p class="note">From Singapore's Radiation Protection (Ionising Radiation) Regulations 2023, read from a third-party copy. Verify the regulation numbers on Singapore Statutes Online.</p>
+    <div class="table-wrap wide-table">
+      <table>
+        <thead><tr><th>Step</th><th>Who</th><th>What the law says is recorded</th></tr></thead>
+        <tbody>
+          <tr><td>Sign-out from the store</td><td>Store officer → radiographer</td><td>"All movements into and out of the storage location" (reg 26(1)(f)(ii))</td></tr>
+          <tr><td>Carrying it</td><td>An authorised radiation worker (reg 27(b))</td><td>The person receiving it must be "made aware" it's a sealed source (reg 27(c)). <strong>No signature is required.</strong></td></tr>
+          <tr><td>On site, between crew members</td><td>Radiographers</td><td><strong>Nothing</strong></td></tr>
+          <tr><td>Daily location</td><td>Licensee</td><td>Location "kept up to date on each working day" (reg 26(1)(e))</td></tr>
+          <tr><td>Return to the store</td><td>Radiographer → store officer</td><td>The movement back into storage (reg 26(1)(f)(ii))</td></tr>
+          <tr><td>If it's lost</td><td>Worker → licensee → NEA</td><td>"Immediately notify" at each step (reg 26(3) and 26(4))</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="pull"><strong>The gap:</strong> the law sees a source leave the store and come back, plus one location a day. It doesn't see <strong>who holds it in between</strong>, and it never asks the receiver to <strong>sign</strong>.</p>
+  </div>
+</section>
+
+<!-- PART 4 -->
+<section id="p4">
+  <div class="part-head">
+    <span class="part-tag">Part 4</span>
+    <h2>What has gone wrong before</h2>
+  </div>
+  <div class="stack">
+    <div class="table-wrap wide-table">
+      <table>
+        <thead><tr><th>When</th><th>Where</th><th>What happened</th><th>What it shows</th></tr></thead>
+        <tbody>
+          <tr><td class="tnum">Aug 2018</td><td>Malaysia</td><td>A 23 kg radiography device containing iridium-192 went missing in transit, believed to have fallen off a truck. <strong>Singapore tightened its border checks.</strong> <span class="chip rep">reported</span></td><td>Custody during transport was never confirmed</td></tr>
+          <tr><td class="tnum">Feb 2017</td><td>Malaysia</td><td>Two radiography projectors were stolen from an oil and gas firm. They were later found at a flat and a scrapyard, and eight people were arrested. <span class="chip rep">reported</span></td><td>A custody lapse</td></tr>
+          <tr><td class="tnum">Jan 2023</td><td>Western Australia</td><td>A caesium capsule fell from a truck on a trip of about 1,400 km. It was only noticed missing <strong>on arrival</strong>, and a detector vehicle found it by the road on 1 Feb. <span class="chip rep">reported</span></td><td>No handover was expected on the way, so the loss went unseen for up to two weeks</td></tr>
+          <tr><td class="tnum">2006–2012</td><td>United States</td><td>Four radiography cameras or the trucks carrying them were stolen. In one case a camera was <strong>left in a truck instead of returned to storage</strong>. <span class="chip fact">fact, US GAO</span></td><td>A return to the store that never happened</td></tr>
+          <tr><td class="tnum">Mar 2023</td><td>Thailand</td><td>A caesium-137 cylinder went missing from a power plant and was traced to a foundry, where it had already been melted. <span class="chip rep">reported</span></td><td>Missing for about two weeks before anyone reported it</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>The pattern:</strong> sources go missing <strong>while they're out of the store and moving</strong>. The loss is found <strong>late</strong>, and nobody can show <strong>who last had it</strong>.</p>
+
+    <h3>One-sided records fail, even in Singapore</h3>
+    <div class="grid">
+      <div class="card">
+        <span class="label">Court of Appeal · [2018] SGCA 87</span>
+        <p>In <em>Mohamed Affandi bin Rosli v Public Prosecutor</em>, two officers gave conflicting accounts of who held drug exhibits between about 6.50 pm and 10.56 pm. The officer who received them didn't record it. The court found "two plausible but irreconcilable versions of the chain of custody" and set the capital convictions aside. <span class="chip fact">fact</span></p>
+      </div>
+      <div class="card">
+        <span class="label">Singapore Police Force · 11 Aug 2023</span>
+        <p>An investigation officer allegedly <strong>forged acknowledgement receipts</strong> so that his supervisor would believe restitution processes had been followed. It came to light years later, through case reviews. <span class="chip fact">fact</span></p>
+      </div>
+    </div>
+    <p>These cases aren't about radioactive sources. They prove the mechanism: <strong>a handover that only one person records, or a receipt that only one person controls, can't be trusted later.</strong> Requiring both people to sign closes that gap.</p>
+  </div>
+</section>
+
+<!-- PART 5 -->
+<section id="p5">
+  <div class="part-head">
+    <span class="part-tag">Part 5</span>
+    <h2>What exists today, and where it stops</h2>
+  </div>
+  <div class="table-wrap wide-table">
+    <table>
+      <thead><tr><th>Tool</th><th>What it does</th><th>Where it stops</th></tr></thead>
+      <tbody>
+        <tr><td>Store register and the records the law requires</td><td>Records sign-out, return and a daily location</td><td>Doesn't see handovers away from the store, and needs no signature from the receiver</td></tr>
+        <tr><td>GPS on trucks or cameras</td><td>Shows where a vehicle is. The US regulator didn't require it, and 8 of 15 radiography firms the GAO visited had added it themselves. <span class="chip fact">fact</span></td><td>Tracks the truck, not the person holding the source. Needs a signal to report.</td></tr>
+        <tr><td>National source tracking (US)</td><td>Both the sender and the receiver report each transfer by the next business day, and an alert fires if the receipt never arrives <span class="chip rep">search summary</span></td><td>Works between companies, not people, a day later, and needs a network. <strong>Our app brings the same "both sides confirm" idea down to each person, at the moment of handover, offline.</strong></td></tr>
+        <tr><td>Electronic key and asset cabinets</td><td>Log who took an item from the cabinet</td><td>The log ends at the cabinet door <span class="chip inf">inference</span></td></tr>
+        <tr><td>Offline inspection and guard-tour apps</td><td>Save records on the phone and upload later</td><td>Each record comes from one person. The vendors we read publish no rule for conflicting edits, and none is self-hosted. <span class="chip fact">vendor docs</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- PART 6 -->
+<section id="p6">
+  <div class="part-head">
+    <span class="part-tag">Part 6</span>
+    <h2>Our solution: a signed custody token</h2>
+  </div>
+  <div class="stack">
+    <p class="pull">Every time a radiography camera changes hands, the giver and the receiver both sign the handover on their phones and swap it by QR code, with no network. The latest signed handover shows who is liable now. An overdue return raises an alarm, and when phones reconnect, the server rebuilds one checked chain.</p>
+
+    <h3>How one handover works</h3>
+    <ol class="steps">
+      <li><div><strong>Offer.</strong> The giver picks the camera and the receiver from the team list. Their phone signs an offer and shows it as a QR code. The code includes the camera's recent history, so the receiver can check it.</div></li>
+      <li><div><strong>Check, offline.</strong> The receiver's phone scans the offer and checks every signature against the team's public keys, which it saved at the last sync. It confirms the giver really is the current holder.</div></li>
+      <li><div><strong>Tie it to the object.</strong> The receiver scans the camera's tag or tamper-evident seal. If the number doesn't match, the handover can't go ahead.</div></li>
+      <li><div><strong>Accept.</strong> The receiver's phone signs the acceptance and shows it as a QR code. <strong>Liability moves the moment the receiver signs.</strong></div></li>
+      <li><div><strong>Confirm.</strong> The giver scans the acceptance. Both phones now hold the same record, signed by both, ready to sync.</div></li>
+    </ol>
+
+    <h3>The chain for one working day</h3>
+    <div class="diagram" role="img" aria-label="Diagram: camera C-12 passes from the store (Siti) to Ravi at 07:30, to Wei Ming at 13:00, and back to the store at 19:40. Each handover is a record signed by both people. The middle handovers happen offline.">
+      <svg viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head" d="M0 0 L10 5 L0 10 z"></path></marker>
+        </defs>
+        <rect class="d-box store" x="10" y="40" width="150" height="70"></rect>
+        <text class="d-t" x="85" y="70" text-anchor="middle">Store · Siti</text>
+        <text class="d-s" x="85" y="92" text-anchor="middle">store officer</text>
+
+        <rect class="d-box" x="230" y="40" width="150" height="70"></rect>
+        <text class="d-t" x="305" y="70" text-anchor="middle">Ravi</text>
+        <text class="d-s" x="305" y="92" text-anchor="middle">radiographer</text>
+
+        <rect class="d-box" x="450" y="40" width="150" height="70"></rect>
+        <text class="d-t" x="525" y="70" text-anchor="middle">Wei Ming</text>
+        <text class="d-s" x="525" y="92" text-anchor="middle">radiographer</text>
+
+        <rect class="d-box store" x="670" y="40" width="140" height="70"></rect>
+        <text class="d-t" x="740" y="70" text-anchor="middle">Store · Siti</text>
+        <text class="d-s" x="740" y="92" text-anchor="middle">returned</text>
+
+        <line class="d-line" x1="160" y1="75" x2="228" y2="75" marker-end="url(#ah)"></line>
+        <line class="d-line" x1="380" y1="75" x2="448" y2="75" marker-end="url(#ah)"></line>
+        <line class="d-line" x1="600" y1="75" x2="668" y2="75" marker-end="url(#ah)"></line>
+
+        <text class="d-m" x="195" y="30" text-anchor="middle">H1 07:30</text>
+        <text class="d-m" x="415" y="30" text-anchor="middle">H2 13:00</text>
+        <text class="d-m" x="635" y="30" text-anchor="middle">H3 19:40</text>
+
+        <rect class="d-off" x="225" y="128" width="380" height="34"></rect>
+        <text class="d-s" x="415" y="150" text-anchor="middle">offline: inside the tank and in the yard</text>
+        <text class="d-s" x="85" y="150" text-anchor="middle">online</text>
+        <text class="d-s" x="740" y="150" text-anchor="middle">online</text>
+        <text class="d-s" x="410" y="190" text-anchor="middle">Every arrow is one record, signed by both people and linked to the record before it.</text>
+      </svg>
+    </div>
+
+    <div class="grid">
+      <div class="card"><span class="label">The item</span><p>A radiography camera with the serial number of the source inside it. It carries a QR tag and a tamper-evident seal.</p></div>
+      <div class="card"><span class="label">Each phone</span><p>Holds a private signing key that can't be copied out of the phone, plus every team member's public key, so it can check any signature offline.</p></div>
+      <div class="card"><span class="label">The due-back time</span><p>Set at sign-out, for example 19:00. Every phone in the chain knows it, so an overdue alarm goes off even with no network.</p></div>
+      <div class="card"><span class="label">The server</span><p>Rebuilds the chain from whatever phones sync, checks every signature and link, raises fork and overdue alerts, and produces the records the law requires.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- PART 7 -->
+<section id="p7">
+  <div class="part-head">
+    <span class="part-tag">Part 7</span>
+    <h2>Try it: one camera, four phones</h2>
+  </div>
+  <p>Press each step in order. You'll sign out camera C-12, take the phones offline, hand it over, cheat, let it go overdue, and then reconnect. Watch what each phone believes, and what the server works out. <span class="note">Signatures here are simulated with a short hash. The real app uses phone-held keys.</span></p>
+  <div class="sim" id="sim">
+    <div class="sim-controls" id="sim-controls"></div>
+    <div class="narration" id="sim-narration" aria-live="polite"></div>
+    <div class="phones" id="sim-phones"></div>
+    <div class="server" id="sim-server"></div>
+  </div>
+</section>
+
+<!-- PART 8 -->
+<section id="p8">
+  <div class="part-head">
+    <span class="part-tag">Part 8</span>
+    <h2>Why it syncs correctly</h2>
+  </div>
+  <div class="stack">
+    <p>We define "correctly" as five properties you can check, plus one more that this setting needs.</p>
+    <div class="props">
+      <div class="prop"><span class="n">1</span><div><strong>Nothing is lost.</strong><p>Each handover is stored on both phones, so either phone can deliver it.</p></div></div>
+      <div class="prop"><span class="n">2</span><div><strong>Nothing is doubled.</strong><p>A handover sent twice is the same signed record, so the server keeps one copy.</p></div></div>
+      <div class="prop"><span class="n">3</span><div><strong>Nothing is silently overwritten.</strong><p>When two records clash, both are kept and shown to the radiation safety officer.</p></div></div>
+      <div class="prop"><span class="n">4</span><div><strong>The rules always hold.</strong><p>One holder at a time, and only authorised workers can accept. A fork or a seal mismatch is never accepted silently.</p></div></div>
+      <div class="prop"><span class="n">5</span><div><strong>The history is honest.</strong><p>Every step is signed by both people and linked to the step before it. The phone's time and the server's arrival time are both kept.</p></div></div>
+      <div class="prop"><span class="n">+</span><div><strong>A missing handover gets noticed.</strong><p>The overdue alarm means a missing source is noticed at 19:00, not two weeks later.</p></div></div>
+    </div>
+
+    <h3>The design decisions behind it</h3>
+    <div class="grid">
+      <div class="card"><span class="label">Proof is a signature</span><p>An empty phone proves nothing, because the giver could have hidden the camera. What proves the giver's case is the receiver's signature. It works like signing for a parcel.</p></div>
+      <div class="card"><span class="label">Why not an NFT</span><p>An NFT relies on a blockchain to record each transfer, and a blockchain needs a network. Offline, an NFT is just a copyable file. A chain that both people sign gives the same guarantee with no network.</p></div>
+      <div class="card"><span class="label">Copies get caught</span><p>Software can't stop a tampered phone from copying a token while it's offline. But a double handover leaves two records signed by the same giver after the same step. That proves who cheated.</p></div>
+      <div class="card"><span class="label">Tied to the object</span><p>The receiver scans the seal at every handover. In production, NFC tags that generate a new code on every tap would stop a photo of the tag from being used.</p></div>
+      <div class="card"><span class="label">Clocks aren't trusted</span><p>The order of events comes from the chain's links and each phone's own counter. A phone's clock is treated as a claim, and the server records when each record actually arrived.</p></div>
+      <div class="card"><span class="label">Check by radio</span><p>A supervisor reads out a random challenge. The holder's phone turns it into six digits, which the holder reads back. Those digits prove which phone holds the latest chain, without a network or a QR code.</p></div>
+    </div>
+
+    <div class="diagram" role="img" aria-label="Diagram of a fork: record H1 (Siti to Ravi) is followed by two records signed by Ravi, H2 to Wei Ming at 13:00 and H2b to Jun at 13:20. The second branch is highlighted as the double handover.">
+      <svg viewBox="0 0 700 220" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head" d="M0 0 L10 5 L0 10 z"></path></marker>
+          <marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head bad" d="M0 0 L10 5 L0 10 z"></path></marker>
+        </defs>
+        <rect class="d-box" x="10" y="75" width="190" height="70"></rect>
+        <text class="d-t" x="105" y="105" text-anchor="middle">H1 · Siti → Ravi</text>
+        <text class="d-s" x="105" y="127" text-anchor="middle">07:30 · both signed</text>
+
+        <rect class="d-box" x="420" y="15" width="260" height="70"></rect>
+        <text class="d-t" x="550" y="45" text-anchor="middle">H2 · Ravi → Wei Ming</text>
+        <text class="d-s" x="550" y="67" text-anchor="middle">13:00 · follows H1</text>
+
+        <rect class="d-box bad" x="420" y="135" width="260" height="70"></rect>
+        <text class="d-t" x="550" y="165" text-anchor="middle">H2b · Ravi → Jun</text>
+        <text class="d-a" x="550" y="187" text-anchor="middle">13:20 · also follows H1</text>
+
+        <path class="d-line" d="M200 100 C 310 100, 310 50, 418 50" marker-end="url(#ah2)"></path>
+        <path class="d-line bad" d="M200 120 C 310 120, 310 170, 418 170" marker-end="url(#ah3)"></path>
+        <text class="d-a" x="300" y="215" text-anchor="middle">Same giver, same previous step: a fork.</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- PART 9 -->
+<section id="p9">
+  <div class="part-head">
+    <span class="part-tag">Part 9</span>
+    <h2>Why it's new, and why it's useful</h2>
+  </div>
+  <div class="stack">
+    <h3>What no other tool we found does</h3>
+    <div class="table-wrap wide-table">
+      <table>
+        <thead><tr><th>Capability</th><th>Paper register</th><th>GPS tracker</th><th>US source tracking</th><th>Key cabinet</th><th>Offline apps</th><th>Ours</th></tr></thead>
+        <tbody>
+          <tr><td>Works with no network</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+          <tr><td>Records person-to-person handovers</td><td class="no">At the store only</td><td class="no">No</td><td class="no">Company to company</td><td class="no">At the cabinet only</td><td class="no">One side only</td><td class="yes">Yes</td></tr>
+          <tr><td>Receiver must sign</td><td class="no">No</td><td class="no">No</td><td class="no">Reports later</td><td class="no">No</td><td class="no">No</td><td class="yes">Yes</td></tr>
+          <tr><td>Proves who made a double handover</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="yes">Yes</td></tr>
+          <tr><td>Alarm when a return is missing</td><td class="no">No</td><td class="no">No</td><td class="yes">A day later</td><td class="no">Some</td><td class="no">No</td><td class="yes">At the due time, offline</td></tr>
+          <tr><td>Tied to the physical item</td><td class="no">No</td><td class="no">The truck</td><td class="no">Serial only</td><td class="yes">Key tag</td><td class="no">Varies</td><td class="yes">Seal scan</td></tr>
+          <tr><td>Runs on your own servers</td><td class="yes">Paper</td><td class="no">Vendor</td><td class="no">Government</td><td class="yes">Standalone</td><td class="no">Cloud</td><td class="yes">Self-hostable</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Based on the vendor documents and reports we read. We didn't test the products.</p>
+
+    <h3>Who it helps</h3>
+    <div class="grid">
+      <div class="card"><span class="label">Radiographers</span><p>A receipt proves they handed the camera on, so they're never blamed for an item they no longer hold. Every step works inside a tank with no signal.</p></div>
+      <div class="card"><span class="label">Store officer</span><p>Sees who holds every camera according to the latest signature, and when it's due back. The movement records the law requires are filled in automatically.</p></div>
+      <div class="card"><span class="label">Radiation safety officer</span><p>Gets an overdue alarm at the due time, a fork alert that names who did it, and a full signed chain to hand NEA if anything goes missing.</p></div>
+      <div class="card"><span class="label">The public and national security</span><p>A missing source is noticed within minutes, with a named last holder, which shrinks the search from days to one leg of the journey.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- PART 10 -->
+<section id="p10">
+  <div class="part-head">
+    <span class="part-tag">Part 10</span>
+    <h2>What we're not claiming</h2>
+  </div>
+  <ul class="stack" style="padding-left:1.2em">
+    <li>We found <strong>no lost source in Singapore</strong>. Our incidents are from Malaysia, Australia, Thailand and the US, and we say so.</li>
+    <li>We don't know which tools Singapore companies use today. We only know what the law requires.</li>
+    <li>Not every site is offline. Handovers often happen where signal is poor or phones are restricted, and a handover signed by both people is useful even online (Part 4).</li>
+    <li>The chain is <strong>tamper-evident, not tamper-proof</strong>. A tampered phone can misbehave, but it can't forge another person's signature.</li>
+    <li>It can't stop a capsule falling off a truck. What it can do is raise the alarm on time, and name the last person who signed for it.</li>
+    <li>The demo uses dummy items only, and we describe source security only at the level of public rules.</li>
+  </ul>
+</section>
+
+<!-- PART 11 -->
+<section id="p11">
+  <div class="part-head">
+    <span class="part-tag">Part 11</span>
+    <h2>The 3-minute demo, and how it scores</h2>
+  </div>
+  <div class="stack">
+    <ol class="steps">
+      <li><div><strong>Hook (20 s).</strong> "Singapore's Court of Appeal threw out convictions because two officers' records of one handover didn't match. Now picture that item is a radioactive source."</div></li>
+      <li><div><strong>Sign-out (30 s).</strong> Siti issues C-12 to Ravi: one seal scan and two QR codes. Then every phone goes into airplane mode.</div></li>
+      <li><div><strong>Handover in the yard (40 s).</strong> Ravi hands C-12 to Wei Ming. The seal is scanned, and the screen states that the item is a sealed source. Ravi shows the signed receipt.</div></li>
+      <li><div><strong>The cheat (30 s).</strong> A tampered phone tries to hand C-12 over a second time, from an old copy of the token.</div></li>
+      <li><div><strong>Overdue (20 s).</strong> The clock passes 19:00, and Wei Ming's phone raises the alarm with no network.</div></li>
+      <li><div><strong>Reconnect (40 s).</strong> Airplane mode goes off. The supervisor's screen rebuilds the chain and shows a red fork alert naming who cheated. The records the law requires are produced automatically.</div></li>
+    </ol>
+
+    <div class="table-wrap wide-table">
+      <table>
+        <thead><tr><th>Criterion</th><th class="tnum">Points</th><th>How this solution earns them</th></tr></thead>
+        <tbody>
+          <tr><td>Functionality</td><td class="tnum">10</td><td>A small data model (cameras, people, handovers, due times) leaves time to perfect the sync and signature engine. Every step runs live in airplane mode.</td></tr>
+          <tr><td>Originality</td><td class="tnum">5</td><td>Handovers that work offline and need both people's signatures, plus proof of who made a double handover. None of the tools we found does either.</td></tr>
+          <tr><td>Design</td><td class="tnum">5</td><td>Three clear roles, one handover screen, and an alarm everyone understands. Sync status shows on every screen.</td></tr>
+          <tr><td>Pitching</td><td class="tnum">5</td><td>It uses the challenge's own words ("safety and security"), cites a Singapore court case, and asks a question anyone can follow: "Who holds the source right now?"</td></tr>
+          <tr><td>Sudden Dev</td><td class="tnum">5</td><td>The same engine works for any controlled item, and new rules, such as two-person sign-out, slot straight in.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap stack">
+    <span class="label">Sources</span>
+    <ol class="sources">
+      <li>Radiation Protection (Ionising Radiation) Regulations 2023, S 85/2023 (third-party copy; verify on sso.agc.gov.sg): <a href="https://littdb.sfo2.cdn.digitaloceanspaces.com/litt/SG/SSOStatutes/subsidiary_legislation/RPA2007-S85-2023.html">littdb mirror</a></li>
+      <li>NEA, summary of the 2023 regulations: <a href="https://www.nea.gov.sg/our-services/radiation-safety/regulatory-information/summary-of-ionising-radiation-regulations-2023">nea.gov.sg</a></li>
+      <li>NEA licence listings, L6A handle and transport: <a href="https://govtech-gobusiness-vica.netlify.app/browse-all-licences/National-Environment-Agency-(NEA)/L6A---Licence-to-handle-and-transport-radioactive-materials">GoBusiness listing</a>; L3 form with shipyard and refinery: <a href="https://es.scribd.com/document/335902717/Singapore-NEA-L3-License-for-Individual-Equipment-Owner">Scribd copy</a></li>
+      <li>Court of Appeal, Mohamed Affandi bin Rosli v PP [2018] SGCA 87: <a href="https://www.elitigation.sg/gd/s/2018_SGCA_87">elitigation.sg</a></li>
+      <li>Singapore Police Force, 11 Aug 2023: <a href="https://www.police.gov.sg/media-hub/news/2023/20230811_two_men_charged_for_criminal_breach_of_trust_related_offences">police.gov.sg</a></li>
+      <li>Malaysia 2018: <a href="https://mothership.sg/2018/08/radioactive-iridium-malaysia-missing/">Mothership</a>, <a href="https://www.freemalaysiatoday.com/category/nation/2018/08/24/singapore-alert-over-radioactive-device-missing-in-malaysia">Free Malaysia Today</a>. Malaysia 2017: <a href="https://nst.com.my/news/2017/02/212097/eight-nabbed-connection-radioactive-material-theft-case-video">NST</a></li>
+      <li>Western Australia 2023: <a href="https://www.health.wa.gov.au/Media-releases/2023/February/Radioactive-capsule-found-in-Pilbara">WA Health</a>. Thailand 2023: <a href="https://www.khaosodenglish.com/news/crimecourtscalamity/2023/03/20/radioactive-cylinder-found-at-prachinburi-plant-poses-no-public-risk-officials-say/">Khaosod English</a></li>
+      <li>US GAO-14-293, radiography camera thefts and GPS: <a href="https://gao.gov/assets/670/664075.txt">gao.gov</a></li>
+      <li>MINDEF, 28 Feb 2017, I-net and physical separation: <a href="https://www.mindef.gov.sg/news-and-events/latest-releases/28feb17_nr/">mindef.gov.sg</a>; 23 Aug 2013, Red Zones: <a href="https://www.mindef.gov.sg/news-and-events/latest-releases/2013aug23-news-releases-02529/">mindef.gov.sg</a></li>
+      <li>MDDI, 8 Oct 2024 Singtel disruption: <a href="https://www.mddi.gov.sg/newsroom/pqs-related-to-the-8-october-singtel-disruption/">mddi.gov.sg</a>; IMDA comment: <a href="https://www.thestar.com.my/aseanplus/aseanplus-news/2025/12/11/singtel-fined-s1mil-for-fixed-line-voice-outage-that-disrupted-emergency-call-services-in-oct-2024">The Star</a></li>
+      <li>DSO National Security Office: <a href="https://www.dso.org.sg/works/national-security-office">dso.org.sg</a></li>
+      <li>Team research notes, with every source tagged: docs/research/ and docs/research/contexts/ in the project repository</li>
+    </ol>
+    <p class="note">Tags: <span class="chip fact">fact</span> official or primary source we checked · <span class="chip rep">reported</span> news, secondary source or a third-party copy · <span class="chip inf">inference</span> our reasoning. The names in the worked example (Siti, Ravi, Wei Ming, Jun) are made up.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var P = {
+    siti: { name: "Siti", role: "Store officer" },
+    ravi: { name: "Ravi", role: "Radiographer" },
+    wm: { name: "Wei Ming", role: "Radiographer" },
+    jun: { name: "Jun", role: "Radiographer" }
+  };
+  var ORDER = ["siti", "ravi", "wm", "jun"];
+
+  function sig(s) {
+    var h = 0x811c9dc5;
+    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return ("00000000" + h.toString(16)).slice(-8);
+  }
+  function rec(id, from, to, prev, time) {
+    var body = [id, from, to, prev, time, "C-12", "IR-0457"].join("|");
+    return { id: id, from: from, to: to, prev: prev, time: time, sigFrom: sig("g" + body), sigTo: sig("r" + body) };
+  }
+
+  var S;
+  function reset() {
+    S = { step: 0, overdue: false, all: {}, server: [], phones: {} };
+    ORDER.forEach(function (k) { S.phones[k] = { online: true, recs: [] }; });
+    say("", "Press step 1. Every phone starts online, with nothing signed yet. The server is the radiation safety officer's view.");
+    render();
+  }
+
+  function add(keys, r, carry) {
+    S.all[r.id] = r;
+    keys.forEach(function (k) {
+      var ph = S.phones[k];
+      (carry || []).forEach(function (id) {
+        if (!ph.recs.some(function (x) { return x.id === id; }) && S.all[id]) ph.recs.push(S.all[id]);
+      });
+      if (!ph.recs.some(function (x) { return x.id === r.id; })) ph.recs.push(r);
+    });
+  }
+  function syncOnline() {
+    ORDER.forEach(function (k) {
+      var ph = S.phones[k];
+      if (!ph.online) return;
+      ph.recs.forEach(function (r) {
+        if (!S.server.some(function (x) { return x.id === r.id; })) S.server.push(r);
+      });
+    });
+    S.server.sort(function (a, b) { return a.time.localeCompare(b.time); });
+  }
+  function holds(k) {
+    var mine = false;
+    S.phones[k].recs.forEach(function (r) { if (r.to === k) mine = true; if (r.from === k) mine = false; });
+    return mine;
+  }
+  function onServer(id) { return S.server.some(function (x) { return x.id === id; }); }
+
+  var STEPS = [
+    { label: "Sign out C-12 to Ravi", time: "07:30", run: function () {
+      add(["siti", "ravi"], rec("H1", "siti", "ravi", "START", "07:30"));
+      syncOnline();
+      say("07:30", "At the store, Siti picks camera C-12 and Ravi. Ravi scans the seal, and they swap two QR codes. Both phones now hold record H1, signed by both. Everyone is online, so the server receives H1 straight away. C-12 is due back at 19:00.");
+    } },
+    { label: "Go to the site (offline)", time: "08:30", run: function () {
+      ["ravi", "wm", "jun"].forEach(function (k) { S.phones[k].online = false; });
+      say("08:30", "Ravi, Wei Ming and Jun go to the shipyard and climb inside a steel tank. Their phones lose signal, but nothing in the custody chain needs one.");
+    } },
+    { label: "Ravi hands C-12 to Wei Ming", time: "13:00", run: function () {
+      add(["ravi", "wm"], rec("H2", "ravi", "wm", "H1", "13:00"), ["H1"]);
+      say("13:00", "At shift change in the yard, still offline, Wei Ming scans the seal and signs. Ravi's offer QR included H1, so Wei Ming's phone could check that Ravi really held C-12. Liability moves to Wei Ming the moment he signs, and Ravi keeps the signed receipt.");
+    } },
+    { label: "Cheat: Ravi hands C-12 to Jun too", time: "13:20", run: function () {
+      add(["ravi", "jun"], rec("H2b", "ravi", "jun", "H1", "13:20"), ["H1"]);
+      say("13:20", "Ravi's phone has been tampered with so it keeps an old copy of the token, and he hands C-12 to Jun as well. Jun's phone sees a valid chain (H1, then H2b) and can't tell anything is wrong, because it has never seen H2.");
+    } },
+    { label: "Skip to 19:00", time: "19:00", run: function () {
+      S.overdue = true;
+      say("19:00", "C-12 is due back. Wei Ming's phone and Jun's phone both think they hold it, so both raise the overdue alarm with no network. The server last heard about C-12 at 07:30, so it flags it as overdue, with Ravi as the last holder it knows of.");
+    } },
+    { label: "Everyone reconnects", time: "19:40", run: function () {
+      ORDER.forEach(function (k) { S.phones[k].online = true; });
+      syncOnline();
+      say("19:40", "The phones reconnect and send their records. The server rebuilds the chain and finds two records that both follow H1, both signed by Ravi as the giver. That is a double handover, and Ravi's own signatures prove he did it. The radiation safety officer now checks who physically has C-12.");
+    } }
+  ];
+
+  var elC = document.getElementById("sim-controls");
+  var elN = document.getElementById("sim-narration");
+  var elP = document.getElementById("sim-phones");
+  var elS = document.getElementById("sim-server");
+
+  function say(clock, text) {
+    elN.innerHTML = (clock ? '<span class="clock">' + clock + '</span>' : "") + text;
+  }
+
+  function name(k) { return P[k].name; }
+  function recLine(r, status) {
+    return '<li><span>' + r.id + ' · ' + r.time + ' · ' + name(r.from) + ' → ' + name(r.to) + '</span>' + status + '</li>';
+  }
+
+  function serverAlerts() {
+    var out = [];
+    var byPrev = {};
+    S.server.forEach(function (r) { (byPrev[r.prev] = byPrev[r.prev] || []).push(r); });
+    var forks = Object.keys(byPrev).map(function (k) { return byPrev[k]; }).filter(function (a) { return a.length > 1; });
+    forks.forEach(function (a) {
+      out.push({ kind: "alert", text: "Double handover. " + name(a[0].from) + " signed C-12 over to " +
+        a.map(function (r) { return name(r.to) + " (" + r.time + ")"; }).join(" and ") +
+        ", both after record " + a[0].prev + ". " + name(a[0].from) + "'s own signatures (" +
+        a.map(function (r) { return r.sigFrom; }).join(", ") + ") prove it." });
+    });
+    if (S.overdue) {
+      if (forks.length) {
+        out.push({ kind: "warn", text: "C-12 is overdue and disputed between " +
+          forks[0].map(function (r) { return name(r.to); }).join(" and ") + ". The radiation safety officer must check who physically has it." });
+      } else if (S.server.length) {
+        var last = S.server[S.server.length - 1];
+        out.push({ kind: "warn", text: "C-12 is overdue. The last holder the server knows of is " + name(last.to) +
+          " (since " + last.time + "). Newer handovers may not have synced yet." });
+      }
+    } else if (S.server.length && !forks.length) {
+      var l = S.server[S.server.length - 1];
+      out.push({ kind: "ok", text: "C-12 is held by " + name(l.to) + ", according to the latest record the server has (" + l.id + ", " + l.time + "). It's due back at 19:00." });
+    }
+    return { alerts: out, forkIds: [].concat.apply([], forks.map(function (a) { return a.slice(1).map(function (r) { return r.id; }); })) };
+  }
+
+  function render() {
+    elC.innerHTML = "";
+    STEPS.forEach(function (st, i) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.id = "sim-step-" + (i + 1);
+      b.textContent = (i < S.step ? "✓ " : (i + 1) + ". ") + st.label;
+      if (i < S.step) { b.className = "done"; b.disabled = true; }
+      else if (i === S.step) { b.className = "next"; }
+      else { b.disabled = true; }
+      b.addEventListener("click", function () {
+        if (i !== S.step) return;
+        st.run(); S.step++; render();
+        var nextBtn = document.getElementById("sim-step-" + (S.step + 1));
+        if (nextBtn) nextBtn.focus(); else document.getElementById("sim-reset").focus();
+      });
+      elC.appendChild(b);
+    });
+    var r = document.createElement("button");
+    r.type = "button"; r.id = "sim-reset"; r.className = "reset"; r.textContent = "Start again";
+    r.addEventListener("click", reset);
+    elC.appendChild(r);
+
+    elP.innerHTML = ORDER.map(function (k) {
+      var ph = S.phones[k];
+      var h = holds(k);
+      var pending = ph.recs.filter(function (x) { return !onServer(x.id); }).length;
+      var recs = ph.recs.length
+        ? '<ul class="recs">' + ph.recs.map(function (x) {
+            return recLine(x, onServer(x.id) ? '<span class="st">synced</span>' : '<span class="st wait">waiting</span>');
+          }).join("") + "</ul>"
+        : '<p class="empty" style="margin:0">No records yet</p>';
+      return '<div class="phone">' +
+        '<div class="phone-head"><div><div class="phone-name">' + P[k].name + '</div><div class="label">' + P[k].role + '</div></div>' +
+        '<span class="pill ' + (ph.online ? "on" : "off") + '">' + (ph.online ? "Online" : "Offline") + '</span></div>' +
+        '<div class="holds ' + (h ? "yes" : "") + '">' + (h ? "Holds C-12 · due 19:00" : "Doesn't hold C-12") + '</div>' +
+        (S.overdue && h ? '<div class="alarm">Return overdue</div>' : "") +
+        recs +
+        '<div class="label">' + (pending ? pending + " waiting to sync" : "Nothing waiting") + '</div>' +
+        '</div>';
+    }).join("");
+
+    var a = serverAlerts();
+    var chain = S.server.length
+      ? '<ul class="recs">' + S.server.map(function (x) {
+          var forked = a.forkIds.indexOf(x.id) !== -1;
+          return '<li class="' + (forked ? "forked" : "") + '"><span>' + x.id + ' · ' + x.time + ' · ' + name(x.from) + ' → ' + name(x.to) +
+            ' · follows ' + x.prev + '</span><span class="st">sig ' + x.sigFrom.slice(0, 4) + '…/' + x.sigTo.slice(0, 4) + '…</span></li>';
+        }).join("") + "</ul>"
+      : '<p class="empty" style="margin:0">The server hasn\'t received any records yet</p>';
+    elS.innerHTML =
+      '<div class="phone-head"><div><div class="phone-name">Server · radiation safety officer\'s view</div><div class="label">One chain rebuilt from every phone that has synced</div></div></div>' +
+      chain +
+      a.alerts.map(function (x) { return '<div class="s-alert ' + x.kind + '">' + x.text + "</div>"; }).join("");
+  }
+
+  reset();
+})();
+</script>
+</body>
+</html>
