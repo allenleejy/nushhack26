@@ -397,11 +397,11 @@ private fun OfferStep(state: GiveUiState, onAction: (GiveAction) -> Unit) {
                     style = TenetType.bodyLg, color = colors.ink,
                 )
             }
-            if (state.tapped) TapLine(tappedText(name))
+            if (state.tapped && state.tapReady) TapLine(tappedText(name))
         } else {
             QrPanel(offer.payload, caption = "Offer · ${summary.itemCode}", instruction = "Ask $name to scan this code.")
             when {
-                state.tapped -> TapLine(tappedText(name))
+                state.tapped && state.tapReady -> TapLine(tappedText(name))
                 state.tapReady -> TapLine("Or hold your phone to $name's")
             }
             val left = state.secondsLeft
@@ -409,7 +409,7 @@ private fun OfferStep(state: GiveUiState, onAction: (GiveAction) -> Unit) {
                 "For $name only · single use · valid for ${countdown(left)}",
                 style = TenetType.bodyStrong, color = colors.ink,
             )
-            if (!state.tapped) Text("Waiting for $name to accept", style = TenetType.body, color = colors.inkMuted)
+            if (!(state.tapped && state.tapReady)) Text("Waiting for $name to accept", style = TenetType.body, color = colors.inkMuted)
         }
     }
     state.tapError?.let { ErrorBox(it) }
