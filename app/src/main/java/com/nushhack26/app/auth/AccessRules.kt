@@ -98,12 +98,11 @@ object AccessRules {
     }
 
     private val zone: ZoneId get() = ZoneId.systemDefault()
-    private val shortFormat = DateTimeFormatter.ofPattern("d MMM", Locale.UK)
-    private val longFormat = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.UK)
+    private val dateFormat = DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.UK)
 
-    /** "3 Nov" */
-    fun shortDate(ms: Long): String = shortFormat.format(Instant.ofEpochMilli(ms).atZone(zone))
+    /** "03.11.2026" */
+    fun shortDate(ms: Long): String = dateFormat.format(Instant.ofEpochMilli(ms).atZone(zone))
 
-    /** "30 Jun 2027" */
-    fun longDate(ms: Long): String = longFormat.format(Instant.ofEpochMilli(ms).atZone(zone))
+    /** "30.06.2027" */
+    fun longDate(ms: Long): String = dateFormat.format(Instant.ofEpochMilli(ms).atZone(zone))
 }

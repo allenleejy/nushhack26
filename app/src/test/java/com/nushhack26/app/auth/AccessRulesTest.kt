@@ -45,7 +45,7 @@ class AccessRulesTest {
     @Test fun anAuthorisedReceiverPasses() {
         val check = AccessRules.checkReceiver(giver = ravi, me = weiMing, atMs = now)
         assertTrue(check.ok)
-        assertEquals("Authorised · radiographer · valid to 30 Jun 2027", check.text)
+        assertEquals("Authorised · radiographer · valid to 30.06.2027", check.text)
     }
 
     @Test fun aStoreOfficerReceivingAReturnPasses() {
@@ -57,13 +57,13 @@ class AccessRulesTest {
     @Test fun aLapsedReceiverIsRefusedOnTheirOwnPhone() {
         val check = AccessRules.checkReceiver(giver = ravi, me = jun, atMs = now)
         assertFalse(check.ok)
-        assertEquals("You aren't authorised to hold sealed sources (lapsed 3 Nov)", check.text)
+        assertEquals("You aren't authorised to hold sealed sources (lapsed 03.11.2026)", check.text)
     }
 
     @Test fun aLapsedReceiverIsGreyedOutInThePicker() {
         val check = AccessRules.checkPick(giver = ravi, receiver = jun, atMs = now)
         assertFalse(check.ok)
-        assertEquals("Jun Lim · authorisation lapsed 3 Nov", check.text)
+        assertEquals("Jun Lim · authorisation lapsed 03.11.2026", check.text)
         assertTrue(AccessRules.checkPick(giver = siti, receiver = ravi, atMs = now).ok)
     }
 

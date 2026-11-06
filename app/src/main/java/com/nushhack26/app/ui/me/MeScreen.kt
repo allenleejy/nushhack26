@@ -96,16 +96,16 @@ fun MeContent(state: MeUiState, modifier: Modifier = Modifier, onAction: (MeActi
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(TenetDimens.space1)) {
                 Text(identity.name.uppercase(), style = TenetType.headline, color = colors.ink, modifier = Modifier.testTag("me_name"))
+                val (roleLine, roleAlert) = roleLine(state)
                 Text(
-                    listOfNotNull(AccessRules.roleName(identity.role), state.person?.staffNo).joinToString(" · ").uppercase(),
+                    roleLine,
                     style = TenetType.record,
-                    color = colors.inkMuted,
+                    color = if (roleAlert) colors.alertText else colors.inkMuted,
                     modifier = Modifier.testTag("me_role"),
                 )
             }
             if (state.lease?.expired == true) LeaseExpiredBanner()
             MeCard("Access") {
-                Text(authorisationLine(state), style = TenetType.body, color = authorisationColor(state), modifier = Modifier.testTag("me_authorised"))
                 Text(meAccessLine(state.lease).replaceFirstChar(Char::uppercase), style = TenetType.body, color = colors.inkMuted, modifier = Modifier.testTag("me_lease"))
                 if (state.lockApplies) {
                     SecondaryButton("Lock now", icon = Icons.Sharp.Lock, onClick = { onAction(MeAction.LockNow) }, modifier = Modifier.testTag("lock_now"))
@@ -139,20 +139,16 @@ fun MeContent(state: MeUiState, modifier: Modifier = Modifier, onAction: (MeActi
     }
 }
 
-/** "Authorised radiographer · valid to 30 Jun 2027", or "· no expiry", or the lapse. */
-private fun authorisationLine(state: MeUiState): String {
-    val role = AccessRules.roleName(state.identity?.role.orEmpty())
-    val person = state.person ?: return "Authorised $role · details appear after the next sync"
-    if (!person.active) return "${person.name} is no longer on the active roster"
-    val until = person.authorisedUntilMs ?: return "Authorised $role · no expiry"
-    if (until < state.now) return "Authorisation lapsed ${AccessRules.longDate(until)}"
-    return "Authorised $role · valid to ${AccessRules.longDate(until)}"
-}
-
-@Composable
-private fun authorisationColor(state: MeUiState) = state.person.let { person ->
-    val lapsed = person != null && (!person.active || (person.authorisedUntilMs ?: Long.MAX_VALUE) < state.now)
-    if (lapsed) Tenet.colors.alertText else Tenet.colors.ink
+/** The line under the name: "RADIOGRAPHER · R-2210 · VALID TO 30.06.2027", or the lapse, in alert colour. */
+private fun roleLine(state: MeUiState): Pair<String, Boolean> {
+    val role = AccessRules.roleName(state.identity?.role.orEmpty()).uppercase()
+    val person = state.person ?: return role to false
+    return when {
+        !person.active -> "$role · ${person.staffNo} · NOT ON THE ACTIVE ROSTER" to true
+        person.authorisedUntilMs == null -> "$role · ${person.staffNo}" to false
+        person.authorisedUntilMs < state.now -> "$role · ${person.staffNo} · LAPSED ${AccessRules.longDate(person.authorisedUntilMs)}" to true
+        else -> "$role · ${person.staffNo} · VALID TO ${AccessRules.longDate(person.authorisedUntilMs)}" to false
+    }
 }
 
 /** "Device key 3F:A9:12:7C · hardware-backed (TEE)", or the labelled test key. */
