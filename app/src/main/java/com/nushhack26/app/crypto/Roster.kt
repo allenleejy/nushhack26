@@ -2,11 +2,13 @@ package com.nushhack26.app.crypto
 
 import com.nushhack26.app.data.local.DeviceEntity
 import com.nushhack26.app.data.local.PersonEntity
+import com.nushhack26.app.data.local.ItemEntity
 
 /** Everyone on the team and their devices' public keys, as last synced to this phone. */
 data class Roster(
     val people: List<PersonEntity> = emptyList(),
     val devices: List<DeviceEntity> = emptyList(),
+    val items: List<ItemEntity> = emptyList(),
 ) {
     fun person(id: String?): PersonEntity? = people.firstOrNull { it.id == id }
 
