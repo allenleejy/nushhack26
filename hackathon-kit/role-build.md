@@ -15,7 +15,7 @@ The owner names a job in plain words, such as "start the kickoff", "here's the s
 
 ## Fill-ins
 
-- GitHub owner: `allenleejy`. Repo: `hack-app`.
+- GitHub owner: `allenleejy`. Repo: `nushhack26`.
 - Teammates' GitHub usernames: ________ and ________
 - Live URL: ________ (if it's still blank after the Vercel import, ask the owner and write it here)
 - Submission time S: ________
@@ -79,8 +79,8 @@ Commit after each step. Push only where a step says so.
    - If create-next-app's initial commit already had an AGENTS.md or CLAUDE.md (check with `git show HEAD:AGENTS.md`), first move any useful Next.js-specific notes from it into a short "Next.js notes" section at the end of `hackathon-kit/stack.md`.
 2. **Structure.** If there's no `src/` folder, move `app/` into `src/app` and point the `@/*` alias at `./src/*`. Make sure `.env.local` and `shots/` are git-ignored.
 3. **GitHub.**
-   - Run `gh repo create hack-app --private --source . --remote origin --push`.
-   - Add the two teammates from Fill-ins as collaborators with push access: `gh api -X PUT repos/allenleejy/hack-app/collaborators/USERNAME -f permission=push`.
+   - The repo `allenleejy/nushhack26` already exists and `origin` points to it. Just `git push`.
+   - Add the two teammates from Fill-ins as collaborators with push access: `gh api -X PUT repos/allenleejy/nushhack26/collaborators/USERNAME -f permission=push`.
 4. **Deploy rules.** Create `vercel.json` containing `{"$schema": "https://openapi.vercel.sh/vercel.json", "git": {"deploymentEnabled": {"**": false, "main": true}}}` so only main deploys. Push, then tell the owner "Ready for Vercel import" and keep going.
 5. **UI base.** Initialize shadcn/ui with its current CLI (defaults). Add button, card, input, textarea, label, sheet, dialog, drawer, tabs, badge, avatar, skeleton, sonner, separator and scroll-area. Build the app shell in `src/app/layout.tsx` and `src/components/shell/`:
    - a viewport export with width=device-width, initial-scale=1, viewport-fit=cover, and a themeColor
@@ -217,4 +217,4 @@ From now on, only fix things on the demo path (`docs/spec.md`, section 2).
   - the open pull requests
   - the open P1 bugs
   - what's left of the demo path
-  - deploys in the last 24 hours, counted from `gh api repos/allenleejy/hack-app/deployments` if Vercel reports them there
+  - deploys in the last 24 hours, counted from `gh api repos/allenleejy/nushhack26/deployments` if Vercel reports them there

@@ -243,7 +243,7 @@ Keep High for the ideas and the spec. For the design brief, the pitch and rescop
 
 Do this when the build account says "Ready for Vercel import".
 
-1. Go to https://vercel.com/new. Find `hack-app` under **Import Git Repository** and click **Import**.
+1. Go to https://vercel.com/new. Find `nushhack26` under **Import Git Repository** and click **Import**.
 2. Check that **Framework Preset** says Next.js.
 3. Open **Environment Variables** and paste this block into the first **Key** field. Vercel splits it into separate variables. Fill in the values.
    ```
@@ -263,7 +263,7 @@ Do this after the build account has pushed.
 
 1. Start a new Devin session in **Normal** mode with:
    ```
-   You are Devin on our hackathon team. Read hackathon-kit/README.md, hackathon-kit/role-devin.md and hackathon-kit/stack.md first. Then set up your environment for this repo: allenleejy/hack-app.
+   You are Devin on our hackathon team. Read hackathon-kit/README.md, hackathon-kit/role-devin.md and hackathon-kit/stack.md first. Then set up your environment for this repo: allenleejy/nushhack26.
    ```
 2. Approve the setup suggestion cards (the "blueprint").
 3. In the blueprint editor's **Secrets** tab, add:

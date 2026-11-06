@@ -59,7 +59,7 @@ You run a wave. Don't write code yourself.
 
 ## Environment setup
 
-1. The repo is `allenleejy/hack-app`. Use Node 24 and npm, and install with `npm ci`.
+1. The repo is `allenleejy/nushhack26`. Use Node 24 and npm, and install with `npm ci`.
 2. Environment variables come from secrets: `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (or `NEXT_PUBLIC_SUPABASE_ANON_KEY`). There are no AI keys, on purpose.
 3. Install the Playwright browsers: `npx playwright install --with-deps chromium webkit`.
 4. Check that `npm run check` and `npm run test:phone` both pass.
