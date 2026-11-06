@@ -3,6 +3,7 @@ package com.nushhack26.app.nearby
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.Application
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.ContextWrapper
@@ -10,6 +11,7 @@ import android.content.pm.PackageManager
 import android.nfc.NfcAdapter
 import android.nfc.tech.IsoDep
 import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -52,7 +54,19 @@ class TapLink(private val context: Context, private val scope: CoroutineScope) {
         private set
     var lastTapReadAt: Long = 0
         private set
-    init { refresh() }
+    init {
+        refresh()
+        // Re-check on every resume, so turning Bluetooth or NFC on or off shows on any screen.
+        (context.applicationContext as? Application)?.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
+            override fun onActivityResumed(activity: Activity) = refresh()
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
+            override fun onActivityStarted(activity: Activity) = Unit
+            override fun onActivityPaused(activity: Activity) = Unit
+            override fun onActivityStopped(activity: Activity) = Unit
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
+            override fun onActivityDestroyed(activity: Activity) = Unit
+        })
+    }
 
     fun requiredPermissions(): Array<String> = buildList {
         if (Build.VERSION.SDK_INT >= 31) {
