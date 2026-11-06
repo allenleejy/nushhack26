@@ -150,6 +150,20 @@ class SyncEngineTest {
     }
 
     @Test
+    fun retryOfRejectedRecordAfterDroppedResponseStaysRejected() = runTest {
+        val db = phone()
+        server.push(listOf(h1.op()))
+        val replay = Demo.handover("replay", Demo.c12Register, Demo.SITI, Demo.JUN, "issue", nonce = h1.nonce!!)
+        db.receive(replay)
+        server.dropNextResponse = true
+        assertTrue(runCatching { engine(db).run() }.isFailure)
+        engine(db).run()
+        assertEquals(SyncMark.REJECTED, db.handoverDao().get("replay")!!.syncStatus)
+        assertEquals("replayed offer", db.handoverDao().get("replay")!!.syncReason)
+        assertEquals(0, db.outboxDao().observeCount().first())
+    }
+
+    @Test
     fun firstPullBringsTheRosterAndTheChain() = runTest {
         val fresh = phone()
         engine(fresh).run()

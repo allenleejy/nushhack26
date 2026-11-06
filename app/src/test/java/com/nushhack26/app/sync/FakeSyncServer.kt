@@ -102,7 +102,8 @@ class FakeSyncServer : SyncApi {
                 addAlert(AlertRow(UUID.randomUUID().toString(), "rejected", reason = "conflicting copy of the same record", opTable = op.table, opPayload = op.payload))
                 return OpResult(op.opId, OpResultKind.REJECTED, "conflicting copy of the same record")
             }
-            return OpResult(op.opId, OpResultKind.DUPLICATE, prior.reason, prior.status)
+            val kind = if (prior.result == OpResultKind.REJECTED) OpResultKind.REJECTED else OpResultKind.DUPLICATE
+            return OpResult(op.opId, kind, prior.reason, prior.status)
         }
         if (op.kind != "insert") return reject(op.opId, op.table, op.payload, "only inserts are allowed")
         return when (op.table) {
