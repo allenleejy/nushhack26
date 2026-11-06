@@ -69,7 +69,7 @@ class MeScreenshotTest {
     }
 
     @Test
-    fun loading() = captureScreen("Me_loading") { MeContent(MeUiState(loading = true)) }
+    fun loading() = captureLoadingScreen("Me_loading") { MeContent(MeUiState(loading = true)) }
 
     @Test
     @Config(qualifiers = NARROW)

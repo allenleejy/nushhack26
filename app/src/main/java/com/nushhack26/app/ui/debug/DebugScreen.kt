@@ -2,6 +2,7 @@ package com.nushhack26.app.ui.debug
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -138,7 +139,11 @@ fun DebugContent(state: DebugUiState, modifier: Modifier = Modifier, onAction: (
         item { Fact("Last sync", state.lastSyncAt?.let(::formatTime) ?: "Never") }
         item { Fact("Last error", state.lastError ?: "None") }
         item {
-            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(
+                Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Button(onClick = { onAction(DebugAction.SyncNow) }) { Text("Sync now") }
                 OutlinedButton(onClick = { confirmClear = true }) { Text("Clear local data") }
             }

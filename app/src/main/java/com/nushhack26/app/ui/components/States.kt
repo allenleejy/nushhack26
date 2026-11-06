@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.style.TextAlign
 import com.nushhack26.app.ui.theme.Tenet
 import com.nushhack26.app.ui.theme.TenetDimens
@@ -62,7 +63,12 @@ fun EmptyState(
 fun LoadingState(modifier: Modifier = Modifier, message: String = "Loading") {
     val colors = Tenet.colors
     CenteredMessage(modifier) {
-        CircularProgressIndicator(color = colors.signal)
+        // Previews and screenshot tests can't settle on the endless spinner, so they draw it still.
+        if (LocalInspectionMode.current) {
+            CircularProgressIndicator(progress = { 0.75f }, color = colors.signal)
+        } else {
+            CircularProgressIndicator(color = colors.signal)
+        }
         Text(message.uppercase(), style = TenetType.recordLabel, color = colors.inkMuted)
     }
 }

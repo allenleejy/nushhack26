@@ -202,7 +202,7 @@ class GiveScreenshotTest {
     }
 
     @Test
-    fun loading() = captureScreen("Give_loading") {
+    fun loading() = captureLoadingScreen("Give_loading") {
         GiveContent(GiveUiState())
     }
 

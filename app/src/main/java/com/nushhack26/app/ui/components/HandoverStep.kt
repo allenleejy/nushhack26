@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,12 +20,14 @@ import androidx.compose.material.icons.sharp.GppBad
 import androidx.compose.material.icons.sharp.Verified
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.nushhack26.app.ui.theme.Tenet
 import com.nushhack26.app.ui.theme.TenetDimens
 import com.nushhack26.app.ui.theme.TenetType
@@ -44,7 +47,7 @@ private val receiverSteps = listOf("Scan offer", "Scan seal", "Sign and show")
 fun HandoverStepper(role: HandoverRole, currentStep: Int, modifier: Modifier = Modifier) {
     val colors = Tenet.colors
     val steps = if (role == HandoverRole.Giver) giverSteps else receiverSteps
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(TenetDimens.space2)) {
+    Row(modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(TenetDimens.space2)) {
         steps.forEachIndexed { index, label ->
             val number = index + 1
             val done = number < currentStep
@@ -57,6 +60,7 @@ fun HandoverStepper(role: HandoverRole, currentStep: Int, modifier: Modifier = M
             Column(
                 modifier = Modifier
                     .weight(1f)
+                    .fillMaxHeight()
                     .background(
                         when {
                             done -> colors.okBg
@@ -95,6 +99,9 @@ fun HandoverStepper(role: HandoverRole, currentStep: Int, modifier: Modifier = M
                     label.uppercase(),
                     style = TenetType.recordLabel.copy(fontWeight = FontWeight.Bold),
                     color = if (done || current) colors.ink else colors.inkMuted,
+                    maxLines = 2,
+                    // Shrinks a long word like ACCEPTANCE at large font sizes instead of breaking it mid-word.
+                    autoSize = TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = TenetType.recordLabel.fontSize),
                 )
             }
         }
