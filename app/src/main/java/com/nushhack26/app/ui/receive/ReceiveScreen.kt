@@ -15,6 +15,7 @@ import androidx.compose.material.icons.sharp.PersonOff
 import androidx.compose.material.icons.sharp.QrCodeScanner
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -39,6 +40,9 @@ import com.nushhack26.app.ui.components.SyncChipState
 import com.nushhack26.app.ui.components.TextLinkButton
 import com.nushhack26.app.ui.components.rememberSignPrompt
 import com.nushhack26.app.auth.AccessRules
+import com.nushhack26.app.ui.give.LinkedMark
+import com.nushhack26.app.ui.give.TapLine
+import com.nushhack26.app.ui.give.rememberTapReady
 import com.nushhack26.app.ui.theme.Tenet
 import com.nushhack26.app.ui.theme.TenetDimens
 import com.nushhack26.app.ui.theme.TenetType
@@ -46,6 +50,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private const val DECLINED_CLOSE_MS = 2_500L
+private val LINKED_STEPS = setOf(ReceiveStep.Checks, ReceiveStep.ScanSeal, ReceiveStep.Accept, ReceiveStep.Sending)
 
 @Composable
 fun ReceiveScreen(container: AppContainer, onDone: () -> Unit, relayedOfferId: String? = null) {
@@ -60,6 +65,13 @@ fun ReceiveScreen(container: AppContainer, onDone: () -> Unit, relayedOfferId: S
         },
     )
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val tapLink = container.tapLink
+    val onR1 = state.step == ReceiveStep.ScanOffer && relayedOfferId == null
+    val tapReady = rememberTapReady(tapLink, active = onR1)
+    tapLink.rememberTapReader(enabled = onR1 && tapReady && !state.rosterEmpty) { payload ->
+        viewModel.onTapped(payload.offer) { tapLink.join(payload).asTapSession() }
+    }
+    DisposableEffect(viewModel) { onDispose { viewModel.closeTap() } }
     val sign = rememberSignPrompt()
     val scope = rememberCoroutineScope()
     LaunchedEffect(state.step) {
@@ -68,7 +80,7 @@ fun ReceiveScreen(container: AppContainer, onDone: () -> Unit, relayedOfferId: S
             onDone()
         }
     }
-    ReceiveContent(state) { action ->
+    ReceiveContent(state.copy(tapReady = tapReady && onR1)) { action ->
         when (action) {
             ReceiveAction.Accept -> scope.launch {
                 if (!viewModel.prepareAccept()) return@launch
@@ -113,6 +125,9 @@ private fun StepFrame(state: ReceiveUiState, modifier: Modifier, onAction: (Rece
             verticalArrangement = Arrangement.spacedBy(TenetDimens.space4),
         ) {
             if (state.step != ReceiveStep.Declined) HandoverStepper(HandoverRole.Receiver, stepNumber)
+            if (state.linked && state.step in LINKED_STEPS) {
+                LinkedMark("Linked to ${state.summary?.giverShortName ?: "the giver"}'s phone")
+            }
             when (state.step) {
                 ReceiveStep.ScanOffer -> ScanOfferBody(state, onAction)
                 ReceiveStep.Checking -> Text("Checking offline…", style = TenetType.bodyLg, color = Tenet.colors.ink)
@@ -159,6 +174,7 @@ private fun ScanOfferBody(state: ReceiveUiState, onAction: (ReceiveAction) -> Un
         hint = "Point at the giver's code",
         modifier = Modifier.fillMaxWidth(),
     )
+    if (state.tapReady) TapLine("Or hold your phone to the giver's")
     SecondaryButton(
         if (state.torchOn) "Torch off" else "Torch on",
         onClick = { onAction(ReceiveAction.ToggleTorch) },
@@ -222,7 +238,11 @@ private fun ShowBody(state: ReceiveUiState) {
 @Composable
 private fun DoneBody(state: ReceiveUiState) {
     val summary = state.summary ?: return
-    if (state.sentOnline) {
+    if (state.sentTap) {
+        Text("Sent to ${summary.giverShortName}'s phone, no network", style = TenetType.bodyLg, color = Tenet.colors.ink)
+        state.matchCode?.let { MatchCode(it, summary.giverShortName) }
+        DoneLabel(summary, matchCode = null, header = "Accepted · tapped, no network")
+    } else if (state.sentOnline) {
         Text("Sent to ${summary.giverShortName} · ask them to check the match code", style = TenetType.bodyLg, color = Tenet.colors.ink)
         state.matchCode?.let { MatchCode(it, summary.giverShortName) }
         DoneLabel(summary, matchCode = null, header = "Accepted · sent through the server")

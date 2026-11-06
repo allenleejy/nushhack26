@@ -186,4 +186,46 @@ class ReceiveScreenshotTest {
             ReceiveContent(relayed.copy(step = ReceiveStep.ScanSeal, seal = SealResult(true, "S-40117", "S-40117", "Seal S-40117 matches C-12")))
         }
     }
+    @Test
+    fun scanOfferTap() = captureScreen("Receive_R1_tap") {
+        ReceiveContent(base.copy(step = ReceiveStep.ScanOffer, summary = null, tapReady = true))
+    }
+
+    @Test
+    fun tappedChecksLinked() = captureScreen("Receive_tap_R2_linked") {
+        ReceiveContent(base.copy(step = ReceiveStep.Checks, lines = green, passed = true, linked = true))
+    }
+
+    @Test
+    fun tappedSent() = captureScreen("Receive_tap_R5_sent") {
+        ReceiveContent(base.copy(step = ReceiveStep.Done, sentTap = true, matchCode = "48 21 07"))
+    }
+
+    @Test
+    fun tappedFallbackQr() = captureScreen("Receive_tap_R5_fallback_qr") {
+        ReceiveContent(
+            base.copy(
+                step = ReceiveStep.ShowAcceptance, acceptanceQr = "CS1A:demo-acceptance-payload", matchCode = "48 21 07",
+                fallbackText = "Couldn't reach Siti's phone. Show this instead.",
+            ),
+        )
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h780dp-xxhdpi")
+    fun tappedSentNarrowLargeText() {
+        RuntimeEnvironment.setFontScale(1.3f)
+        captureScreen("Receive_tap_R5_sent_360dp_large_text") {
+            ReceiveContent(base.copy(step = ReceiveStep.Done, sentTap = true, matchCode = "48 21 07"))
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h780dp-xxhdpi")
+    fun tappedSealNarrowLargeText() {
+        RuntimeEnvironment.setFontScale(1.3f)
+        captureScreen("Receive_tap_R3_linked_360dp_large_text") {
+            ReceiveContent(base.copy(step = ReceiveStep.ScanSeal, linked = true, seal = SealResult(true, "S-40117", "S-40117", "Seal S-40117 matches C-12")))
+        }
+    }
 }

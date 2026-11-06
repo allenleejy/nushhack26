@@ -27,6 +27,7 @@ import com.nushhack26.app.data.repo.Identity
 import com.nushhack26.app.data.repo.IdentityRepository
 import com.nushhack26.app.data.repo.RelayOutcome
 import com.nushhack26.app.data.repo.RelayRepository
+import com.nushhack26.app.nearby.GiverTapEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.coroutineScope
@@ -110,6 +111,8 @@ data class DoneView(
     val synced: Boolean,
     /** The acceptance came through the server (A.10), not a scanned QR. */
     val viaServer: Boolean = false,
+    /** The acceptance came back over the tap link (A.11). */
+    val viaTap: Boolean = false,
 )
 
 /** Who and what, shown on G2, G3 and the receipt. */
@@ -153,6 +156,12 @@ data class GiveUiState(
     /** G3-online: the relayed acceptance failed the giver's checks. */
     val relayError: String? = null,
     val scanError: String? = null,
+    /** G3: NFC and Bluetooth are on with the permissions, so the tap line shows. Set by the screen. */
+    val tapReady: Boolean = false,
+    /** G3: the receiver's phone read the offer by tap; this phone finishes when the acceptance arrives. */
+    val tapped: Boolean = false,
+    /** G3: the acceptance that came over the tap link failed the giver's checks. */
+    val tapError: String? = null,
     val done: DoneView? = null,
     val snack: GiveSnack? = null,
     val nowMs: Long = 0L,
@@ -216,6 +225,9 @@ private data class FlowState(
     val declined: Boolean = false,
     val relayError: String? = null,
     val viaServer: Boolean = false,
+    val tapped: Boolean = false,
+    val tapError: String? = null,
+    val viaTap: Boolean = false,
     /** The signed offer being shown or waiting for its acceptance. */
     val offer: HandoverEntity? = null,
     val proof: HandoverEntity? = null,
@@ -300,7 +312,7 @@ class GiveViewModel(
         val f = flowState.value
         if (f.step != GiveStep.Scan || f.offer?.id != offer.id) return
         when (val next = relayStep(status, 0)) {
-            is RelayStep.Accepted -> finishFromRelay(offer, next.acceptance)
+            is RelayStep.Accepted -> finishFromLink(offer, next.acceptance, viaTap = false)
             else -> if (status.status == RelayStatusKind.OPEN) {
                 flowState.update { it.copy(step = GiveStep.Sent, relayed = true, declined = false, relayError = null) }
             }
@@ -321,7 +333,7 @@ class GiveViewModel(
                 }
             }
             GiveAction.BackToChoose -> flowState.update { it.copy(step = GiveStep.Choose, snack = null) }
-            GiveAction.ScanAcceptance -> flowState.update { it.copy(step = GiveStep.Scan, scanError = null) }
+            GiveAction.ScanAcceptance -> flowState.update { it.copy(step = GiveStep.Scan, scanError = null, tapped = false, tapError = null) }
             GiveAction.BackToOffer -> flowState.update { it.copy(step = GiveStep.Offer, scanError = null) }
             GiveAction.ShowQrInstead -> flowState.update { it.copy(step = GiveStep.Offer, relayError = null) }
             GiveAction.ChooseSomeoneElse -> discardOffer(null, toStep = GiveStep.Choose)
@@ -330,6 +342,22 @@ class GiveViewModel(
             is GiveAction.CodeScanned -> onCodeScanned(action.text)
             GiveAction.DismissSnack -> flowState.update { it.copy(snack = null) }
             GiveAction.Sign, GiveAction.CopyCode, GiveAction.Finish -> Unit // Handled by the screen.
+        }
+    }
+
+    /** G3 tap (docs/sync.md A.11): what the tap link reports while this phone serves the offer. */
+    fun onTapEvent(event: GiverTapEvent) {
+        when (event) {
+            GiverTapEvent.Tapped -> flowState.update { if (it.step == GiveStep.Offer) it.copy(tapped = true, tapError = null) else it }
+            GiverTapEvent.Linked -> Unit
+            is GiverTapEvent.Acceptance -> {
+                val f = flowState.value
+                val offer = f.offer ?: return
+                if (f.step != GiveStep.Offer) return
+                viewModelScope.launch { finishFromLink(offer, event.text, viaTap = true) }
+            }
+            // The QR stays the way through, so a dropped link just brings the tap line back.
+            is GiverTapEvent.Failed -> flowState.update { it.copy(tapped = false) }
         }
     }
 
@@ -378,7 +406,7 @@ class GiveViewModel(
             flowState.update {
                 it.copy(
                     signing = false, step = if (sent) GiveStep.Sent else GiveStep.Offer, offer = offer, proof = proof,
-                    relayed = sent, declined = false, relayError = null, scanError = null,
+                    relayed = sent, declined = false, relayError = null, scanError = null, tapped = false, tapError = null,
                 )
             }
         }.onFailure { e ->
@@ -438,7 +466,7 @@ class GiveViewModel(
             if (!waiting()) break
             when (val next = relayStep(status, nulls)) {
                 RelayStep.Wait -> Unit
-                is RelayStep.Accepted -> viewModelScope.launch { finishFromRelay(offer, next.acceptance) }.join()
+                is RelayStep.Accepted -> viewModelScope.launch { finishFromLink(offer, next.acceptance, viaTap = false) }.join()
                 RelayStep.Declined -> flowState.update { it.copy(declined = true) }
                 RelayStep.Gone -> discardOffer(GiveSnack.Info(NO_LONGER_OPEN), toStep = GiveStep.Choose, closeRelay = false)
                 RelayStep.LostNetwork -> lostNetwork()
@@ -452,8 +480,8 @@ class GiveViewModel(
         flowState.update { it.copy(step = GiveStep.Offer, snack = GiveSnack.Info(LOST_NETWORK)) }
     }
 
-    /** The relayed `CS1A:` string gets the same checks as a scanned one (G4). */
-    private suspend fun finishFromRelay(offer: HandoverEntity, acceptance: String) {
+    /** A relayed or tapped `CS1A:` string gets the same checks as a scanned one (G4). */
+    private suspend fun finishFromLink(offer: HandoverEntity, acceptance: String, viaTap: Boolean) {
         if (finishing) return
         finishing = true
         val d = data.first()
@@ -467,12 +495,12 @@ class GiveViewModel(
                 check.text.startsWith("Unknown signer") -> check.text
                 else -> "This isn't $name's acceptance of this offer."
             }
-            flowState.update { it.copy(relayError = message) }
+            flowState.update { if (viaTap) it.copy(tapError = message, tapped = false) else it.copy(relayError = message) }
             return
         }
         val record = HandoverBuilder.fromAcceptance(offer, code)
         repository.completeHandover(record)
-        showDone(record, d, viaServer = true)
+        showDone(record, d, viaServer = !viaTap, viaTap = viaTap)
     }
 
     /** The receiver's record reached this phone by sync before the relay answered. */
@@ -483,7 +511,7 @@ class GiveViewModel(
         showDone(record, data.first(), viaServer = true)
     }
 
-    private fun showDone(record: HandoverEntity, d: GiveData, viaServer: Boolean) {
+    private fun showDone(record: HandoverEntity, d: GiveData, viaServer: Boolean, viaTap: Boolean = false) {
         val facts = listOfNotNull(
             d.item?.code,
             "Holder: ${d.roster.person(record.toPersonId)?.name?.let(::callName) ?: "the receiver"}",
@@ -492,6 +520,7 @@ class GiveViewModel(
         flowState.update {
             it.copy(
                 step = GiveStep.Done, completed = record, scanError = null, relayError = null, viaServer = viaServer,
+                viaTap = viaTap, tapped = false, tapError = null,
                 snack = GiveSnack.Confirmation(confirmationTitle(record.kind), facts),
             )
         }
@@ -507,7 +536,7 @@ class GiveViewModel(
             flowState.update {
                 it.copy(
                     step = toStep, offer = null, proof = null, scanError = null, snack = snack,
-                    relayed = false, declined = false, relayError = null,
+                    relayed = false, declined = false, relayError = null, tapped = false, tapError = null,
                     // Back at G2, decide online or QR again: the network may have changed.
                     online = if (toStep == GiveStep.Review) isOnline.value && serverConfigured else it.online,
                     selectedReceiverId = if (toStep == GiveStep.Choose) null else it.selectedReceiverId,
@@ -564,6 +593,7 @@ class GiveViewModel(
                 acceptedMs = record.acceptedMs ?: now,
                 synced = stored != null && !stored.hiddenByTamper && (stored.syncStatus == SyncMark.SYNCED || stored.serverSeq != null),
                 viaServer = f.viaServer,
+                viaTap = f.viaTap,
             )
         }
 
@@ -587,6 +617,8 @@ class GiveViewModel(
                 runCatching { OfferView(QrPayloads.offer(o, f.proof), o.expiresMs ?: 0L) }.getOrNull()
             },
             scanError = f.scanError,
+            tapped = f.tapped,
+            tapError = f.tapError,
             done = done,
             snack = f.snack,
             nowMs = now,

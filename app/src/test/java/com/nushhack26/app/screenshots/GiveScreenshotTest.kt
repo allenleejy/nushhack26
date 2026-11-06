@@ -228,4 +228,51 @@ class GiveScreenshotTest {
             )
         }
     }
+    @Test
+    fun offerTap() = captureScreen("Give_G3_tap_offer") {
+        GiveContent(base.copy(step = GiveStep.Offer, selectedReceiverId = "p-wei", summary = transfer, offer = offer, tapReady = true))
+    }
+
+    @Test
+    fun offerTapped() = captureScreen("Give_G3_tapped") {
+        GiveContent(base.copy(step = GiveStep.Offer, selectedReceiverId = "p-wei", summary = transfer, offer = offer, tapReady = true, tapped = true))
+    }
+
+    @Test
+    fun offerTapError() = captureScreen("Give_G3_tap_error") {
+        GiveContent(
+            base.copy(
+                step = GiveStep.Offer, selectedReceiverId = "p-wei", summary = transfer, offer = offer, tapReady = true,
+                tapError = "This isn't Wei Ming's acceptance of this offer.",
+            ),
+        )
+    }
+
+    @Test
+    fun doneTapped() = captureScreen("Give_G5_done_tapped") {
+        GiveContent(
+            base.copy(
+                step = GiveStep.Done, selectedReceiverId = "p-wei", summary = transfer,
+                done = DoneView(recordNo = 3, matchCode = "48 21 07", acceptedMs = now, synced = false, viaTap = true),
+            ),
+        )
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h780dp-xxhdpi")
+    fun offerTappedNarrowLargeText() {
+        RuntimeEnvironment.setFontScale(1.3f)
+        captureScreen("Give_G3_tapped_360dp_1.3x") {
+            GiveContent(base.copy(step = GiveStep.Offer, selectedReceiverId = "p-wei", summary = transfer, offer = offer, tapReady = true, tapped = true))
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h780dp-xxhdpi")
+    fun offerTapNarrowLargeText() {
+        RuntimeEnvironment.setFontScale(1.3f)
+        captureScreen("Give_G3_tap_offer_360dp_1.3x") {
+            GiveContent(base.copy(step = GiveStep.Offer, selectedReceiverId = "p-wei", summary = transfer, offer = offer, tapReady = true))
+        }
+    }
 }
