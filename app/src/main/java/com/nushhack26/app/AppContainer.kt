@@ -20,6 +20,7 @@ import com.nushhack26.app.data.repo.IdentityRepository
 import com.nushhack26.app.data.repo.ReceiveRepository
 import com.nushhack26.app.data.repo.RelayRepository
 import com.nushhack26.app.data.repo.SafetyRepository
+import com.nushhack26.app.nearby.TapLink
 import com.nushhack26.app.sync.NetworkMonitor
 import com.nushhack26.app.sync.SyncEngine
 import com.nushhack26.app.sync.SyncScheduler
@@ -78,6 +79,9 @@ class AppContainer(context: Context) {
 
     /** The online handover: the server carries the offer and acceptance strings (docs/sync.md A.10). */
     val offerRelay by lazy { RelayRepository(SupabaseOfferRelayApi(supabase), isOnline, identity, scope) }
+
+    /** Tap to hand over offline: NFC pairs the phones, Nearby Connections links them (docs/sync.md A.11). */
+    val tapLink by lazy { TapLink(appContext, scope) }
 
     fun start() {
         appLock.start()

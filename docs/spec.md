@@ -54,7 +54,7 @@
    - C (Wei Ming) picks up his phone. Its screen went off, so Tenet locked itself: "LOCKED · TAN WEI MING · R-2234". **Unlock** → fingerprint → it opens, still in airplane mode. The presenter: "No network and no login server. His fingerprint unlocks a key in the phone's secure chip, and the app checks that key's signature against his enrolment."
    - B (Ravi): My custody → C-12 card → **Hand over**. The picker shows **Jun Lim greyed out: "Authorisation lapsed 3 Nov"**. The presenter: "Jun's authorisation lapsed on Tuesday, so even offline Ravi can't hand him a source." → **Tan Wei Ming** → **Sign** → fingerprint. B shows the offer card with "For Wei Ming only · single use · valid for 0:58".
    - **The presenter invites a judge to photograph B's offer QR** with their own phone.
-   - C (Wei Ming): **Receive** → scans B → checklist green → scans the seal → accept card → fingerprint → acceptance QR. B scans it. Both show the same match code. C's home: "You hold C-12 · return by 14:31 · 1:02 left" (example times).
+   - C (Wei Ming): **Receive** → Ravi holds B to C (**tap**). C's checklist turns green with no network → scans the seal → accept card → fingerprint. B moves to Done by itself over the phone-to-phone link. Both show the same match code. The presenter: "No network, no codes: one tap and two fingerprints." C's home: "You hold C-12 · return by 14:31 · 1:02 left" (example times).
    - B's home **still says "You hold C-12"**. The presenter: "Ravi's phone has been tampered with. It kept a copy of the token."
 3. **The cheat (1:15–1:40).**
    - B (Ravi): C-12 → **Hand over** → **Siti Aminah (return to store)** → sign. A scans it: checklist green, because offline nobody can tell. Siti scans the **copied seal** → match → accept → fingerprint. B scans A's acceptance. A's Store shows C-12 "In store".
@@ -193,6 +193,7 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
 - **G3 Offer QR.** The same card with the QR inside it, the line **"For Wei Ming only · single use · valid for 0:58"** counting down, "Waiting for Wei Ming to accept", the primary button **Scan acceptance**, and the text button **Cancel offer**. The screen stays awake at full brightness.
   - **Expired:** "Offer expired. If Wei Ming already accepted, scan their code. Otherwise sign a new offer."
   - Debug builds: **Copy code**.
+  - **Tap** (`sync.md` A.11, when NFC and Bluetooth are on): under the QR, "Or hold your phone to Wei Ming's" with a phone-to-phone icon. After the tap: "Tapped · waiting for Wei Ming to scan the seal and accept", and the phone moves to G5 by itself when the acceptance arrives.
 - **G4 Scan acceptance.** The viewfinder.
   - **Error:** "This isn't Wei Ming's acceptance of this offer." / "Not a handover code." / "Allow the camera to scan codes." with **Open settings**.
 - **G5 Done.** A green check, "Signed by both · checked offline · 2 of 2 signatures valid" (online: "Signed by both · sent through the server · 2 of 2 signatures checked on this phone"), the match code in large digits, "**48 21 07** · check that Wei Ming's screen shows the same", and "Receipt saved · not synced yet" (or "Synced").
@@ -202,6 +203,7 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
   - **R2–R4** are the same, plus a text button **Decline** ("Declined. Siti still holds C-12.").
 - **R1 Scan the offer.** A viewfinder, a torch toggle, and "Point at the giver's code".
   - **Error:** "Not a handover code." / camera permission, as G4.
+  - **Tap:** while R1 is open, "Or hold your phone to the giver's". A tap opens R2 at once with the same checks, and a "Linked to Siti's phone" mark appears when the Nearby link is up.
 - **R2 Checks.** "Checking offline…" (under a second), then one line per check, each ✓ or ✗:
   1. "Signed by Ravi Kumar · key 3F:A9:12:7C"
   2. "Ravi Kumar holds C-12 · signed by Siti and Ravi at 14:29"
@@ -219,6 +221,7 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
   - **Error:** "Fingerprint cancelled. Nothing was signed. Ravi still holds C-12."
 - **R5 Acceptance QR.** The QR in the card, "Show this to Ravi", and the match code. After Ravi scans it, or on **Done**: "You hold C-12. Return by 14:31." and "Not synced yet".
   - **Online:** no QR. "Sent to Ravi · ask him to check the match code", the match code, then the same "You hold C-12" line. If the acceptance can't be sent: "Couldn't reach the server. Show this to Ravi instead." with the acceptance QR.
+  - **Tapped:** no QR. "Sent to Siti's phone, no network", the match code, then "You hold C-12". If the link isn't up within 10 seconds: the acceptance QR with "Couldn't reach Siti's phone. Show this instead."
 
 ### T Timeline (`ui/timeline/`)
 - **Purpose:** the custody chain of one camera.
@@ -390,8 +393,10 @@ None.
 | 13 | Device revocation: the safety officer withdraws a phone; other phones refuse its signatures after they sync | a migration adding `devices.revoked_at`, `auth/` | 07 | 3 | Normal |
 | 14 | Online hand over: post the offer through the relay, G3-online waiting, finish on the relayed acceptance, QR fallback | `ui/give/`, `data/repo/GiveRepository.kt`, `GiveScreenshotTest.kt` | relay (plan job, `sync.md` A.10), 03 | 2 | Normal |
 | 15 | Online receive: the R0 banner, R2–R4 from a relayed offer, Decline, send the acceptance, R5-online | `ui/incoming/`, `ui/receive/`, `data/repo/ReceiveRepository.kt`, `ReceiveScreenshotTest.kt` | relay, 04 | 2 | Normal |
+| 16 | Tap link: NFC card emulation and reader, the `CS1T:` payload, Nearby Connections, a Debug tap test | `nearby/`, `ui/debug/`, `test/.../nearby/` | plan (A.11) | 2 | Fusion |
+| 17 | Tap in the handover: G3 and R1 offer the tap, R5 and G5 finish over the link, QR fallback | `ui/give/`, `ui/receive/`, their tests | 14, 15, 16 | 3 | Normal |
 
-Cut to make room for the Sudden Dev change: the old card 08 (enrolment code, key details) is folded into 07; encrypted offers and handover over Nearby Connections are stretch ideas only.
+Cut to make room for the Sudden Dev change: the old card 08 (enrolment code, key details) is folded into 07; encrypted offers are a stretch idea only. Handover over NFC and Nearby Connections is cards 16 and 17.
 
 Overnight wave: polish and the QA sweep (`role-build.md`).
 

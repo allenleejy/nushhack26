@@ -249,6 +249,49 @@ The relay is only a mailbox: the server never signs or checks anything in it. A 
    - only the giver and the named receiver can read a row, and only an enrolled session can call them
    - a stolen string is as useless as a photographed QR: it's made out to one person, single use, short-lived, and still needs the seal and the receiver's own key
 
+### A.11 Tap to hand over offline (`nearby/`: NFC, then Nearby Connections)
+
+With no network, the phones don't have to swap QR codes. The giver holds the phone to the receiver's phone once. NFC carries the offer and a one-time session key; then a Nearby Connections link (Bluetooth, upgraded to Wi-Fi when possible, no network or root needed) carries the acceptance back, so the giver's phone finishes by itself.
+
+The same as A.10, only the transport changes: the strings are the `CS1O:` offer and `CS1A:` acceptance, read with `QrPayloads.parse`, with the same checks and the same Room saves. The QR codes stay on screen as the fallback the whole time.
+
+**The tap payload:**
+- format: `CS1T:` + JSON `{"o": "<the CS1O: offer string>", "k": "<session key: 16 random bytes, base64url>"}`, at most 1,400 characters
+- the session key is made fresh for each offer and never stored
+- the Nearby endpoint names come from it:
+  - giver: `G-` + the first 8 hex digits of SHA-256(`"giver" + k`)
+  - receiver: `R-` + the first 8 hex digits of SHA-256(`"receiver" + k`)
+
+**NFC (card emulation on the giver, reader mode on the receiver):**
+- **The card:**
+  - it's the giver's `TapCardService`, AID `F054454E455401` (`F0` + "TENET" + `01`, category `other`, device unlocked)
+  - it answers only while the giver's offer screen is collecting `TapLink.serve`; otherwise `6A82`
+- **The APDUs:**
+  - `SELECT` by AID (`00 A4 04 00 07 F054454E455401`) → `<total length, 2 bytes big-endian> 9000`
+  - `READ` (`00 B0 <offset hi> <offset lo> E0`) → up to 224 bytes from that offset, then `9000`
+  - the reader repeats READ until it has the total
+  - any other command → `6D00`
+- **The receiver** turns reader mode on (`NfcAdapter.enableReaderMode`, flags NFC_A | NFC_B | SKIP_NDEF_CHECK) while R1 is on screen. A tap feeds the offer straight into R2. The checks need no link at all.
+
+**Nearby Connections** (`SERVICE_ID = "com.nushhack26.app.tap"`, `Strategy.P2P_POINT_TO_POINT`):
+1. **The giver** advertises as `G-…` while the offer screen is up. It accepts a connection only from the matching `R-…` name, and rejects anything else.
+2. **The receiver**, after the tap, discovers and requests a connection to the matching `G-…` name, and accepts it. It connects in the background while the person does R2–R4.
+3. **After Accept and `saveAccepted`,** the receiver sends one BYTES payload: the `CS1A:` string. If no link is up within 10 s, it shows the R5 acceptance QR as now.
+4. **The giver,** on that payload: the same acceptance checks as G4, then `completeHandover`, then G5 ("Signed by both · tapped, no network").
+5. Both sides disconnect and stop advertising or discovering when their screen leaves.
+
+**Why it's safe:**
+- The link carries only signed strings. The acceptance is checked against the receiver's device key on the roster, exactly as when scanned.
+- The session key only makes sure the right two phones connect.
+- NFC reaches about 4 cm, so a tap proves the two phones were together. The seal scan still proves the camera was there.
+
+**Permissions:**
+- runtime `BLUETOOTH_ADVERTISE`, `BLUETOOTH_CONNECT`, `BLUETOOTH_SCAN` (Android 12+), `NEARBY_WIFI_DEVICES` (13+), and fine location on 11 and below
+- they're asked the first time an offer or receive screen opens
+- if they're refused, or NFC is off or missing, the tap option hides and the QR codes work as before
+
+**Airplane mode in the demo:** airplane mode turns Bluetooth off on both phones, and NFC off on the Android 13 phone. Before the demo, on each phone, run `adb shell settings put global airplane_mode_radios cell,wifi,wimax`. Airplane mode then cuts the network (mobile data and Wi-Fi) but leaves Bluetooth and NFC on. Otherwise, turn Bluetooth (and NFC) back on after switching airplane mode on.
+
 ---
 
 ## B. Tables

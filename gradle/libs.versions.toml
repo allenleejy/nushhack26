@@ -18,6 +18,7 @@ fragment = "1.9.1"
 camerax = "1.6.2"
 mlkitBarcode = "17.3.0"
 zxing = "3.5.4"
+playServicesNearby = "19.5.1"
 junit = "4.13.2"
 androidxTestCore = "1.7.0"
 robolectric = "4.17"
@@ -51,6 +52,8 @@ ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "kto
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
+play-services-nearby = { module = "com.google.android.gms:play-services-nearby", version.ref = "playServicesNearby" }
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragment" }
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }

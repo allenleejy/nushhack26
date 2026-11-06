@@ -115,6 +115,9 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.mlkit.barcode.scanning)
     implementation(libs.zxing.core)
+    // Tap to hand over offline: NFC pairs the phones, Nearby Connections carries the strings (docs/sync.md A.11).
+    implementation(libs.play.services.nearby)
+    implementation(libs.kotlinx.coroutines.play.services)
 
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
