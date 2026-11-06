@@ -158,6 +158,9 @@ class SoftwareDeviceKeys(private val context: Context) : DeviceKeys {
         requireTestPhone()
         val pair = KeyPairGenerator.getInstance("EC").apply { initialize(ECGenParameterSpec("secp256r1")) }.generateKeyPair()
         val atomicFile = file
+        // On Windows (the build laptop's unit tests) a rename can't replace an existing file,
+        // so the old key would survive. Replacing the key means deleting the old one first.
+        atomicFile.delete()
         val output = atomicFile.startWrite()
         try {
             val data = DataOutputStream(output)
