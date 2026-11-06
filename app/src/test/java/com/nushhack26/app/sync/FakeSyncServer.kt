@@ -163,7 +163,7 @@ class FakeSyncServer : SyncApi {
             return "orphan"
         }
         alerts.values.filter { it.kind == "orphan" && it.closedAt == null && id in it.handoverIds }
-            .forEach { alerts[it.id] = it.copy(closedAt = "closed", serverSeq = ++seq) }
+            .forEach { alerts[it.id] = it.copy(closedAt = "2026-11-06T14:15:00Z", serverSeq = ++seq) }
 
         if (prev.toPersonId != h.fromPersonId || prev.recordHash != h.prevHash) {
             val reason = if (prev.toPersonId != h.fromPersonId) "giver was not the holder" else "broken link"
@@ -244,7 +244,7 @@ class FakeSyncServer : SyncApi {
                 }
             }
         }
-        alerts[alert.id] = alert.copy(resolutionId = r.id, closedAt = "closed", serverSeq = ++seq)
+        alerts[alert.id] = alert.copy(resolutionId = r.id, closedAt = "2026-11-06T14:15:00Z", serverSeq = ++seq)
         return record(opId, OpResult(opId, OpResultKind.APPLIED, serverSeq = resolutions.getValue(r.id).serverSeq))
     }
 
