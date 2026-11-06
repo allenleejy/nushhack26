@@ -17,4 +17,7 @@ data class Roster(
     /** The device, only if it belongs to [personId]. */
     fun deviceOf(personId: String?, deviceId: String?): DeviceEntity? =
         device(deviceId)?.takeIf { it.personId == personId }
+
+    /** When the safety officer withdrew this device (server clock), or null while it's in use (docs/sync.md A.12). */
+    fun withdrawnAt(deviceId: String?): Long? = device(deviceId)?.revokedAtMs
 }

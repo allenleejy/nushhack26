@@ -75,6 +75,7 @@ fun TimelineContent(state: TimelineUiState, modifier: Modifier = Modifier, onRep
                     when (node) {
                         is TimelineNode.Record -> TimelineRow(node.entry, last = last)
                         is TimelineNode.Fork -> ForkBlock(node.branches)
+                        is TimelineNode.LocalFork -> LocalForkCard(node.text)
                         is TimelineNode.Resolution -> ResolutionRow(node)
                     }
                 }
