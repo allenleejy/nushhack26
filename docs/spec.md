@@ -46,9 +46,9 @@
 **The demo (about 3 minutes).**
 
 1. **Sign-out, online (0:00–0:30).**
-   - A (Siti): Store → **Issue** on C-12 → pick **Ravi Kumar** → due chip **+90 s** → **Sign** → fingerprint. A shows the offer card: "Siti Aminah → Ravi Kumar · C-12 · IR-0457 · For Ravi only · single use · valid for 0:58" with the QR inside it.
-   - B (Ravi): My custody → **Receive** → camera scans A's QR. The checklist turns green: signed by Siti, Siti holds C-12, made out to you, valid, not used before, authorised. **Scan the seal** → he scans the sticker → "Seal S-40117 matches C-12". The accept card says "This is sealed source IR-0457 (iridium-192). You're liable for it the moment you sign." → **Accept** → fingerprint. B shows its acceptance QR and the match code.
-   - A: **Scan acceptance** → scans B. Both A and B show "Signed by both · checked offline · 2 of 2 signatures valid" and the same match code, for example **48 21 07**. Siti and Ravi read it aloud.
+   - A (Siti): Store → **Issue** on C-12 → pick **Ravi Kumar** → due chip **+90 s** → **Sign** → fingerprint. A shows "Sent to Ravi's phone · waiting for Ravi to scan the seal and accept".
+   - B (Ravi) is already showing the yellow banner: "Siti Aminah is handing you C-12". **Open** → the checklist turns green: signed by Siti, Siti holds C-12, made out to you, valid, not used before, authorised. **Scan the seal** → he scans the sticker → "Seal S-40117 matches C-12". The accept card says "This is sealed source IR-0457 (iridium-192). You're liable for it the moment you sign." → **Accept** → fingerprint.
+   - A moves to Done by itself. Both show "Signed by both" and the same match code, for example **48 21 07**. Siti and Ravi read it aloud. The presenter: "Online it's two fingerprints and the seal. Now watch what happens when the network goes."
    - Wait until A's and B's sync bars show "All synced". **Airplane mode on: A, B and C.**
 2. **Shift change, offline (0:30–1:15).**
    - C (Wei Ming) picks up his phone. Its screen went off, so Tenet locked itself: "LOCKED · TAN WEI MING · R-2234". **Unlock** → fingerprint → it opens, still in airplane mode. The presenter: "No network and no login server. His fingerprint unlocks a key in the phone's secure chip, and the app checks that key's signature against his enrolment."
@@ -184,15 +184,22 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
   - **Authorisation:** receivers who may not take the camera (`sync.md` A.8) stay in the list, greyed out and not selectable, with the reason: "Jun Lim · authorisation lapsed 3 Nov".
   - **Empty:** "You don't hold this camera" (it isn't yours to give) / "No one on the roster can receive it. Sync once."
 - **G2 Review and sign.** The who-and-what card: giver → receiver with names and roles; "C-12 · sealed source IR-0457 (Ir-192) · seal S-40117"; due time. The primary button **Sign** with the line "Place your finger to sign this handover".
+  - **Online** (`sync.md` A.10): the line reads "Online · Wei Ming accepts on his phone, no codes to scan"; offline: "Offline · you'll swap QR codes".
   - **Error:** "Fingerprint cancelled. Nothing was handed over."
+- **G3-online Sent.** The same card without a QR: "Sent to Wei Ming's phone", "Waiting for Wei Ming to scan the seal and accept · 2:58" counting down, a pulsing waiting mark, the text buttons **Show QR instead** (→ G3 with the same offer) and **Cancel offer**.
+  - **Accepted:** goes straight to G5 by itself.
+  - **Declined:** "Wei Ming declined. Nothing was handed over." with **Choose someone else**.
+  - **Lost the network:** "Lost the network. Show the QR instead." and G3 opens by itself.
 - **G3 Offer QR.** The same card with the QR inside it, the line **"For Wei Ming only · single use · valid for 0:58"** counting down, "Waiting for Wei Ming to accept", the primary button **Scan acceptance**, and the text button **Cancel offer**. The screen stays awake at full brightness.
   - **Expired:** "Offer expired. If Wei Ming already accepted, scan their code. Otherwise sign a new offer."
   - Debug builds: **Copy code**.
 - **G4 Scan acceptance.** The viewfinder.
   - **Error:** "This isn't Wei Ming's acceptance of this offer." / "Not a handover code." / "Allow the camera to scan codes." with **Open settings**.
-- **G5 Done.** A green check, "Signed by both · checked offline · 2 of 2 signatures valid", the match code in large digits, "**48 21 07** · check that Wei Ming's screen shows the same", and "Receipt saved · not synced yet" (or "Synced").
+- **G5 Done.** A green check, "Signed by both · checked offline · 2 of 2 signatures valid" (online: "Signed by both · sent through the server · 2 of 2 signatures checked on this phone"), the match code in large digits, "**48 21 07** · check that Wei Ming's screen shows the same", and "Receipt saved · not synced yet" (or "Synced").
 
 ### R Receive (`ui/receive/`, one route with steps)
+- **R0 Incoming offer** (`ui/incoming/`, online only, `sync.md` A.10). A signal-yellow banner under the top bar on every screen except a handover: "**Siti Aminah is handing you C-12** · Scan its seal to accept" with **Open** and a countdown. The phone vibrates once when a new one arrives. Tapping it opens R2 for that offer (R1 is skipped).
+  - **R2–R4** are the same, plus a text button **Decline** ("Declined. Siti still holds C-12.").
 - **R1 Scan the offer.** A viewfinder, a torch toggle, and "Point at the giver's code".
   - **Error:** "Not a handover code." / camera permission, as G4.
 - **R2 Checks.** "Checking offline…" (under a second), then one line per check, each ✓ or ✗:
@@ -211,6 +218,7 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
 - **R4 Accept.** The who-and-what card plus the statement "This is sealed source IR-0457 (iridium-192). You're liable for it the moment you sign." and the due time. The primary button **Accept**, with "Place your finger to accept".
   - **Error:** "Fingerprint cancelled. Nothing was signed. Ravi still holds C-12."
 - **R5 Acceptance QR.** The QR in the card, "Show this to Ravi", and the match code. After Ravi scans it, or on **Done**: "You hold C-12. Return by 14:31." and "Not synced yet".
+  - **Online:** no QR. "Sent to Ravi · ask him to check the match code", the match code, then the same "You hold C-12" line. If the acceptance can't be sent: "Couldn't reach the server. Show this to Ravi instead." with the acceptance QR.
 
 ### T Timeline (`ui/timeline/`)
 - **Purpose:** the custody chain of one camera.
@@ -380,6 +388,8 @@ None.
 | 11 | Radio check: a 4-digit challenge, a 6-digit answer | `ui/radiocheck/`, `crypto/RadioCheck.kt` | 01 | 3 | Normal |
 | 12 | Signature check on the server, in an Edge Function before `sync_push` | `supabase/functions/` | 02 | 3 | Normal |
 | 13 | Device revocation: the safety officer withdraws a phone; other phones refuse its signatures after they sync | a migration adding `devices.revoked_at`, `auth/` | 07 | 3 | Normal |
+| 14 | Online hand over: post the offer through the relay, G3-online waiting, finish on the relayed acceptance, QR fallback | `ui/give/`, `data/repo/GiveRepository.kt`, `GiveScreenshotTest.kt` | relay (plan job, `sync.md` A.10), 03 | 2 | Normal |
+| 15 | Online receive: the R0 banner, R2–R4 from a relayed offer, Decline, send the acceptance, R5-online | `ui/incoming/`, `ui/receive/`, `data/repo/ReceiveRepository.kt`, `ReceiveScreenshotTest.kt` | relay, 04 | 2 | Normal |
 
 Cut to make room for the Sudden Dev change: the old card 08 (enrolment code, key details) is folded into 07; encrypted offers and handover over Nearby Connections are stretch ideas only.
 

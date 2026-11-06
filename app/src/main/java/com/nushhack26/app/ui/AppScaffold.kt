@@ -55,7 +55,9 @@ import com.nushhack26.app.ui.navigation.ForkRoute
 import com.nushhack26.app.ui.navigation.GiveRoute
 import com.nushhack26.app.ui.navigation.MeRoute
 import com.nushhack26.app.ui.navigation.OutboxRoute
+import com.nushhack26.app.ui.navigation.ReceiveRelayedRoute
 import com.nushhack26.app.ui.navigation.ReceiveRoute
+import com.nushhack26.app.ui.incoming.IncomingOfferBanner
 import com.nushhack26.app.ui.navigation.ReportMissingRoute
 import com.nushhack26.app.ui.navigation.TimelineRoute
 import com.nushhack26.app.ui.navigation.TopLevelTab
@@ -107,7 +109,9 @@ private fun RoleScaffold(container: AppContainer, role: String) {
     val destination = backStackEntry?.destination
     val syncStatus by container.syncStatus.collectAsStateWithLifecycle()
     val currentTab = tabs.firstOrNull { !it.opensFlow && destination?.hasRoute(it.routeClass) == true }
-    val inHandover = destination?.let { it.hasRoute(GiveRoute::class) || it.hasRoute(ReceiveRoute::class) } == true
+    val inHandover = destination?.let {
+        it.hasRoute(GiveRoute::class) || it.hasRoute(ReceiveRoute::class) || it.hasRoute(ReceiveRelayedRoute::class)
+    } == true
 
     Scaffold(
         containerColor = Tenet.colors.bg000,
@@ -140,12 +144,18 @@ private fun RoleScaffold(container: AppContainer, role: String) {
             if (currentTab != null) TenetBottomNav(tabs, currentTab, navController)
         },
     ) { innerPadding ->
-        AppNavHost(
-            navController,
-            container,
-            startDestination = TopLevelTab.startFor(role).route,
-            modifier = Modifier.padding(innerPadding),
-        )
+        Column(Modifier.padding(innerPadding)) {
+            // An offer sent to me through the server (docs/sync.md A.10). Hidden mid-handover.
+            if (!inHandover) {
+                IncomingOfferBanner(container, onOpen = { navController.navigate(ReceiveRelayedRoute(it)) })
+            }
+            AppNavHost(
+                navController,
+                container,
+                startDestination = TopLevelTab.startFor(role).route,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 
@@ -241,6 +251,7 @@ private fun titleFor(destination: NavDestination?, tab: TopLevelTab?): String = 
     destination == null -> APP_NAME
     destination.hasRoute(GiveRoute::class) -> "Hand over"
     destination.hasRoute(ReceiveRoute::class) -> "Receive"
+    destination.hasRoute(ReceiveRelayedRoute::class) -> "Receive"
     destination.hasRoute(TimelineRoute::class) -> "Custody chain"
     destination.hasRoute(ForkRoute::class) -> "Fork"
     destination.hasRoute(OutboxRoute::class) -> "Outbox"

@@ -43,7 +43,7 @@ import com.nushhack26.app.ui.theme.TenetType
 import kotlinx.coroutines.launch
 
 @Composable
-fun ReceiveScreen(container: AppContainer, onDone: () -> Unit) {
+fun ReceiveScreen(container: AppContainer, onDone: () -> Unit, relayedOfferId: String? = null) {
     val viewModel: ReceiveViewModel = viewModel(
         factory = viewModelFactory {
             initializer { ReceiveViewModel(container.receiveRepository, container.identity, { container.deviceKeys }) }

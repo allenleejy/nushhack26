@@ -10,6 +10,7 @@ import com.nushhack26.app.data.local.put
 import com.nushhack26.app.data.remote.SessionManager
 import com.nushhack26.app.data.remote.SupabaseEnrolApi
 import com.nushhack26.app.data.remote.SupabaseConfig
+import com.nushhack26.app.data.remote.SupabaseOfferRelayApi
 import com.nushhack26.app.data.remote.SupabaseSyncApi
 import com.nushhack26.app.data.remote.createSupabase
 import com.nushhack26.app.data.repo.CustodyRepository
@@ -17,6 +18,7 @@ import com.nushhack26.app.data.repo.EnrolRepository
 import com.nushhack26.app.data.repo.GiveRepository
 import com.nushhack26.app.data.repo.IdentityRepository
 import com.nushhack26.app.data.repo.ReceiveRepository
+import com.nushhack26.app.data.repo.RelayRepository
 import com.nushhack26.app.data.repo.SafetyRepository
 import com.nushhack26.app.sync.NetworkMonitor
 import com.nushhack26.app.sync.SyncEngine
@@ -73,6 +75,9 @@ class AppContainer(context: Context) {
     val custodyRepository by lazy { CustodyRepository(database) }
     val enrolRepository by lazy { EnrolRepository(database, identity, SupabaseEnrolApi(supabase), appLock, requestSync) }
     val safetyRepository by lazy { SafetyRepository(database, requestSync) }
+
+    /** The online handover: the server carries the offer and acceptance strings (docs/sync.md A.10). */
+    val offerRelay by lazy { RelayRepository(SupabaseOfferRelayApi(supabase), isOnline, identity, scope) }
 
     fun start() {
         appLock.start()

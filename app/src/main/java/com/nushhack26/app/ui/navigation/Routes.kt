@@ -23,6 +23,8 @@ import kotlin.reflect.KClass
 @Serializable data object DebugRoute
 @Serializable data class GiveRoute(val itemId: String)
 @Serializable data object ReceiveRoute
+/** Receive an offer sent through the server (docs/sync.md A.10), opened from the incoming-offer banner. */
+@Serializable data class ReceiveRelayedRoute(val offerId: String)
 @Serializable data class TimelineRoute(val itemId: String)
 @Serializable data class ForkRoute(val alertId: String)
 @Serializable data object DailyRecordRoute

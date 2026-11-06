@@ -211,6 +211,44 @@ This is a pure function in `crypto/Custody.kt`, used by every screen and by the 
 - **After that,** the app still unlocks and shows every record, but Hand over, Receive and Sign decision are disabled with "Connect once to confirm your access. Until then you can look but not sign." The next successful sync renews it.
 - "Clear local data" keeps `last_sync_at`, `enrolled_at` and `device_public_key`.
 
+### A.10 The online handover (`RelayRepository`, `offer_relay`)
+
+When both phones are online, nobody scans a QR code. The server carries the same two strings instead, the giver's `CS1O:` offer and the receiver's `CS1A:` acceptance, and both people only touch their fingerprint. The receiver still scans the seal on the camera. That's what proves the two people and the camera are together.
+
+**What doesn't change:**
+- the signed records (A.2), the receiver's checks (A.4), the seal check, and the giver's checks on the acceptance
+- the Room saves (`savePendingOffer`, `saveAccepted`, `completeHandover`) and their outbox entries
+- the record still reaches `handovers` only through `sync_push`, and the server checks it there (§C)
+
+The relay is only a mailbox: the server never signs or checks anything in it. A string read from the relay goes through `QrPayloads.parse` exactly like a scanned one.
+
+**Steps:**
+1. **Giver, after G2 signs:**
+   - if `isOnline`, post with `container.offerRelay.post(id, item_id, to_person_id, QrPayloads.offer(record, proof), expires_ms)`
+   - a relayed offer is valid for 3 minutes: `expires_ms = offered_ms + RelayRepository.RELAYED_OFFER_VALID_MS`. A QR offer stays at 60 s.
+   - the expiry is chosen before signing, because it's part of the signed string, so the giver decides online or QR at G2 from `isOnline`
+   - on `Sent`, show G3-online and check `status(id)` every 2 s. Also watch the local `handovers` for the record id, since the receiver's record can arrive by sync first.
+2. **Receiver:**
+   - the app frame collects `offerRelay.incoming`, which calls `relay_inbox` every 2 s while it's on screen, online and enrolled
+   - a banner (R0) shows each offer made out to me. Tapping it opens `ReceiveRelayedRoute(offerId)`, which starts at R2 with `QrPayloads.parse(offer)`.
+   - from there it's the same checks (including line 6, authorisation), then R3 seal, then R4 fingerprint and `saveAccepted`
+   - then `offerRelay.accept(id, QrPayloads.acceptance(record))`. On `Sent`, R5-online shows "Sent to <giver>" with no QR.
+3. **Giver, when `status` is `accepted`:**
+   - `QrPayloads.parse(acceptance)`, then the same giver checks, then `completeHandover(record)`, then G5
+   - if the record arrived by sync first, delete the pending offer and go to G5 with that record
+4. **Falling back.** Every relay call gives up after 6 s and returns `Unavailable` or `Refused`; then that step uses the QR path:
+   - **the giver can't post:** show the normal G3 QR. If the offer was signed for 3 minutes, the QR simply shows that longer countdown.
+   - **the giver while waiting:** G3-online always has **Show QR instead**, which shows the same offer as a QR, and **Scan acceptance**
+   - **the receiver can't send the acceptance:** show the normal R5 acceptance QR, and the giver scans it (G4)
+5. **Declined or cancelled:**
+   - **Decline** on R2–R4 calls `close(id)`; the giver's status turns `declined` and G3-online says "<name> declined. Nothing was handed over."
+   - the giver's **Cancel offer** calls `close(id)` and deletes the pending offer
+   - an offer nobody answers simply lapses at `expires_ms`
+6. **Security:**
+   - `offer_relay` has RLS on with every grant revoked; only the `relay_*` functions touch it
+   - only the giver and the named receiver can read a row, and only an enrolled session can call them
+   - a stolen string is as useless as a photographed QR: it's made out to one person, single use, short-lived, and still needs the seal and the receiver's own key
+
 ---
 
 ## B. Tables
@@ -375,6 +413,20 @@ On `applied` or `duplicate`, in one Room transaction, the phone:
 - marks the app unlocked
 
 Then it syncs.
+
+### D.5 Relay (online handover, A.10)
+
+Online only, never queued, through `OfferRelayApi` (`data/remote/`) and `RelayRepository` (`data/repo/`). Each needs an enrolled session (error `42501 not enrolled` otherwise).
+
+| Call | Who | Returns |
+|---|---|---|
+| `relay_offer(p_id, p_item_id, p_to_person_id, p_offer, p_expires_ms)` | giver | `{"result": "posted" \| "duplicate" \| "rejected", "reason"}`. A new offer for the same item cancels the giver's older open ones. |
+| `relay_inbox()` | receiver | `[{"id", "item_id", "from_person_id", "offer", "expires_ms"}]`: open offers to me, up to 30 s past expiry |
+| `relay_accept(p_id, p_acceptance)` | receiver | `{"result": "accepted" \| "duplicate" \| "rejected", "reason"}` |
+| `relay_close(p_id)` | either | `{"result": "closed" \| "unchanged" \| "rejected", "status"}`: the receiver declines, the giver cancels |
+| `relay_status(p_id)` | either | `{"status": "open" \| "accepted" \| "declined" \| "cancelled" \| "unknown", "acceptance"}` |
+
+`offer_relay` rows are never pulled by `sync_pull` and never stored in Room.
 
 ### D.3 When sync runs
 - after every local save

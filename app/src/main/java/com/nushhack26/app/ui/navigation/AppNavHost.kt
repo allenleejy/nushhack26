@@ -43,6 +43,9 @@ fun AppNavHost(
         }
         composable<GiveRoute> { entry -> GiveScreen(container, entry.toRoute<GiveRoute>().itemId, onDone = back) }
         composable<ReceiveRoute> { ReceiveScreen(container, onDone = back) }
+        composable<ReceiveRelayedRoute> { entry ->
+            ReceiveScreen(container, onDone = back, relayedOfferId = entry.toRoute<ReceiveRelayedRoute>().offerId)
+        }
         composable<TimelineRoute> { entry ->
             TimelineScreen(container, entry.toRoute<TimelineRoute>().itemId, onReportMissing = { navController.navigate(ReportMissingRoute(it)) })
         }
