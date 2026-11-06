@@ -93,10 +93,13 @@ class TapLink(private val context: Context, private val scope: CoroutineScope) {
         val serving = TapServing.Offer(TapPayload.encode(offer, key).toByteArray(Charsets.UTF_8)) { trySend(GiverTapEvent.Tapped) }
         TapServing.offer = serving
         val accepted = ConcurrentHashMap.newKeySet<String>()
+        // Endpoints that already delivered their acceptance: hanging up after that is normal.
+        val delivered = ConcurrentHashMap.newKeySet<String>()
         fun fail(e: Exception) { if (e is CancellationException) throw e; trySend(GiverTapEvent.Failed(e.message ?: "Nearby failed")) }
         val payloads = object : PayloadCallback() {
             override fun onPayloadReceived(id: String, payload: Payload) {
                 if (id in accepted && payload.type == Payload.Type.BYTES) payload.asBytes()?.let {
+                    delivered.add(id)
                     trySend(GiverTapEvent.Acceptance(it.toString(Charsets.UTF_8)))
                 }
             }
@@ -120,7 +123,9 @@ class TapLink(private val context: Context, private val scope: CoroutineScope) {
                 }
             }
             override fun onDisconnected(id: String) {
-                if (accepted.remove(id)) trySend(GiverTapEvent.Failed("Disconnected"))
+                if (accepted.remove(id) && !delivered.remove(id)) {
+                    trySend(GiverTapEvent.Failed("The other phone left before sending its acceptance"))
+                }
             }
         }
         val advertising = launch {
