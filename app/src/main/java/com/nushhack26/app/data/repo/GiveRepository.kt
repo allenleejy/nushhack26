@@ -11,6 +11,8 @@ import com.nushhack26.app.data.local.ResolutionEntity
 import com.nushhack26.app.data.local.SyncMark
 import com.nushhack26.app.data.remote.toPayload
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 /** Hand over (card 03): the giver's side. */
 class GiveRepository(
@@ -25,6 +27,10 @@ class GiveRepository(
     fun observeResolutions(): Flow<List<ResolutionEntity>> = db.resolutionDao().observeAll()
 
     fun observeRoster(): Flow<Roster> = db.observeRoster()
+
+    /** One handover by id: the receiver's record can arrive by sync before the relay answers (A.10). */
+    fun handover(id: String): Flow<HandoverEntity?> =
+        db.handoverDao().observeAll().map { all -> all.firstOrNull { it.id == id } }.distinctUntilChanged()
 
     fun observePendingOffer(itemId: String): Flow<PendingOfferEntity?> = db.pendingOfferDao().observeLatestForItem(itemId)
 

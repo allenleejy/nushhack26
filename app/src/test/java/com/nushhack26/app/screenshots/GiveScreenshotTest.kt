@@ -101,6 +101,71 @@ class GiveScreenshotTest {
     }
 
     @Test
+    fun reviewOnline() = captureScreen("Give_G2_review_online") {
+        GiveContent(base.copy(step = GiveStep.Review, selectedReceiverId = "p-wei", summary = transfer, online = true))
+    }
+
+    private val relayedOffer = OfferView(payload = "CS1O:" + "A".repeat(400), expiresMs = now + 178_000)
+
+    @Test
+    fun sentOnline() = captureScreen("Give_G3_online_sent") {
+        GiveContent(base.copy(step = GiveStep.Sent, selectedReceiverId = "p-wei", summary = transfer, offer = relayedOffer, online = true))
+    }
+
+    @Test
+    fun sentDeclined() = captureScreen("Give_G3_online_declined") {
+        GiveContent(base.copy(step = GiveStep.Sent, selectedReceiverId = "p-wei", summary = transfer, offer = relayedOffer, declined = true))
+    }
+
+    @Test
+    fun sentAcceptanceFailed() = captureScreen("Give_G3_online_error") {
+        GiveContent(
+            base.copy(
+                step = GiveStep.Sent, selectedReceiverId = "p-wei", summary = transfer, offer = relayedOffer,
+                relayError = "This isn't Wei Ming's acceptance of this offer.",
+            ),
+        )
+    }
+
+    @Test
+    fun lostNetwork() = captureScreen("Give_G3_lost_network") {
+        GiveContent(
+            base.copy(
+                step = GiveStep.Offer, selectedReceiverId = "p-wei", summary = transfer, offer = relayedOffer,
+                snack = GiveSnack.Info(GiveViewModel.LOST_NETWORK),
+            ),
+        )
+    }
+
+    @Test
+    fun doneOnline() = captureScreen("Give_G5_done_online") {
+        GiveContent(
+            base.copy(
+                step = GiveStep.Done, selectedReceiverId = "p-wei", summary = transfer,
+                done = DoneView(recordNo = 3, matchCode = "48 21 07", acceptedMs = now, synced = false, viaServer = true),
+            ),
+        )
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h780dp-xxhdpi")
+    fun sentNarrowLargeText() {
+        RuntimeEnvironment.setFontScale(1.3f)
+        captureScreen("Give_G3_online_360dp_1.3x") {
+            GiveContent(base.copy(step = GiveStep.Sent, selectedReceiverId = "p-wei", summary = transfer, offer = relayedOffer, online = true))
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h780dp-xxhdpi")
+    fun reviewOnlineNarrowLargeText() {
+        RuntimeEnvironment.setFontScale(1.3f)
+        captureScreen("Give_G2_online_360dp_1.3x") {
+            GiveContent(base.copy(step = GiveStep.Review, selectedReceiverId = "p-wei", summary = transfer, online = true))
+        }
+    }
+
+    @Test
     fun offerQr() = captureScreen("Give_G3_offer") {
         GiveContent(base.copy(step = GiveStep.Offer, selectedReceiverId = "p-wei", summary = transfer, offer = offer))
     }
