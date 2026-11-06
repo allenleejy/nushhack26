@@ -13,6 +13,7 @@ import com.nushhack26.app.data.repo.CustodyRepository
 import com.nushhack26.app.data.repo.Identity
 import com.nushhack26.app.data.repo.IdentityRepository
 import com.nushhack26.app.ui.store.LOCAL_DB_ERROR
+import com.nushhack26.app.ui.store.cameraPhrase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -33,10 +34,16 @@ data class HeldCamera(
     val dueMs: Long?,
     val startMs: Long?,
     val synced: Boolean,
-)
+    val name: String = "",
+) {
+    val displayName: String get() = name.ifBlank { code }
+    val phrase: String get() = cameraPhrase(name, code)
+}
 
 /** An offer I made that's waiting for the receiver's acceptance code. */
-data class PendingOfferRow(val itemId: String, val code: String, val toName: String, val expiresMs: Long)
+data class PendingOfferRow(val itemId: String, val code: String, val toName: String, val expiresMs: Long, val name: String = "") {
+    val phrase: String get() = cameraPhrase(name, code)
+}
 
 /** A handover I gave: the receiver signed for the camera. */
 data class ReceiptRow(
@@ -48,7 +55,11 @@ data class ReceiptRow(
     val sealNo: String?,
     val matchCode: String,
     val syncStatus: String,
-)
+    val name: String = "",
+) {
+    val displayName: String get() = name.ifBlank { code }
+    val phrase: String get() = cameraPhrase(name, code)
+}
 
 sealed interface MyCustodyUiState {
     data object Loading : MyCustodyUiState
@@ -84,23 +95,25 @@ fun myCustody(board: CustodyBoard, offers: List<PendingOfferEntity>, personId: S
         }
         .map { s ->
             HeldCamera(
-                itemId = s.item.id, code = s.item.code, source = "${s.item.isotope} · ${s.item.sourceSerial}",
+                itemId = s.item.id, code = s.item.code, source = "${s.item.sourceSerial} · ${s.item.isotope}",
                 sealNo = s.item.sealNo, status = s.status, dueMs = s.dueMs, startMs = issueStart(s.head, board.handovers),
-                synced = s.allSynced,
+                synced = s.allSynced, name = s.item.name,
             )
         }
         .sortedWith(compareBy({ it.status != CustodyStatus.Disputed }, { it.dueMs ?: Long.MAX_VALUE }, { it.code }))
-    val code = { itemId: String -> board.roster.items.firstOrNull { it.id == itemId }?.code ?: board.states.firstOrNull { it.item.id == itemId }?.item?.code ?: itemId }
+    val item = { itemId: String -> board.roster.items.firstOrNull { it.id == itemId } ?: board.states.firstOrNull { it.item.id == itemId }?.item }
+    val code = { itemId: String -> item(itemId)?.code ?: itemId }
+    val itemName = { itemId: String -> item(itemId)?.name.orEmpty() }
     val name = { id: String? -> board.roster.person(id)?.name ?: "Unknown person" }
     val pending = offers
         .filter { it.expiresMs > board.nowMs }
-        .map { PendingOfferRow(it.itemId, code(it.itemId), name(it.toPersonId), it.expiresMs) }
+        .map { PendingOfferRow(it.itemId, code(it.itemId), name(it.toPersonId), it.expiresMs, itemName(it.itemId)) }
     val receipts = CustodyRepository.receiptsOf(board.handovers, personId).map { h ->
         ReceiptRow(
             handoverId = h.id, code = code(h.itemId), kind = h.kind, toName = name(h.toPersonId),
             acceptedMs = h.acceptedMs, sealNo = h.sealNo,
             matchCode = runCatching { Canonical.matchCode(h.recordHash) }.getOrDefault(""),
-            syncStatus = h.syncStatus,
+            syncStatus = h.syncStatus, name = itemName(h.itemId),
         )
     }
     return MyCustodyUiState.Ready(board.nowMs, held, pending, receipts)

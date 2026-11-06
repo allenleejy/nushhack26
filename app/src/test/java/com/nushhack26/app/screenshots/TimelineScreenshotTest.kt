@@ -33,9 +33,9 @@ private val register = entry("r", HandoverKind.REGISTER, "Registered to Store of
 private val issue = entry("a", HandoverKind.ISSUE, "Issued to Priya Nair", "From Store officer", 120)
 private val transfer = entry("b", HandoverKind.TRANSFER, "Handed to Daniel Lim", "From Priya Nair", 30, sync = SyncMark.WAITING)
 
-private const val LOCAL_FORK = "This phone holds two handovers of CAM-01 from Priya Nair after H1. Only one can be right. The safety officer will decide once this phone syncs."
+private const val LOCAL_FORK = "This phone holds two handovers of Kestrel (C-12) from Priya Nair after H1. Only one can be right. The safety officer will decide once this phone syncs."
 
-private val header = TimelineHeader("CAM-01", "Ir-192 · IR-7714", "S-40213", CustodyStatus.Out, "Daniel Lim", SAMPLE_NOW + 21_480_000)
+private val header = TimelineHeader("C-12", "IR-0457 · Ir-192", "S-40117", CustodyStatus.Out, "Tan Wei Ming", SAMPLE_NOW + 21_480_000, name = "Kestrel")
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)

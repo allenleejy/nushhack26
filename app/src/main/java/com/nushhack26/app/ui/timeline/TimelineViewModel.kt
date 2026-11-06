@@ -14,6 +14,7 @@ import com.nushhack26.app.data.local.SyncMark
 import com.nushhack26.app.data.repo.CustodyRepository
 import com.nushhack26.app.data.repo.ItemChain
 import com.nushhack26.app.ui.store.LOCAL_DB_ERROR
+import com.nushhack26.app.ui.store.phrase
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -62,7 +63,10 @@ data class TimelineHeader(
     val status: CustodyStatus,
     val holderName: String?,
     val dueMs: Long?,
-)
+    val name: String = "",
+) {
+    val displayName: String get() = name.ifBlank { code }
+}
 
 sealed interface TimelineUiState {
     data object Loading : TimelineUiState
@@ -114,7 +118,7 @@ fun buildTimeline(chain: ItemChain): TimelineUiState {
             else -> {
                 if (state?.localFork == true && state.head?.id == at.id) {
                     val after = (nodes.count { it is TimelineNode.Record } - 1).let { if (it <= 0) "its registration" else "H$it" }
-                    nodes += TimelineNode.LocalFork(localForkText(item.code, state.forkBranches, after, roster))
+                    nodes += TimelineNode.LocalFork(localForkText(item.phrase, state.forkBranches, after, roster))
                 }
                 nodes += TimelineNode.Fork(next.map { branchFrom(it) })
                 chain.resolutions.sortedBy { it.decidedMs }.forEach { nodes += resolutionNode(it, byId, roster) }
@@ -128,11 +132,11 @@ fun buildTimeline(chain: ItemChain): TimelineUiState {
         .forEach { nodes += TimelineNode.Record(entry(it).copy(look = lookOf(it, orphan = true))) }
 
     if (state?.localFork == true && nodes.none { it is TimelineNode.LocalFork }) {
-        nodes.add(0, TimelineNode.LocalFork(localForkText(item.code, state.forkBranches, "the same record", roster)))
+        nodes.add(0, TimelineNode.LocalFork(localForkText(item.phrase, state.forkBranches, "the same record", roster)))
     }
 
     val header = TimelineHeader(
-        code = item.code, source = "${item.isotope} · ${item.sourceSerial}", sealNo = item.sealNo,
+        code = item.code, source = "${item.sourceSerial} · ${item.isotope}", sealNo = item.sealNo, name = item.name,
         status = state?.status ?: CustodyStatus.Unknown,
         holderName = state?.holderId?.let { roster.person(it)?.name ?: "Unknown person" },
         dueMs = state?.dueMs,
@@ -165,10 +169,10 @@ private fun toEntry(h: HandoverEntity, parent: HandoverEntity?, roster: Roster):
 }
 
 /** "This phone holds two handovers of C-12 from Ravi Kumar after H1. …" (docs/spec.md T). */
-private fun localForkText(code: String, branches: List<HandoverEntity>, after: String, roster: Roster): String {
+private fun localForkText(camera: String, branches: List<HandoverEntity>, after: String, roster: Roster): String {
     val giver = roster.person(branches.firstOrNull()?.fromPersonId)?.name ?: "the same giver"
     val count = when (branches.size) { 2 -> "two"; 3 -> "three"; 4 -> "four"; else -> branches.size.toString() }
-    return "This phone holds $count handovers of $code from $giver after $after. Only one can be right. " +
+    return "This phone holds $count handovers of $camera from $giver after $after. Only one can be right. " +
         "The safety officer will decide once this phone syncs."
 }
 

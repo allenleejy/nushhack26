@@ -17,10 +17,10 @@ import org.robolectric.annotation.GraphicsMode
 const val SAMPLE_NOW = 1_762_430_400_000L
 
 val sampleStoreRows = listOf(
-    StoreRow("i3", "CAM-03", "Ir-192 · IR-7731", CustodyStatus.Disputed, "Priya Nair", SAMPLE_NOW + 3_600_000, synced = true),
-    StoreRow("i2", "CAM-02", "Ir-192 · IR-7722", CustodyStatus.Overdue, "Daniel Lim", SAMPLE_NOW - 240_000, synced = false),
-    StoreRow("i1", "CAM-01", "Ir-192 · IR-7714", CustodyStatus.Out, "Priya Nair", SAMPLE_NOW + 21_480_000, synced = true),
-    StoreRow("i4", "CAM-04", "Se-75 · SE-1102", CustodyStatus.InStore, "Store officer", null, synced = true),
+    StoreRow("i3", "C-15", "SE-0112 · Se-75", CustodyStatus.Disputed, "Priya Nair", SAMPLE_NOW + 3_600_000, synced = true, name = "Heron"),
+    StoreRow("i2", "C-12", "IR-0457 · Ir-192", CustodyStatus.Overdue, "Daniel Lim", SAMPLE_NOW - 240_000, synced = false, name = "Kestrel"),
+    StoreRow("i1", "C-07", "IR-0391 · Ir-192", CustodyStatus.Out, "Priya Nair", SAMPLE_NOW + 21_480_000, synced = true, name = "Osprey"),
+    StoreRow("i4", "C-21", "IR-7714 · Ir-192", CustodyStatus.InStore, "Store officer", null, synced = true),
 )
 
 @RunWith(RobolectricTestRunner::class)

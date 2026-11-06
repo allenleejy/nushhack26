@@ -9,6 +9,8 @@ data class IncomingOfferUi(
     val giverName: String,
     val itemCode: String,
     val expiresMs: Long,
+    /** "Kestrel"; empty until the camera's name has synced. */
+    val itemName: String = "",
 ) {
     fun countdown(nowMs: Long): String {
         val seconds = ((expiresMs - nowMs).coerceAtLeast(0) + 999) / 1_000
@@ -28,6 +30,7 @@ object IncomingOffers {
                     giverName = lookup.people[offer.fromPersonId]?.name ?: "A colleague",
                     itemCode = lookup.items[offer.itemId]?.code ?: "a camera",
                     expiresMs = offer.expiresMs,
+                    itemName = lookup.items[offer.itemId]?.name.orEmpty(),
                 )
             }
 

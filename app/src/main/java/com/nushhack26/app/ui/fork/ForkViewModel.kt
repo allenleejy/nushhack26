@@ -67,7 +67,7 @@ class ForkViewModel(
                 return@launch
             }
             input.update { it.copy(signing = true, error = null) }
-            when (val result = sign("Sign decision", "${current.itemCode} is with ${chosen.receiverName}")) {
+            when (val result = sign("Sign decision", "${current.itemName} is with ${chosen.receiverName}")) {
                 is SignResult.Cancelled -> input.update { it.copy(signing = false, error = result.message) }
                 SignResult.Approved -> runCatching {
                     val draft = ResolutionEntity(

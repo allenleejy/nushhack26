@@ -11,7 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.Inventory2
-import androidx.compose.material.icons.sharp.QrCodeScanner
+import androidx.compose.material.icons.sharp.Contactless
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -74,7 +74,7 @@ fun MyCustodyContent(
                     item {
                         EmptyState(
                             title = "No cameras held",
-                            message = "When someone hands you a camera, it shows here with its due time.",
+                            message = "You don't hold anything. Open RECEIVE when someone hands you a camera.",
                             icon = Icons.Sharp.Inventory2,
                             modifier = Modifier.fillMaxWidth(),
                         )
@@ -107,6 +107,6 @@ fun MyCustodyContent(
 private fun Header(onReceive: () -> Unit) {
     Column(Modifier.padding(TenetDimens.space4), verticalArrangement = Arrangement.spacedBy(TenetDimens.space3)) {
         Text("MY CUSTODY", style = TenetType.headline, color = Tenet.colors.ink)
-        PrimaryButton("Receive", onClick = onReceive, icon = Icons.Sharp.QrCodeScanner)
+        PrimaryButton("Receive", onClick = onReceive, icon = Icons.Sharp.Contactless)
     }
 }
