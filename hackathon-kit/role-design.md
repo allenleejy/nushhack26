@@ -70,6 +70,7 @@ The owner gives the chosen idea and any changes the team agreed. Write `docs/spe
    - The tables, with columns, types, and primary and foreign keys. The server and the phone hold the same tables.
    - For each table: is it **append-only** (each action adds a new row, such as a checklist tick, a patrol scan or a note) or **editable**? Make as many tables append-only as you can: they never conflict.
    - For each editable table, its **conflict rule**: what happens when two phones change the same record offline. For example: "the later status wins, but both notes are kept", or "flag it for the supervisor to decide".
+   - For any table where two new rows can clash, the **rule the server checks**. For example: "a key has one holder at a time, so a second checkout made offline becomes a conflict for the supervisor".
    - In plain words, who may read and write each table.
    - Sign-in: by default each phone signs in anonymously and the officer picks their name; say if we truly need real accounts.
    - Which storage buckets we need, if any.

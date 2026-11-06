@@ -161,16 +161,17 @@ The owner pastes the spec. Save it as `docs/spec.md`. The Claude Design export s
    - Restyle the top bar and the bottom bar to match, and rename the placeholder tabs to the spec's main screens.
 3. **Sync protocol, in `docs/sync.md`.** It states:
    - for every table, whether it's append-only or editable, and for each editable table its conflict rule from the spec
+   - for every table whose new rows can clash (for example two checkouts of one key), the rule the server checks and what happens to a row that breaks it
    - the push and pull calls and their payloads
    - what the phone does with each result: applied, conflict or rejected
    - how conflicts appear to the officer and how they're resolved
 4. **Server schema v1, as one migration.** It includes:
    - every table in the spec, with phone-made UUID keys, `version`, `server_seq` (from one shared sequence, set by a trigger on every insert and update), `deleted_at`, `performed_at`, `received_at` and `created_by` (`auth.uid()`), plus foreign keys and indexes for the obvious queries
    - RLS on every table, with policies matching the spec
-   - an `applied_ops` table, and the functions `sync_push(ops jsonb)` and `sync_pull(since bigint)` from `docs/sync.md`. `sync_push` applies a batch in one transaction, skips ops it has already applied, and checks the base version on edits.
+   - an `applied_ops` table, and the functions `sync_push(ops jsonb)` and `sync_pull(since bigint)` from `docs/sync.md`. `sync_push` applies a batch in one transaction, skips ops it has already applied, checks the base version on edits, and checks each table's clash rules from `docs/sync.md` on new rows, with the affected record locked (`FOR UPDATE`).
    - storage buckets and their policies, if the spec needs photos or files
 
-   Apply it with the Supabase MCP. Try the functions there: an op pushed twice is applied once, a stale edit comes back as a conflict, and a pull from 0 returns everything. Then write `supabase/seed.sql` with the spec's demo data, and run it with the MCP.
+   Apply it with the Supabase MCP. Try the functions there: an op pushed twice is applied once, a stale edit comes back as a conflict, a new row that breaks a clash rule comes back as a conflict, and a pull from 0 returns everything. Then write `supabase/seed.sql` with the spec's demo data, and run it with the MCP.
 5. **Shared files, all at once** (see "Shared files" in stack.md):
    - every dependency and permission the cards need
    - a Room entity and DAO for every server table, with a "not synced yet" mark per record, and the matching `@Serializable` server classes
@@ -179,7 +180,7 @@ The owner pastes the spec. Save it as `docs/spec.md`. The Claude Design export s
 6. **Sync tests first.** In `app/src/test/.../sync/`, write unit tests for the rules in `docs/sync.md`, run against a fake server that follows the same rules as `sync_push`. Cover at least:
    - a record created offline, then synced
    - a retry after a dropped connection, with no duplicates
-   - two phones adding records to the same item: both are kept
+   - two phones adding records to the same item: both are kept, unless the table has a clash rule that the second record breaks (for example a second checkout of one key), which comes back as a conflict
    - two phones editing the same field: a conflict, and nothing lost
    - an edit to a record that was deleted
    - a phone whose clock is wrong
