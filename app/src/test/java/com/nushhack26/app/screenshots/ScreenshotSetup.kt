@@ -3,6 +3,8 @@ package com.nushhack26.app.screenshots
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalInspectionMode
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.nushhack26.app.sync.SyncStatus
 import com.nushhack26.app.ui.components.SyncStatusBar
@@ -23,4 +25,9 @@ fun captureScreen(name: String, status: SyncStatus = SyncStatus(), content: @Com
             }
         }
     }
+}
+
+/** For a screen with the endless loading spinner: draws it still, so the capture can settle. */
+fun captureLoadingScreen(name: String, content: @Composable () -> Unit) = captureScreen(name) {
+    CompositionLocalProvider(LocalInspectionMode provides true, content = content)
 }

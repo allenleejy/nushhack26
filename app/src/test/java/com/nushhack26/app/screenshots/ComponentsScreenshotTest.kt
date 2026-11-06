@@ -3,6 +3,7 @@ package com.nushhack26.app.screenshots
 import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -42,7 +43,7 @@ class ComponentsScreenshotTest {
     @Test
     fun controls() = captureScreen("Components_controls", SyncStatus(isOnline = false, pendingCount = 3, lastSyncAt = 0L)) {
         Gallery {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SyncChip(SyncChipState.Synced)
                 SyncChip(SyncChipState.Waiting, count = 3)
                 SyncChip(SyncChipState.Conflict)

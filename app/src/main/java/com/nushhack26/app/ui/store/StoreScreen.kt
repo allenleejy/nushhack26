@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -113,9 +114,10 @@ private fun StoreItemRow(row: StoreRow, nowMs: Long, readOnly: Boolean, onIssue:
                 Text(row.source.uppercase(), style = TenetType.recordLabel, color = colors.inkMuted)
             }
         }
-        Row(
+        FlowRow(
             horizontalArrangement = Arrangement.spacedBy(TenetDimens.space2),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(TenetDimens.space2),
+            itemVerticalAlignment = Alignment.CenterVertically,
         ) {
             CustodyStatusChip(row.status)
             if (!row.synced) NotSyncedMark()
