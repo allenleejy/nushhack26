@@ -2,6 +2,29 @@ package com.nushhack26.app.ui.give
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.material.icons.sharp.QrCode2
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.IntOffset
+import com.nushhack26.app.nearby.TapAvailability
+import com.nushhack26.app.ui.components.HandoverSteps
+import com.nushhack26.app.ui.components.ParcelField
+import com.nushhack26.app.ui.components.ParcelLabel
+import com.nushhack26.app.ui.components.TapOffPanel
+import com.nushhack26.app.ui.components.TapPhase
+import com.nushhack26.app.ui.components.TapPulse
+import com.nushhack26.app.ui.components.rememberHaptics
+import com.nushhack26.app.ui.theme.LocalReduceMotion
+import com.nushhack26.app.ui.theme.TenetMotion
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -22,7 +45,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.sharp.CheckCircle
 import androidx.compose.material.icons.sharp.ChevronRight
 import androidx.compose.material.icons.sharp.Cloud
 import androidx.compose.material.icons.sharp.CloudOff
@@ -57,7 +79,6 @@ import com.nushhack26.app.auth.AccessRules
 import com.nushhack26.app.ui.components.DiamondVariant
 import com.nushhack26.app.ui.components.EmptyState
 import com.nushhack26.app.ui.components.HazardDiamond
-import com.nushhack26.app.ui.components.HandoverRole
 import com.nushhack26.app.ui.components.HandoverStepper
 import com.nushhack26.app.ui.components.ListDivider
 import com.nushhack26.app.ui.components.ListRow
@@ -80,7 +101,7 @@ import com.nushhack26.app.ui.theme.TenetType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** Hand over (docs/spec.md section 3, G1–G5): choose, sign, show the offer, scan the acceptance. */
+/** Hand over (docs/spec.md section 3, G1–G5): choose, sign, tap (or show the offer and scan the acceptance). */
 @Composable
 fun GiveScreen(container: AppContainer, itemId: String, onDone: () -> Unit) {
     val viewModel: GiveViewModel = viewModel(
@@ -101,6 +122,7 @@ fun GiveScreen(container: AppContainer, itemId: String, onDone: () -> Unit) {
         if (waitingOn != null) lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) { viewModel.watchRelay() }
     }
     val tapLink = container.tapLink
+    val availability by tapLink.available.collectAsStateWithLifecycle()
     val tapReady = rememberTapReady(tapLink, active = state.step == GiveStep.Offer)
     // Serves the offer by tap while G3 shows it; once tapped, it keeps serving past the expiry
     // so an acceptance signed in time still arrives.
@@ -108,11 +130,26 @@ fun GiveScreen(container: AppContainer, itemId: String, onDone: () -> Unit) {
     LaunchedEffect(serving) {
         if (serving != null) tapLink.serve(serving).collect { viewModel.onTapEvent(it) }
     }
+    var qrMode by rememberSaveable(itemId) { mutableStateOf(false) }
+    LaunchedEffect(state.step) { if (state.step == GiveStep.Scan) qrMode = true }
+    val haptics = rememberHaptics()
+    var lastStep by remember { mutableStateOf(state.step) }
+    LaunchedEffect(state.step) {
+        if (lastStep == GiveStep.Review && (state.step == GiveStep.Offer || state.step == GiveStep.Sent)) haptics.confirm()
+        lastStep = state.step
+    }
+    LaunchedEffect(state.scanError) { if (state.scanError != null) haptics.reject() }
     val sign = rememberSignPrompt()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    GiveContent(state.copy(tapReady = tapReady)) { action ->
+    GiveContent(
+        state.copy(tapReady = tapReady),
+        qrMode = qrMode,
+        tap = availability,
+        onQrMode = { qrMode = it },
+        onTapResume = { tapLink.refresh() },
+    ) { action ->
         when (action) {
             GiveAction.Sign -> scope.launch {
                 val subtitle = viewModel.prepareSign() ?: return@launch
@@ -120,6 +157,10 @@ fun GiveScreen(container: AppContainer, itemId: String, onDone: () -> Unit) {
                     SignResult.Approved -> viewModel.signAndShow()
                     is SignResult.Cancelled -> viewModel.signCancelled()
                 }
+            }
+            GiveAction.ShowQrInstead -> {
+                qrMode = true
+                viewModel.onAction(action)
             }
             GiveAction.CopyCode -> state.offer?.let { offer ->
                 context.getSystemService(ClipboardManager::class.java)
@@ -131,9 +172,22 @@ fun GiveScreen(container: AppContainer, itemId: String, onDone: () -> Unit) {
     }
 }
 
+/**
+ * [qrMode] is the screen's "Show QR code instead" switch; with [tap] at NoNfc the QR flow is the
+ * only way. [onTapResume] re-checks NFC and Bluetooth when the person comes back from Settings.
+ */
 @Composable
-fun GiveContent(state: GiveUiState, modifier: Modifier = Modifier, onAction: (GiveAction) -> Unit = {}) {
+fun GiveContent(
+    state: GiveUiState,
+    modifier: Modifier = Modifier,
+    qrMode: Boolean = false,
+    tap: TapAvailability = TapAvailability.Ready,
+    onQrMode: (Boolean) -> Unit = {},
+    onTapResume: () -> Unit = {},
+    onAction: (GiveAction) -> Unit = {},
+) {
     val colors = Tenet.colors
+    val qr = qrMode || tap == TapAvailability.NoNfc
     when {
         state.loading -> LoadingState(modifier)
         state.empty != null -> EmptyState(
@@ -144,30 +198,42 @@ fun GiveContent(state: GiveUiState, modifier: Modifier = Modifier, onAction: (Gi
             onAction = { onAction(GiveAction.Finish) },
         )
         else -> Column(modifier.fillMaxSize().background(colors.bg000)) {
-            val stepNo = when (state.step) {
-                GiveStep.Choose, GiveStep.Review -> 1
-                GiveStep.Sent, GiveStep.Offer -> 2
-                GiveStep.Scan -> 3
-                GiveStep.Done -> 4
-            }
-            HandoverStepper(HandoverRole.Giver, stepNo, Modifier.padding(TenetDimens.space4))
-            Column(
-                Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = TenetDimens.space4),
-                verticalArrangement = Arrangement.spacedBy(TenetDimens.space4),
-            ) {
-                when (state.step) {
-                    GiveStep.Choose -> ChooseStep(state, onAction)
-                    GiveStep.Review -> ReviewStep(state)
-                    GiveStep.Sent -> SentStep(state, onAction)
-                    GiveStep.Offer -> OfferStep(state, onAction)
-                    GiveStep.Scan -> ScanStep(state, onAction)
-                    GiveStep.Done -> DoneStep(state)
+            val (steps, stepNo) = stepperFor(state, qr)
+            HandoverStepper(steps, stepNo, Modifier.padding(TenetDimens.space4))
+            val reduce = LocalReduceMotion.current
+            AnimatedContent(
+                targetState = state,
+                contentKey = { it.step },
+                transitionSpec = {
+                    if (reduce) {
+                        EnterTransition.None togetherWith ExitTransition.None
+                    } else {
+                        val forward = targetState.step.ordinal >= initialState.step.ordinal
+                        val spec = tween<IntOffset>(TenetMotion.STEP_MS, easing = TenetMotion.Emphasized)
+                        slideInHorizontally(spec) { if (forward) it else -it } togetherWith
+                            slideOutHorizontally(spec) { if (forward) -it else it }
+                    }
+                },
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                label = "give-step",
+            ) { s ->
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = TenetDimens.space4),
+                    verticalArrangement = Arrangement.spacedBy(TenetDimens.space4),
+                ) {
+                    when (s.step) {
+                        GiveStep.Choose -> ChooseStep(s, onAction)
+                        GiveStep.Review -> ReviewStep(s, qr)
+                        GiveStep.Sent -> SentStep(s, onAction)
+                        GiveStep.Offer -> if (qr) OfferStep(s, tap, onQrMode, onAction) else TapStep(s, tap, onTapResume)
+                        GiveStep.Scan -> ScanStep(s, onAction)
+                        GiveStep.Done -> DoneStep(s)
+                    }
+                    Box(Modifier.padding(bottom = TenetDimens.space2))
                 }
-                Box(Modifier.padding(bottom = TenetDimens.space2))
             }
             Column(
                 Modifier.fillMaxWidth().padding(TenetDimens.space4),
@@ -180,7 +246,7 @@ fun GiveContent(state: GiveUiState, modifier: Modifier = Modifier, onAction: (Gi
                     }
                     GiveSnackbar(snack)
                 }
-                BottomAction(state, onAction)
+                BottomAction(state, qr, onQrMode, onAction)
             }
         }
     }
@@ -193,8 +259,26 @@ fun GiveContent(state: GiveUiState, modifier: Modifier = Modifier, onAction: (Gi
     }
 }
 
+/** Tap is CHOOSE · TAP, online CHOOSE · SEND, and the QR fallback CHOOSE · SHOW OFFER · SCAN ACCEPTANCE. */
+private fun stepperFor(state: GiveUiState, qr: Boolean): Pair<List<String>, Int> = when (state.step) {
+    GiveStep.Choose -> (if (qr) HandoverSteps.giverQr else HandoverSteps.giverTap) to 1
+    GiveStep.Review -> when {
+        state.online -> HandoverSteps.giverOnline
+        qr -> HandoverSteps.giverQr
+        else -> HandoverSteps.giverTap
+    } to 1
+    GiveStep.Sent -> HandoverSteps.giverOnline to 2
+    GiveStep.Offer -> (if (qr) HandoverSteps.giverQr else HandoverSteps.giverTap) to 2
+    GiveStep.Scan -> HandoverSteps.giverQr to 3
+    GiveStep.Done -> when {
+        state.done?.viaServer == true -> HandoverSteps.giverOnline to 3
+        qr -> HandoverSteps.giverQr to 4
+        else -> HandoverSteps.giverTap to 3
+    }
+}
+
 @Composable
-private fun BottomAction(state: GiveUiState, onAction: (GiveAction) -> Unit) {
+private fun BottomAction(state: GiveUiState, qr: Boolean, onQrMode: (Boolean) -> Unit, onAction: (GiveAction) -> Unit) {
     when (state.step) {
         GiveStep.Choose -> PrimaryButton(
             "Review handover",
@@ -206,14 +290,24 @@ private fun BottomAction(state: GiveUiState, onAction: (GiveAction) -> Unit) {
             },
         )
         GiveStep.Review -> PrimaryButton(
-            if (state.online) "Sign and send" else "Sign and show QR",
+            when {
+                state.online -> "Sign and send"
+                qr -> "Sign and show QR"
+                else -> "Sign"
+            },
             onClick = { onAction(GiveAction.Sign) },
             icon = Icons.Sharp.Fingerprint,
             enabled = !state.leaseExpired && !state.signing,
             disabledReason = if (state.leaseExpired) "Connect once" else "Signing",
         )
         GiveStep.Sent -> if (state.declined) PrimaryButton("Choose someone else", onClick = { onAction(GiveAction.ChooseSomeoneElse) })
-        GiveStep.Offer -> PrimaryButton("Scan acceptance", onClick = { onAction(GiveAction.ScanAcceptance) }, icon = Icons.Sharp.QrCodeScanner)
+        GiveStep.Offer -> if (qr) {
+            PrimaryButton("Scan acceptance", onClick = { onAction(GiveAction.ScanAcceptance) }, icon = Icons.Sharp.QrCodeScanner)
+        } else {
+            SecondaryButton("Show QR code instead", onClick = { onQrMode(true) }, icon = Icons.Sharp.QrCode2)
+            if (state.offerExpired) TextLinkButton("Sign a new offer", onClick = { onAction(GiveAction.SignNewOffer) })
+            else TextLinkButton("Cancel offer", onClick = { onAction(GiveAction.CancelOffer) })
+        }
         GiveStep.Scan -> SecondaryButton("Show the offer again", onClick = { onAction(GiveAction.BackToOffer) })
         GiveStep.Done -> PrimaryButton("Done", onClick = { onAction(GiveAction.Finish) })
     }
@@ -290,7 +384,7 @@ fun ReceiverList(state: GiveUiState, onAction: (GiveAction) -> Unit) {
 }
 
 @Composable
-private fun ReviewStep(state: GiveUiState) {
+private fun ReviewStep(state: GiveUiState, qr: Boolean) {
     val colors = Tenet.colors
     val summary = state.summary ?: return
     HandoverCard(summary)
@@ -308,7 +402,11 @@ private fun ReviewStep(state: GiveUiState) {
                 contentDescription = null, tint = colors.inkMuted, modifier = Modifier.size(TenetDimens.iconLg),
             )
             Text(
-                if (state.online) "Online · $name accepts on their phone, no codes to scan" else "Offline · you'll swap QR codes",
+                when {
+                    state.online -> "Online · $name accepts on their phone, no codes to scan"
+                    qr -> "Offline · you'll swap QR codes"
+                    else -> "Offline · hold your phone to $name's"
+                },
                 style = TenetType.body, color = colors.inkMuted,
             )
         }
@@ -382,8 +480,9 @@ private fun tappedText(name: String) = "Tapped · waiting for $name to scan the 
 
 private fun countdown(seconds: Long): String = "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun OfferStep(state: GiveUiState, onAction: (GiveAction) -> Unit) {
+private fun OfferStep(state: GiveUiState, tap: TapAvailability, onQrMode: (Boolean) -> Unit, onAction: (GiveAction) -> Unit) {
     val colors = Tenet.colors
     val summary = state.summary ?: return
     val offer = state.offer ?: return
@@ -413,9 +512,10 @@ private fun OfferStep(state: GiveUiState, onAction: (GiveAction) -> Unit) {
         }
     }
     state.tapError?.let { ErrorBox(it) }
-    Row(horizontalArrangement = Arrangement.spacedBy(TenetDimens.space2), verticalAlignment = Alignment.CenterVertically) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(TenetDimens.space2), verticalArrangement = Arrangement.Center) {
         if (state.offerExpired) TextLinkButton("Sign a new offer", onClick = { onAction(GiveAction.SignNewOffer) })
         else TextLinkButton("Cancel offer", onClick = { onAction(GiveAction.CancelOffer) })
+        if (tap != TapAvailability.NoNfc) TextLinkButton("Use tap instead", onClick = { onQrMode(false) })
         if (BuildConfig.DEBUG && !state.offerExpired) {
             Row(
                 Modifier.heightIn(min = TenetDimens.targetMin).clickable { onAction(GiveAction.CopyCode) }.padding(horizontal = TenetDimens.space2),
@@ -435,7 +535,14 @@ private fun ScanStep(state: GiveUiState, onAction: (GiveAction) -> Unit) {
     val name = state.receiverFirstName
     Text("Scan $name's acceptance code.", style = TenetType.bodyLg, color = colors.ink)
     state.scanError?.let { ErrorBox(it) }
-    QrScanner(onCode = { onAction(GiveAction.CodeScanned(it)) }, hint = "Point at $name's code")
+    var rejects by remember { mutableIntStateOf(0) }
+    LaunchedEffect(state.scanError) { if (state.scanError != null) rejects++ }
+    QrScanner(
+        onCode = { onAction(GiveAction.CodeScanned(it)) },
+        title = "Scanner · acceptance",
+        hint = "Point at $name's code",
+        rejectCount = rejects,
+    )
     if (state.offerExpired) {
         Text("Offer expired. If $name already accepted, scan their code. Otherwise sign a new offer.", style = TenetType.body, color = colors.inkMuted)
         TextLinkButton("Sign a new offer", onClick = { onAction(GiveAction.SignNewOffer) })
@@ -444,45 +551,83 @@ private fun ScanStep(state: GiveUiState, onAction: (GiveAction) -> Unit) {
     }
 }
 
+/** G3 tap: the tap target, the offer's terms under it, and the panel saying why when tap can't work. */
+@Composable
+private fun TapStep(state: GiveUiState, tap: TapAvailability, onTapResume: () -> Unit) {
+    val colors = Tenet.colors
+    val offer = state.offer ?: return
+    val name = state.receiverFirstName
+    var flooded by remember(offer.payload) { mutableStateOf(false) }
+    LaunchedEffect(state.tapped) { if (!state.tapped) flooded = false }
+    val expiredUntapped = state.offerExpired && !state.tapped
+    when {
+        tap != TapAvailability.Ready -> TapOffPanel(tap, onResume = onTapResume)
+        expiredUntapped -> Row(horizontalArrangement = Arrangement.spacedBy(TenetDimens.space2)) {
+            Icon(Icons.Sharp.Warning, contentDescription = null, tint = colors.alertText)
+            Text(
+                "Offer expired. If $name already accepted, scan their code. Otherwise sign a new offer.",
+                style = TenetType.bodyLg, color = colors.ink,
+            )
+        }
+        else -> {
+            val phase = when {
+                state.tapped && flooded -> TapPhase.Linked
+                state.tapped -> TapPhase.Contact
+                else -> TapPhase.Waiting
+            }
+            TapPulse(
+                phase = phase,
+                title = if (phase == TapPhase.Linked) "Linked" else "Hold to $name's phone",
+                subtitle = if (phase == TapPhase.Linked) "$name is scanning the seal and signing." else "Back to back, until both buzz.",
+                onFlooded = { flooded = true },
+            )
+            if (!state.offerExpired) {
+                Text(
+                    "For $name only · single use · valid for ${countdown(state.secondsLeft)}",
+                    style = TenetType.bodyStrong, color = colors.ink, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            val item = state.item
+            if (phase == TapPhase.Waiting && item != null) {
+                Text(
+                    "${item.displayName} · ${item.code} → $name".uppercase(),
+                    style = TenetType.record, color = colors.inkMuted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+    }
+    state.tapError?.let { ErrorBox(it) }
+}
+
+/** G5: the parcel label stamped HANDED OVER, the sync line and the small verify code. */
 @Composable
 private fun DoneStep(state: GiveUiState) {
     val colors = Tenet.colors
     val done = state.done ?: return
     val summary = state.summary ?: return
-    val name = state.receiverFirstName
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(TenetDimens.space3)) {
-        Icon(Icons.Sharp.CheckCircle, contentDescription = null, tint = colors.ok, modifier = Modifier.size(TenetDimens.iconLg))
-        Text(
-            when {
-                done.viaTap -> "Signed by both · tapped, no network"
-                done.viaServer -> "Signed by both · sent through the server · 2 of 2 signatures checked on this phone"
-                else -> "Signed by both · checked offline · 2 of 2 signatures valid"
-            },
-            style = TenetType.bodyStrong, color = colors.ink)
-    }
-    Column(
-        Modifier.fillMaxWidth().border(TenetDimens.strokeControl, colors.ok).background(colors.okBg).padding(TenetDimens.space4),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(TenetDimens.space2),
-    ) {
-        Text("MATCH CODE", style = TenetType.recordLabel, color = colors.inkMuted)
-        Text(done.matchCode, style = TenetType.readoutXl.copy(fontSize = TenetType.codeLg.fontSize * 1.4f), color = colors.ink, textAlign = TextAlign.Center)
-        Text("Check that $name's screen shows the same code", style = TenetType.body, color = colors.ink, textAlign = TextAlign.Center)
-    }
+    val item = state.item
+    ParcelLabel(
+        itemName = item?.displayName ?: summary.itemCode,
+        itemCode = item?.code ?: summary.itemCode,
+        fields = buildList {
+            add(ParcelField("From", summary.giverName))
+            add(ParcelField("To", summary.receiverName))
+            add(ParcelField("Seal", summary.sealNo))
+            summary.dueMs?.let { add(ParcelField("Return by", GiveViewModel.hhmm(it))) }
+        },
+        stampWord = "Handed over",
+        stampTime = GiveViewModel.hhmm(done.acceptedMs),
+        stampLine = "To ${state.receiverFirstName}",
+    )
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(TenetDimens.space3)) {
         SyncChip(if (done.synced) SyncChipState.Synced else SyncChipState.Waiting)
         Text(if (done.synced) "Receipt saved · synced" else "Receipt saved · not synced yet", style = TenetType.body, color = colors.ink)
     }
-    Receipt(
-        recordNo = done.recordNo,
-        item = summary.itemCode,
-        from = summary.giverName,
-        to = summary.receiverName,
-        seal = summary.sealNo,
-        acceptedAt = GiveViewModel.hhmm(done.acceptedMs),
-        countersigned = true,
-    )
+    Text("VERIFY CODE ${verifyCode(done.matchCode)} · same on both phones", style = TenetType.recordLabel, color = colors.inkMuted)
 }
+
+/** "48 21 07" → "482 107". */
+private fun verifyCode(matchCode: String): String = matchCode.filter(Char::isDigit).chunked(3).joinToString(" ")
 
 @Composable
 private fun SectionLabel(text: String) {
