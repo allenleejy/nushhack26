@@ -1,6 +1,6 @@
 # Concept: offline custody tokens
 
-6 Nov 2026. **Status:** concept, written before we choose the DSO or Singapore setting, so the items and roles here are deliberately generic.
+6 Nov 2026. **Status:** concept, written before we choose the DSO or Singapore setting, so the items and roles here are deliberately generic. Updated with what authenticator-style codes add (5.8).
 Background research, with sources: `docs/research/brief.md` and the five track notes beside it.
 Tags where a claim matters: **fact** (primary source), **reported** (secondary source), **inference** (our reasoning), **general practice** (widely known, not sourced in our research).
 
@@ -175,6 +175,44 @@ Without checkpoints, every offer would have to carry the item's whole history. A
 - **The server decides** whether signatures and links are valid, applies good records, refuses bad ones, finds forks and assigns liability from the signatures.
 - **A supervisor decides** where the item actually is after a fork or a seal problem, and records that decision as a signed event in the chain. The server never guesses.
 
+### 5.8 Authenticator codes: what they add, and where they don't fit
+
+**How authenticator apps work** (general knowledge). The open standards are HOTP (RFC 4226) for codes from a counter, and TOTP (RFC 6238) for codes from the time:
+1. **Setup, online.** The service shows a QR code containing a random **shared secret**. The app scans it, and from then on both the app and the service hold the same secret.
+2. **Afterwards, offline.** The app turns the secret plus the current 30-second time window (TOTP) or a counter (HOTP) into a 6-digit code, using a keyed hash (HMAC).
+3. **Checking.** The verifier holds the same secret, computes the same code and compares the two. A match shows the person has the secret.
+
+Step 1 is the same pattern our handover uses: scan a QR code once, then work offline.
+
+**Comparison with our signed handover:**
+
+| | Authenticator code | Signed handover (our design) |
+|---|---|---|
+| Key | One shared secret, held by both sides | A private key on one phone, plus a public key everyone has |
+| Who can produce a valid code or signature | Anyone holding the secret, **including the verifier** | Only the phone holding the private key |
+| Can a third party later tell who produced it? | **No.** Either side could have. | **Yes.** The signer can't deny it. |
+| What it's tied to | Only the time or the counter | The exact handover: item, giver, receiver, seal, previous record |
+| Size | 6 to 8 digits, which can be read aloud, typed or written down | About 64 bytes per signature, so it needs a QR code |
+| Needs phone clocks to agree | TOTP yes; HOTP and challenge-based codes no | No |
+
+**For the handover itself, keep signatures.** The whole point of a handover is to prove to someone *else*, later, who accepted liability. A shared-secret code can't do that: B could always say "A could have made that code too".
+
+**Where the idea does add something, in three places:**
+
+1. **A custody check over the radio (stretch goal).** A supervisor somewhere else wants to confirm, offline, that B still holds E-104. A QR code can't cross that distance, but six digits can be read over a radio. This is the challenge-response form of these codes (OCRA, RFC 6287), the same idea as a bank token that ties its code to a transfer's details (general knowledge):
+   - The supervisor's phone shows a random challenge, for example `4821`, and the supervisor reads it out.
+   - B's phone computes a short code from four things: a secret it shares with the supervisor's phone (handed out at enrolment), the challenge, E-104's ID, and the latest record in B's chain. B reads back, for example, `305 917`.
+   - The supervisor's phone computes the same and compares. A match shows **B's phone holds E-104's latest chain right now**. A mismatch means B's phone has an older or forked chain, or isn't B's phone at all.
+   - A fresh challenge replaces the clock, so a wrong phone clock doesn't matter, and an old code can't be replayed.
+   - **Limits:** it proves B's *phone* holds the chain, not that B holds the *item*. And because the secret is shared, it's a live check, not lasting proof. The signed records remain the proof.
+2. **Proof the physical item is there (for production).** A printed QR sticker or seal number can be photographed and "scanned" later from the photo. The authenticator idea fixes this if the **item's own tag makes the code**. Some NFC tags have cryptography built in: NXP's NTAG 424 DNA is one, used against counterfeiting (check the details). They produce a new one-time code on every tap, from a secret inside the chip and a counter. The receiver's phone would put that code in the signed handover, and the server would check it at sync. A photo can't produce a fresh code. This is out of scope for the hackathon because it needs special tags, so printed QR codes and seal numbers stand in.
+3. **A voice or paper fallback.** A short code can be spoken or written down, so the radio check still works when someone's only link is a voice call or a written message.
+
+**Practical notes, if we build the radio check:**
+- Keep the shared secrets in the Android Keystore, which supports HMAC keys (general knowledge; check current docs).
+- Hand out each shared secret at enrolment, online, by scanning a QR code, as authenticator apps do.
+- A 6-digit code has a one-in-a-million chance of being guessed, and the supervisor's phone should limit the number of attempts.
+
 ---
 
 ## 6. Failure cases
@@ -188,6 +226,7 @@ Without checkpoints, every offer would have to carry the item's whole history. A
 | A rooted or tampered phone | Keys in the Keystore can't be exported, but a rooted phone can still misbehave. **Tamper-evident, not tamper-proof.** |
 | The phone clock is changed | Order comes from the chain, so a changed clock only shows up as a flagged gap (5.5) |
 | The wrong item is handed over | The receiver's seal scan doesn't match the item, so the handover can't be signed |
+| A photo of the item's QR sticker is scanned instead of the item | Printed tags can be copied this way. Checking the seal number and having a witness make it harder. Tags that make a new code on every tap (5.8) would close the gap in production. |
 | A seal is broken or replaced | The custody check flags it for investigation |
 | A user's access was revoked while they were offline | The phone doesn't know yet. At sync, the server refuses records signed after the revocation and sets them aside for review (kit "Security extras"). |
 | The receiver refuses the item | No acceptance is signed, so the giver still holds it |
@@ -250,10 +289,12 @@ The five properties of "correct" sync (from `brief.md`):
 - the fork alert
 - the custody check
 - a supervisor's decision
+- stretch goal: the custody check over the radio (5.8)
 
 **Out of scope:**
 - radio-based swapping (Bluetooth, local hotspot)
 - real hardware seals (printed QR codes stand in)
+- NFC tags that make a one-time code on every tap (5.8)
 - legal weight of digital signatures
 - multiple sites
 
@@ -272,5 +313,6 @@ The five properties of "correct" sync (from `brief.md`):
 - **The setting** is the next step: porting this to a DSO or Singapore defence context. Which items (keys, police exhibits, lab samples, classified media, arms and controlled equipment) and which roles?
 - **Are phones allowed** where the handovers happen? SAF high-security zones restrict camera phones (fact, 2013 fact sheet). We assume issued phones without cameras, using QR codes shown on screen or an NFC tap.
 - **Are tamper-evident seals already used** on these items? We assume yes for evidence (general practice). To confirm.
+- **Do the items carry tags, and could those be NFC tags with built-in cryptography** (5.8)? That would decide whether "the item is really there" can be proven, or only claimed.
 - **Evidence:** we have no Singapore case yet of a custody dispute caused by being offline. The porting step should look for one.
 - **Legal weight:** whether a digital signature from both people would count as an acceptable custody record. We haven't researched this, and won't claim it.
