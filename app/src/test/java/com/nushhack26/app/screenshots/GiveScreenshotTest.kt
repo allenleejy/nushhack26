@@ -139,12 +139,14 @@ class GiveScreenshotTest {
 
     @Test
     fun doneOnline() = captureScreen("Give_G5_done_online") {
-        GiveContent(
-            base.copy(
-                step = GiveStep.Done, selectedReceiverId = "p-wei", summary = transfer,
-                done = DoneView(recordNo = 3, matchCode = "48 21 07", acceptedMs = now, synced = false, viaServer = true),
-            ),
-        )
+        ReceiptStill {
+            GiveContent(
+                base.copy(
+                    step = GiveStep.Done, selectedReceiverId = "p-wei", summary = transfer,
+                    done = DoneView(recordNo = 3, matchCode = "48 21 07", acceptedMs = now, synced = false, viaServer = true),
+                ),
+            )
+        }
     }
 
     @Test
@@ -187,13 +189,15 @@ class GiveScreenshotTest {
 
     @Test
     fun done() = captureScreen("Give_G5_done") {
-        GiveContent(
-            base.copy(
-                step = GiveStep.Done, selectedReceiverId = "p-wei", summary = transfer,
-                done = DoneView(recordNo = 3, matchCode = "48 21 07", acceptedMs = now, synced = false),
-                snack = GiveSnack.Confirmation(GiveViewModel.confirmationTitle(HandoverKind.TRANSFER), "C-12 · Holder: Wei Ming"),
-            ),
-        )
+        ReceiptStill {
+            GiveContent(
+                base.copy(
+                    step = GiveStep.Done, selectedReceiverId = "p-wei", summary = transfer,
+                    done = DoneView(recordNo = 3, matchCode = "48 21 07", acceptedMs = now, synced = false),
+                    snack = GiveSnack.Confirmation(GiveViewModel.confirmationTitle(HandoverKind.TRANSFER), "C-12 · Holder: Wei Ming"),
+                ),
+            )
+        }
     }
 
     @Test
@@ -220,12 +224,14 @@ class GiveScreenshotTest {
     fun doneNarrowLargeText() {
         RuntimeEnvironment.setFontScale(1.3f)
         captureScreen("Give_G5_done_360dp_1.3x") {
-            GiveContent(
-                base.copy(
-                    step = GiveStep.Done, selectedReceiverId = "p-wei", summary = transfer,
-                    done = DoneView(recordNo = 3, matchCode = "48 21 07", acceptedMs = now, synced = true),
-                ),
-            )
+            ReceiptStill {
+                GiveContent(
+                    base.copy(
+                        step = GiveStep.Done, selectedReceiverId = "p-wei", summary = transfer,
+                        done = DoneView(recordNo = 3, matchCode = "48 21 07", acceptedMs = now, synced = true),
+                    ),
+                )
+            }
         }
     }
     @Test
@@ -252,12 +258,14 @@ class GiveScreenshotTest {
 
     @Test
     fun doneTapped() = captureScreen("Give_G5_done_tapped") {
-        GiveContent(
-            base.copy(
-                step = GiveStep.Done, selectedReceiverId = "p-wei", summary = transfer,
-                done = DoneView(recordNo = 3, matchCode = "48 21 07", acceptedMs = now, synced = false, viaTap = true),
-            ),
-        )
+        ReceiptStill {
+            GiveContent(
+                base.copy(
+                    step = GiveStep.Done, selectedReceiverId = "p-wei", summary = transfer,
+                    done = DoneView(recordNo = 3, matchCode = "48 21 07", acceptedMs = now, synced = false, viaTap = true),
+                ),
+            )
+        }
     }
 
     @Test

@@ -21,8 +21,16 @@ import com.nushhack26.app.data.repo.ReceiveRepository
 import com.nushhack26.app.data.repo.RelayOutcome
 import com.nushhack26.app.data.repo.RelayRepository
 import com.nushhack26.app.nearby.TapAvailability
+import com.nushhack26.app.ui.components.ReceiptContent
+import com.nushhack26.app.ui.components.ReceiptNumbers
+import com.nushhack26.app.ui.components.ReceiptParty
+import com.nushhack26.app.ui.components.ReceiptStamp
 import com.nushhack26.app.ui.components.SignResult
 import com.nushhack26.app.ui.components.SyncChipState
+import com.nushhack26.app.ui.components.formatTime
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -109,14 +117,48 @@ data class ReceiveUiState(
     val cameraOn: Boolean = true,
     /** Set by the screen: the phones touched; R1 stays on the pulse until the flood covers it. */
     val tapContact: Boolean = false,
+    /** RECORD #n on the receipt, from the item's chain on this phone; null if a link is missing. */
+    val recordNo: Int? = null,
 ) {
+    /** R Done's custody receipt: HELD BY YOU. */
+    val receipt: ReceiptContent?
+        get() {
+            val s = summary ?: return null
+            val at = signedAtMs ?: nowMs
+            val code = verifyCode ?: return null
+            return ReceiptContent(
+                recordNo = recordNo,
+                followsNo = recordNo?.takeIf { it > 1 }?.minus(1),
+                date = ddMMyyyy(at),
+                signedTime = formatTime(at),
+                itemName = s.itemName.ifBlank { s.itemCode },
+                itemCode = s.itemCode,
+                source = "${s.sourceSerial} · ${s.isotope}",
+                sealNo = s.sealNo,
+                sealMatches = true,
+                from = ReceiptParty(s.giverName),
+                to = ReceiptParty(s.receiverName),
+                returnBy = s.dueMs?.let(::formatTime),
+                heldBy = "YOU",
+                verifyCode = code,
+            )
+        }
+
+    /** RECEIVED / 13:02 / FROM RAVI. */
+    val stamp: ReceiptStamp?
+        get() {
+            val s = summary ?: return null
+            val at = signedAtMs ?: nowMs
+            return ReceiptStamp("Received", formatTime(at), "From ${s.giverShortName}")
+        }
+
     /** R1 shows the scanner: chosen, or the phone has no NFC. */
     val scanningQr: Boolean
         get() = qrMode || tapAvailability == TapAvailability.NoNfc
 
     /** "482 107": the match code's six digits, grouped in threes, the same on both phones. */
     val verifyCode: String?
-        get() = matchCode?.filter(Char::isDigit)?.takeIf { it.isNotEmpty() }?.chunked(3)?.joinToString(" ")
+        get() = matchCode?.let(ReceiptNumbers::verifyCode)?.takeIf { it.isNotEmpty() }
 
     val refusedHeader: String
         get() = if (looksLikeCopy) "This is a copy. It can't be used." else "This handover can't be accepted."
@@ -442,7 +484,8 @@ class ReceiveViewModel(
         withContext(Dispatchers.IO) { repo.saveAccepted(scanned.proof, record) }
         val acceptance = QrPayloads.acceptance(record)
         val matchCode = Canonical.matchCode(record.recordHash)
-        _state.update { it.copy(signedAtMs = signedAt) }
+        val chain = withContext(Dispatchers.IO) { repo.localHandovers() }.filter { it.itemId == record.itemId }
+        _state.update { it.copy(signedAtMs = signedAt, recordNo = ReceiptNumbers.recordNo(record, chain)) }
         val relayedId = relayedOfferId
         val session = tap
         if (relayedId != null && relay != null) {
@@ -508,6 +551,10 @@ class ReceiveViewModel(
         )
     }
 }
+
+private val dateFormat = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+
+private fun ddMMyyyy(ms: Long): String = dateFormat.format(Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()))
 
 private val DECLINABLE = setOf(ReceiveStep.Checks, ReceiveStep.ScanSeal, ReceiveStep.Accept)
 

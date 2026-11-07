@@ -17,16 +17,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.IntOffset
 import com.nushhack26.app.nearby.TapAvailability
 import com.nushhack26.app.ui.components.HandoverSteps
-import com.nushhack26.app.ui.components.ParcelField
-import com.nushhack26.app.ui.components.ParcelLabel
+import com.nushhack26.app.ui.components.CustodyReceipt
+import com.nushhack26.app.ui.components.ReceiptStyle
+import com.nushhack26.app.ui.components.TapRole
 import com.nushhack26.app.ui.components.TapOffPanel
 import com.nushhack26.app.ui.components.TapPhase
 import com.nushhack26.app.ui.components.TapPulse
 import com.nushhack26.app.ui.components.rememberHaptics
 import com.nushhack26.app.ui.theme.LocalReduceMotion
 import com.nushhack26.app.ui.theme.TenetMotion
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -64,7 +63,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -80,9 +78,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.nushhack26.app.AppContainer
 import com.nushhack26.app.BuildConfig
 import com.nushhack26.app.auth.AccessRules
-import com.nushhack26.app.ui.components.DiamondVariant
 import com.nushhack26.app.ui.components.EmptyState
-import com.nushhack26.app.ui.components.HazardDiamond
 import com.nushhack26.app.ui.components.HandoverStepper
 import com.nushhack26.app.ui.components.ListDivider
 import com.nushhack26.app.ui.components.ListRow
@@ -202,8 +198,10 @@ fun GiveContent(
             onAction = { onAction(GiveAction.Finish) },
         )
         else -> Column(modifier.fillMaxSize().background(colors.bg000)) {
-            val (steps, stepNo) = stepperFor(state, qr)
-            HandoverStepper(steps, stepNo, Modifier.padding(TenetDimens.space4))
+            if (state.step != GiveStep.Done) {
+                val (steps, stepNo) = stepperFor(state, qr)
+                HandoverStepper(steps, stepNo, Modifier.padding(TenetDimens.space4))
+            }
             val reduce = LocalReduceMotion.current
             AnimatedContent(
                 targetState = state,
@@ -453,6 +451,16 @@ private fun SentStep(state: GiveUiState, onAction: (GiveAction) -> Unit) {
     val colors = Tenet.colors
     val summary = state.summary ?: return
     val name = state.receiverFirstName
+    if (!state.declined && !state.offerExpired && state.relayError == null) {
+        var linked by rememberSaveable(state.offer?.payload) { mutableStateOf(false) }
+        TapPulse(
+            phase = if (linked) TapPhase.Linked else TapPhase.Contact,
+            title = "Sent",
+            subtitle = "Waiting for $name to open it, scan the seal and sign.",
+            onFlooded = { linked = true },
+            role = TapRole.Giver,
+        )
+    }
     HandoverCard(summary) {
         when {
             state.declined -> Row(horizontalArrangement = Arrangement.spacedBy(TenetDimens.space2)) {
@@ -466,13 +474,10 @@ private fun SentStep(state: GiveUiState, onAction: (GiveAction) -> Unit) {
                     style = TenetType.bodyLg, color = colors.ink,
                 )
             }
-            else -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(TenetDimens.space3)) {
-                WaitingMark(state.secondsLeft)
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(TenetDimens.space1)) {
-                    Text("Sent to $name's phone", style = TenetType.bodyStrong, color = colors.ink)
-                    Text("Waiting for $name to scan the seal and accept · ${countdown(state.secondsLeft)}", style = TenetType.body, color = colors.inkMuted)
-                }
-            }
+            else -> Text(
+                "Sent to $name's phone · valid for ${countdown(state.secondsLeft)}",
+                style = TenetType.bodyStrong, color = colors.ink,
+            )
         }
     }
     state.relayError?.let { ErrorBox(it) }
@@ -483,17 +488,6 @@ private fun SentStep(state: GiveUiState, onAction: (GiveAction) -> Unit) {
             else TextLinkButton("Cancel offer", onClick = { onAction(GiveAction.CancelOffer) })
         }
     }
-}
-
-/** The hazard diamond, pulsing slowly with the countdown while the offer waits on the other phone. */
-@Composable
-private fun WaitingMark(secondsLeft: Long) {
-    val pulse by animateFloatAsState(
-        targetValue = if (secondsLeft % 2 == 0L) 1f else 0.4f,
-        animationSpec = tween(900, easing = LinearEasing),
-        label = "waiting-alpha",
-    )
-    HazardDiamond(Modifier.alpha(pulse), variant = DiamondVariant.Outlined)
 }
 
 @Composable
@@ -632,35 +626,19 @@ private fun TapStep(state: GiveUiState, tap: TapAvailability, onTapResume: () ->
     state.tapError?.let { ErrorBox(it) }
 }
 
-/** G5: the parcel label stamped HANDED OVER, the sync line and the small verify code. */
+/** G5: the custody receipt stamped HANDED OVER, then the sync line. */
 @Composable
 private fun DoneStep(state: GiveUiState) {
     val colors = Tenet.colors
     val done = state.done ?: return
-    val summary = state.summary ?: return
-    val item = state.item
-    ParcelLabel(
-        itemName = item?.displayName ?: summary.itemCode,
-        itemCode = item?.code ?: summary.itemCode,
-        fields = buildList {
-            add(ParcelField("From", summary.giverName))
-            add(ParcelField("To", summary.receiverName))
-            add(ParcelField("Seal", summary.sealNo))
-            summary.dueMs?.let { add(ParcelField("Return by", GiveViewModel.hhmm(it))) }
-        },
-        stampWord = "Handed over",
-        stampTime = GiveViewModel.hhmm(done.acceptedMs),
-        stampLine = "To ${state.receiverFirstName}",
-    )
+    val receipt = state.receipt ?: return
+    val stamp = state.stamp ?: return
+    CustodyReceipt(receipt, stamp, ReceiptStyle.Done)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(TenetDimens.space3)) {
         SyncChip(if (done.synced) SyncChipState.Synced else SyncChipState.Waiting)
-        Text(if (done.synced) "Receipt saved · synced" else "Receipt saved · not synced yet", style = TenetType.body, color = colors.ink)
+        Text(if (done.synced) "Synced" else "Not synced yet", style = TenetType.body, color = colors.inkMuted)
     }
-    Text("VERIFY CODE ${verifyCode(done.matchCode)} · same on both phones", style = TenetType.recordLabel, color = colors.inkMuted)
 }
-
-/** "48 21 07" → "482 107". */
-private fun verifyCode(matchCode: String): String = matchCode.filter(Char::isDigit).chunked(3).joinToString(" ")
 
 @Composable
 private fun SectionLabel(text: String) {

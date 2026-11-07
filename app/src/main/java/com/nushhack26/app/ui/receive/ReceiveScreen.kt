@@ -42,13 +42,12 @@ import com.nushhack26.app.ui.components.ErrorState
 import com.nushhack26.app.nearby.TapAvailability
 import com.nushhack26.app.ui.components.HandoverStepper
 import com.nushhack26.app.ui.components.HandoverSteps
-import com.nushhack26.app.ui.components.ParcelField
-import com.nushhack26.app.ui.components.ParcelLabel
+import com.nushhack26.app.ui.components.CustodyReceipt
+import com.nushhack26.app.ui.components.ReceiptStyle
 import com.nushhack26.app.ui.components.TapOffPanel
 import com.nushhack26.app.ui.components.TapPhase
 import com.nushhack26.app.ui.components.TapPulse
 import com.nushhack26.app.ui.components.TapRole
-import com.nushhack26.app.ui.components.formatTime
 import com.nushhack26.app.ui.components.rememberHaptics
 import com.nushhack26.app.ui.theme.LocalReduceMotion
 import com.nushhack26.app.ui.theme.TenetMotion
@@ -111,6 +110,9 @@ fun ReceiveScreen(
     LaunchedEffect(inFlow) { onFlowChange(inFlow) }
     // The phones touched: R1 holds the pulse until the flood covers the screen, then the checks show.
     var tapContact by remember(viewModel) { mutableStateOf(false) }
+    // A relayed offer opens on the cube too, in Contact, until its flood gives way to R2.
+    var relayContact by remember(viewModel) { mutableStateOf(relayedOfferId != null) }
+    val relayPulse = relayContact && state.relayed && state.step in setOf(ReceiveStep.Checking, ReceiveStep.Checks)
     tapLink.rememberTapReader(enabled = onR1 && tapReady && !state.rosterEmpty) { payload ->
         if (!viewModel.state.value.qrMode) tapContact = true
         viewModel.onTapped(payload.offer) { tapLink.join(payload).asTapSession() }
@@ -126,7 +128,7 @@ fun ReceiveScreen(
         }
     }
     val shown = state.copy(
-        tapReady = tapReady && onR1, tapAvailability = availability, asTab = asTab, cameraOn = active, tapContact = tapContact,
+        tapReady = tapReady && onR1, tapAvailability = availability, asTab = asTab, cameraOn = active, tapContact = tapContact || relayPulse,
     )
     ReceiveContent(shown) { action ->
         when (action) {
@@ -140,7 +142,10 @@ fun ReceiveScreen(
                 viewModel.finishAccept(result)
             }
             ReceiveAction.Close -> onDone()
-            ReceiveAction.Flooded -> tapContact = false
+            ReceiveAction.Flooded -> {
+                tapContact = false
+                relayContact = false
+            }
             ReceiveAction.RefreshTap -> tapLink.refresh()
             else -> viewModel.onAction(action)
         }
@@ -202,7 +207,7 @@ private fun StepFrame(state: ReceiveUiState, modifier: Modifier, onAction: (Rece
     }
     val reduce = LocalReduceMotion.current
     Column(modifier.fillMaxSize()) {
-        if (shown.step != ReceiveStep.Declined) {
+        if (shown.step != ReceiveStep.Declined && shown.step != ReceiveStep.Done) {
             HandoverStepper(
                 steps,
                 stepNumber(shown.step),
@@ -319,13 +324,20 @@ private fun ScanOfferBody(state: ReceiveUiState, onAction: (ReceiveAction) -> Un
             )
             if (state.tapReady) TapLine("Or hold your phone to the giver's")
         }
-        state.tapContact || state.tapAvailability == TapAvailability.Ready -> TapPulse(
-            phase = if (state.tapContact) TapPhase.Contact else TapPhase.Waiting,
-            title = "HOLD TO THE GIVER'S PHONE",
-            subtitle = "Back to back, until both buzz.",
-            onFlooded = { onAction(ReceiveAction.Flooded) },
-            role = TapRole.Receiver,
-        )
+        state.tapContact || state.tapAvailability == TapAvailability.Ready -> {
+            val summary = state.summary?.takeIf { state.tapContact }
+            TapPulse(
+                phase = if (state.tapContact) TapPhase.Contact else TapPhase.Waiting,
+                title = summary?.let(::itemTitle) ?: if (state.relayed) "INCOMING HANDOVER" else "HOLD TO THE GIVER'S PHONE",
+                subtitle = when {
+                    state.relayed -> "Sent by ${summary?.giverShortName ?: "the giver"}, through the server."
+                    summary != null -> "Scan the seal on ${cameraInSentence(summary)}."
+                    else -> "Back to back, until both buzz."
+                },
+                onFlooded = { onAction(ReceiveAction.Flooded) },
+                role = TapRole.Receiver,
+            )
+        }
         else -> TapOffPanel(state.tapAvailability, onResume = { onAction(ReceiveAction.RefreshTap) })
     }
 }
@@ -383,23 +395,12 @@ private fun ShowBody(state: ReceiveUiState) {
     state.verifyCode?.let { VerifyLine(it) }
 }
 
-/** Every path ends here: the parcel label stamped RECEIVED, the sync line, then the small verify code. */
+/** Every path ends here: the custody receipt stamped RECEIVED, then the sync line. */
 @Composable
 private fun DoneBody(state: ReceiveUiState) {
-    val summary = state.summary ?: return
-    ParcelLabel(
-        itemName = summary.itemName,
-        itemCode = summary.itemCode,
-        fields = listOf(
-            ParcelField("From", summary.giverName),
-            ParcelField("To", summary.receiverName),
-            ParcelField("Seal", summary.sealNo),
-            ParcelField("Return by", summary.dueMs?.let(::formatTime) ?: "No return time"),
-        ),
-        stampWord = "Received",
-        stampTime = formatTime(state.signedAtMs ?: state.nowMs),
-        stampLine = "From ${summary.giverShortName}",
-    )
+    val receipt = state.receipt ?: return
+    val stamp = state.stamp ?: return
+    CustodyReceipt(receipt, stamp, ReceiptStyle.Done)
     Row(horizontalArrangement = Arrangement.spacedBy(TenetDimens.space3), verticalAlignment = Alignment.CenterVertically) {
         SyncChip(state.recordSync)
         Text(
@@ -408,8 +409,11 @@ private fun DoneBody(state: ReceiveUiState) {
             color = Tenet.colors.inkMuted,
         )
     }
-    state.verifyCode?.let { VerifyLine(it) }
 }
+
+/** "KESTREL · C-12", or just the code when the camera has no name. */
+private fun itemTitle(summary: HandoverSummary): String =
+    if (summary.itemName.isBlank()) summary.itemCode else "${summary.itemName.uppercase()} · ${summary.itemCode}"
 
 @Composable
 private fun DeclinedBody(state: ReceiveUiState) {
