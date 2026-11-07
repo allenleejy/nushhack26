@@ -68,7 +68,7 @@ object OfferChecker {
                     "$holder holds $itemCode · signed by $from and $to at $time"
                 }
             } else "The giver doesn't hold $itemCode"),
-            CheckLine(h.toPersonId == me.personId, if (h.toPersonId == me.personId) "Made out to you" else "Made out to $receiver, not you"),
+            CheckLine(h.toPersonId == me.personId, if (h.toPersonId == me.personId) "Intended recipient" else "Not intended recipient · for $receiver"),
             CheckLine(valid, when {
                 expires == null || offered == null -> "Invalid offer time"
                 nowMs > expires -> "Expired ${duration(nowMs - expires)} ago"

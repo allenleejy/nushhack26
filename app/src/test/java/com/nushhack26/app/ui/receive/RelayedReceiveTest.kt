@@ -236,7 +236,7 @@ class RelayedReceiveTest {
 
         val checks = vm.checksDone()
         assertFalse(checks.passed)
-        assertEquals("Made out to Tan Wei Ming, not you", checks.lines[2].text)
+        assertEquals("Not intended recipient · for Tan Wei Ming", checks.lines[2].text)
         runBlocking { withTimeout(10_000) { while (api.closed.isEmpty()) kotlinx.coroutines.delay(20) } }
         assertEquals(listOf(offer.id), api.closed)
         assertEquals(listOf(registerId), handoversOnPhone().map { it.id })
