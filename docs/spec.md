@@ -38,7 +38,7 @@ Three real phones, no emulator. One camera, Kestrel (C-12), goes from the store 
 Airplane mode on B and C cuts mobile data and Wi-Fi but leaves Bluetooth and NFC on (`airplane_mode_radios` = `cell,wifi,wimax`; `scripts/demo-prep.sh` checks it). If B has no NFC, the offline handover in step 2 uses the QR codes instead of the tap.
 
 **Before the pitch (online, about 10 minutes).**
-1. Run `bash scripts/reset-demo.sh`. Every phone: Debug → **Clear local data** → **Sync now**. (When the phones need new people: `bash scripts/reset-demo.sh --reenrol`, and each phone shows Enrol after its next sync.)
+1. Run `reset-demo.bat` and answer N. Every phone: Debug → **Clear local data** → **Sync now**. (When the phones need new people, answer Y: each phone shows Enrol after its next sync.)
 2. Run `bash scripts/demo-prep.sh` with all three phones plugged in: each line must say Tenet with the release, "airplane keeps BT/NFC", NFC on and BT on.
 3. Each phone is enrolled as its person (§8): A Siti (S-1021), B Ravi (R-2210), C Wei Ming (R-2234). Press power and wake each one: Tenet shows LOCKED with that person's name. Unlock it.
 4. **Sync all three** while online, so every phone has the others' keys on its roster. A: Store shows Kestrel (C-12), Osprey (C-07) and Heron (C-15), all "In store".
@@ -75,7 +75,7 @@ Airplane mode on B and C cuts mobile data and Wi-Fi but leaves Bluetooth and NFC
 
 **Optional extras if time allows:** the wrong finger on B is refused by the system prompt, so nothing is signed (10 s); a judge's finger on A's lock screen is refused and Tenet stays locked (5 s).
 
-**After the demo:** run `bash scripts/reset-demo.sh`, then Debug → **Clear local data** → **Sync now** on each phone. The phones stay enrolled, so they're ready for the next run.
+**After the demo:** run `reset-demo.bat` and answer N, then Debug → **Clear local data** → **Sync now** on each phone. The phones stay enrolled, so they're ready for the next run.
 
 ---
 

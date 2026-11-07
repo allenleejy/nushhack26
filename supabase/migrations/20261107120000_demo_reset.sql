@@ -1,4 +1,4 @@
--- Demo reset you can call yourself (docs/spec.md §2, scripts/reset-demo.sh).
+-- Demo reset you can call yourself (docs/spec.md §2, reset-demo.bat).
 --
 -- demo_reset_apply(withdraw) does the work. Only the database owner can run it, so the
 -- SQL editor and supabase/reset_demo.sql call it directly.

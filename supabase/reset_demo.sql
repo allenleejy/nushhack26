@@ -1,5 +1,5 @@
 -- Demo reset: put the server back to the start of docs/spec.md section 2.
--- The usual way is `bash scripts/reset-demo.sh` on the laptop. This file is the same reset
+-- The usual way is `reset-demo.bat` on the laptop. This file is the same reset
 -- for the SQL editor or the Supabase MCP. It is NOT a migration: the work is done by
 -- demo_reset_apply (supabase/migrations/20261107120000_demo_reset.sql).
 -- Safe to run many times in a row.

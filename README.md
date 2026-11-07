@@ -47,14 +47,14 @@ Only the publishable key goes in the app. Row-level security protects the data.
 | `maestro test .maestro/smoke.yaml` | The app opens: Enrol, Lock or the role's first tab, whichever applies. |
 | `maestro test .maestro/offline.yaml` | Airplane mode on shows the offline banner; off hides it. |
 | `maestro test .maestro/enrol-wrong-code.yaml` | A wrong enrolment code shows "doesn't match" (needs a sync-configured debug build). |
-| `bash scripts/reset-demo.sh [--reenrol]` | Resets the server to the start of the demo; `--reenrol` also withdraws every phone. |
+| `reset-demo.bat [reenrol]` | Resets the server to the start of the demo; `reenrol` also withdraws every phone. |
 | `./gradlew :app:assembleRelease -PversionCode=NN` | The release APK for round NN (build account only). |
 
 ## Demo
 
-- **Reset the server** to the start of the demo script (`docs/spec.md` §2): `bash scripts/reset-demo.sh`. It keeps people, cameras and enrolled phones. Afterwards each phone: Debug → **Clear local data**, then **Sync now**.
-  - `bash scripts/reset-demo.sh --reenrol` also withdraws every enrolled phone, so each one wipes itself on its next sync and shows Enrol. Use it to give the phones new people.
-  - The script needs `DEMO_RESET_TOKEN` in `local.properties`, next to the Supabase values. The server keeps only its SHA-256, in `demo_secrets`. Without the laptop, run `supabase/reset_demo.sql` in the SQL editor.
+- **Reset the server** to the start of the demo script (`docs/spec.md` §2): double-click `reset-demo.bat` in the repo folder (or run it in a terminal). It keeps people, cameras and enrolled phones. Afterwards each phone: Debug → **Clear local data**, then **Sync now**.
+  - It asks whether to also withdraw every phone (`reset-demo.bat reenrol` skips the question). Yes withdraws every enrolled phone, so each one wipes itself on its next sync and shows Enrol. Use it to give the phones new people.
+  - It needs `DEMO_RESET_TOKEN` in `local.properties`, next to the Supabase values. The server keeps only its SHA-256, in `demo_secrets`. Without the laptop, run `supabase/reset_demo.sql` in the SQL editor.
 - **Check the phones** in seconds: `bash scripts/demo-prep.sh` prints one line per connected phone (model, Android, Tenet version, airplane-mode radios, NFC, Bluetooth, battery). `bash scripts/demo-prep.sh --install <apk>` also installs that APK on each phone.
 - **Airplane mode must leave Bluetooth and NFC on** for the tap handover (`docs/sync.md` A.11): on each phone, once, run `adb shell settings put global airplane_mode_radios cell,wifi,wimax`. `demo-prep.sh` flags a phone that still cuts them.
 
