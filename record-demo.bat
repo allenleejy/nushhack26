@@ -9,13 +9,13 @@ cd /d "%~dp0"
 set "SCRCPY=scrcpy"
 where scrcpy >nul 2>nul || set "SCRCPY=%LOCALAPPDATA%\Microsoft\WinGet\Packages\Genymobile.scrcpy_Microsoft.Winget.Source_8wekyb3d8bbwe\scrcpy-win64-v5.0.1\scrcpy.exe"
 
-for /f %%t in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HHmm"') do set "STAMP=%%t"
+for /f %%t in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HHmm" ^<nul') do set "STAMP=%%t"
 set "OUT=%USERPROFILE%\Videos\tenet-demo\%STAMP%"
 mkdir "%OUT%" 2>nul
 
-call :rec WKXC5DKNUCU87D7H siti "A - Siti (Redmi 13)"
-call :rec 34685561460034M ravi "B - Ravi (vivo)"
-call :rec r4lvf67ldmvctsei weiming "C - Wei Ming (Redmi 11)"
+call :rec WKXC5DKNUCU87D7H siti "A - Siti - Redmi 13"
+call :rec 34685561460034M ravi "B - Ravi - vivo"
+call :rec r4lvf67ldmvctsei weiming "C - Wei Ming - Redmi 11"
 
 echo.
 echo Recording to %OUT%
@@ -24,7 +24,7 @@ pause >nul
 
 rem Ask each scrcpy to close first so it finishes its file, then stop any that didn't.
 taskkill /IM scrcpy.exe >nul 2>nul
-timeout /t 3 /nobreak >nul
+ping -n 4 127.0.0.1 >nul
 taskkill /F /IM scrcpy.exe >nul 2>nul
 
 echo.
@@ -35,10 +35,13 @@ pause
 exit /b
 
 :rec
-adb devices | findstr /b /c:"%~1" | findstr /e /c:"device" >nul || (
-  echo %~3 is not connected: skipped.
-  exit /b
-)
+rem No ( ) blocks here: the phone names would close them early.
+adb -s %~1 get-state >nul 2>nul
+if errorlevel 1 goto :missing
 start "%~3" "%SCRCPY%" -s %~1 --record="%OUT%\%~2.mkv" --window-title="%~3" --window-height=720 --max-size=1080 --video-bit-rate=12M --no-audio-playback --stay-awake
 echo %~3: recording
+exit /b
+
+:missing
+echo %~3 is not connected: skipped.
 exit /b
