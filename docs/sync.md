@@ -107,7 +107,7 @@ Each check gives one line, ✓ or ✗, with the text from spec R2. The offer is 
    - be for the same item
    - have `to_person_id` equal to the giver
    - if this phone already has the proof's own previous record, link to it
-4. **Made out to you:** `to_person_id` is this phone's person.
+4. **Intended recipient:** `to_person_id` is this phone's person.
 5. **Valid:**
    - It passes if `offered_ms − 15000 ≤ now ≤ expires_ms + 15000`. The 15 seconds allow for phone clocks that disagree.
    - Show "Valid for m:ss" or "Expired m:ss ago", measured from `expires_ms`.

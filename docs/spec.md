@@ -51,7 +51,7 @@ Airplane mode on A and B cuts mobile data and Wi-Fi but leaves Bluetooth and NFC
 
 1. **Sign-out, online (0:00–0:30).**
    - A (Siti): Store → **Issue** on Kestrel. The picker shows **Jun Lim greyed out: "Authorisation lapsed 3 Nov"**. The presenter: "Jun's authorisation lapsed on Tuesday. The phone checks that itself, so it works offline too." → **Ravi Kumar** → due chip **+90 s** → **Sign** → fingerprint. A shows "Sent to Ravi's phone · waiting for Ravi to scan the seal and accept".
-   - B (Ravi) is already showing the yellow banner: "Siti Aminah is handing you Kestrel". **Open** → the checklist turns green: signed by Siti, Siti holds Kestrel, made out to you, valid, not used before, authorised. **Scan the seal** → "Seal S-40117 matches C-12" → the accept card says "This is sealed source IR-0457 (iridium-192). You're liable for it the moment you sign." → **Accept** → fingerprint.
+   - B (Ravi) is already showing the yellow banner: "Siti Aminah is handing you Kestrel". **Open** → the checklist turns green: signed by Siti, Siti holds Kestrel, intended recipient, valid, not used before, authorised. **Scan the seal** → "Seal S-40117 matches C-12" → the accept card says "This is sealed source IR-0457 (iridium-192). You're liable for it the moment you sign." → **Accept** → fingerprint.
    - A moves to Done by itself, and both stamps land. The presenter: "Online it's two fingerprints and the seal, and both phones check both signatures. Now the network goes."
    - Wait until A's and B's sync bars show "All synced". **Airplane mode on: A and B.** C stays online.
 2. **The return, offline (0:30–1:10).**
@@ -240,13 +240,13 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
 - **R2 Checks.** "Checking offline…" (under a second), then one line per check, each ✓ or ✗:
   1. "Signed by Ravi Kumar · key 3F:A9:12:7C"
   2. "Ravi Kumar holds C-12 · signed by Siti and Ravi at 14:29"
-  3. "Made out to you"
+  3. "Intended recipient"
   4. "Valid for 0:41"
   5. "Not used before"
   6. "Authorised · radiographer · valid to 30.06.2027" (for a return: "Authorised · store officer")
 
   If all pass, the button is **Scan the seal**.
-  - **Refused (any ✗):** a red header **"This is a copy. It can't be used."** (or "This handover can't be accepted." when the code isn't a copy), the failed lines in red with reasons ("Made out to Tan Wei Ming, not you", "Expired 0:40 ago", "Already used on this phone", "Unknown signer. Sync this phone before accepting.", "You aren't authorised to hold sealed sources (lapsed 03.11.2026)", "Ravi Kumar already handed C-12 to Tan Wei Ming at 14:30. This would be a second handover.", "Ravi Kumar's phone was withdrawn by the safety officer at 14:40."), and "Nothing was signed."
+  - **Refused (any ✗):** a red header **"This is a copy. It can't be used."** (or "This handover can't be accepted." when the code isn't a copy), the failed lines in red with reasons ("Not intended recipient · for Tan Wei Ming", "Expired 0:40 ago", "Already used on this phone", "Unknown signer. Sync this phone before accepting.", "You aren't authorised to hold sealed sources (lapsed 03.11.2026)", "Ravi Kumar already handed C-12 to Tan Wei Ming at 14:30. This would be a second handover.", "Ravi Kumar's phone was withdrawn by the safety officer at 14:40."), and "Nothing was signed."
 - **R3 Scan the seal.** "Scan the seal on camera C-12".
   - **Match:** "Seal S-40117 matches C-12" → **Next**.
   - **Mismatch:** "Seal S-40999 doesn't match C-12 (S-40117). Don't accept this camera." with no way on.
