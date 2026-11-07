@@ -2,6 +2,9 @@ package com.nushhack26.app.ui.timeline
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,11 +13,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.sharp.CallSplit
+import androidx.compose.material.icons.automirrored.sharp.ReceiptLong
 import androidx.compose.material.icons.sharp.GppBad
 import androidx.compose.material.icons.sharp.Gavel
 import androidx.compose.material.icons.sharp.HelpOutline
@@ -23,6 +28,8 @@ import androidx.compose.material.icons.sharp.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,51 +48,67 @@ import com.nushhack26.app.ui.theme.hazardStripes
 /**
  * One record on the custody chain (design/components/TimelineRow): a square node on a rail,
  * what happened, when, the signature check and the sync mark. Overruled records are hatched
- * and struck out; rejected ones are red with the server's reason.
+ * and struck out; rejected ones are red with the server's reason. With [onClick] the whole row
+ * opens the record's receipt (card 30), pressed in bg-200 with no ripple.
  */
 @Composable
-fun TimelineRow(entry: TimelineEntry, modifier: Modifier = Modifier, compact: Boolean = false, last: Boolean = false) {
+fun TimelineRow(
+    entry: TimelineEntry,
+    modifier: Modifier = Modifier,
+    compact: Boolean = false,
+    last: Boolean = false,
+    onClick: (() -> Unit)? = null,
+) {
     val colors = Tenet.colors
     val small = TenetType.body.copy(fontSize = 14.sp, lineHeight = 20.sp)
-    val (ground, edge) = when (entry.look) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val (look, edge) = when (entry.look) {
         EntryLook.Normal -> Modifier.background(colors.bg100) to colors.line
         EntryLook.Overruled -> Modifier.hatching(colors.line, colors.bg200) to colors.lineStrong
         EntryLook.Rejected -> Modifier.background(colors.alertBg) to colors.alert
         EntryLook.Orphan -> Modifier.background(colors.bg200) to colors.lineStrong
     }
+    val ground = if (pressed) Modifier.background(colors.bg200) else look
     val struck = entry.look == EntryLook.Overruled
-    Row(modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+    val click = if (onClick != null) Modifier.clickable(interactionSource = interaction, indication = null, onClick = onClick) else Modifier
+    Row(modifier.fillMaxWidth().heightIn(min = 48.dp).height(IntrinsicSize.Min).then(click)) {
         if (!compact) {
             Column(Modifier.width(24.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(Modifier.padding(top = TenetDimens.space4).size(12.dp).background(if (entry.look == EntryLook.Rejected) colors.alert else colors.ink))
                 if (!last) Box(Modifier.width(TenetDimens.strokeControl).weight(1f).background(colors.lineStrong))
             }
         }
-        Column(
+        Row(
             Modifier.weight(1f).padding(bottom = TenetDimens.space2).then(ground).border(TenetDimens.strokeHairline, edge).padding(TenetDimens.space3),
-            verticalArrangement = Arrangement.spacedBy(TenetDimens.space1),
+            horizontalArrangement = Arrangement.spacedBy(TenetDimens.space2),
         ) {
-            Text(entry.kind.uppercase(), style = TenetType.recordLabel, color = colors.inkMuted)
-            Text(
-                entry.title, style = TenetType.bodyStrong.copy(textDecoration = if (struck) TextDecoration.LineThrough else null),
-                color = if (struck) colors.inkMuted else colors.ink,
-            )
-            Text(
-                listOfNotNull(entry.detail, entry.timeMs?.let { clockText(it) }).joinToString(" · "),
-                style = small, color = colors.inkMuted,
-            )
-            val extra = listOfNotNull(entry.dueMs?.let { "Due ${clockText(it)}" }, entry.sealNo?.let { "Seal $it" })
-            if (extra.isNotEmpty()) Text(extra.joinToString(" · "), style = small, color = colors.inkMuted)
-            if (entry.matchCode.isNotEmpty()) Text("MATCH ${entry.matchCode}", style = TenetType.recordLabel, color = colors.ink)
-            SigLine(entry.sig, entry.keyWithdrawn)
-            when {
-                entry.look == EntryLook.Overruled -> Patch("OVERRULED BY SUPERVISOR", colors.ink, colors.bg000)
-                entry.look == EntryLook.Rejected -> {
-                    Patch("REJECTED BY SERVER", colors.onAlert, colors.alert)
-                    entry.reason?.let { Text(it, style = small, color = colors.alertText) }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(TenetDimens.space1)) {
+                Text(entry.kind.uppercase(), style = TenetType.recordLabel, color = colors.inkMuted)
+                Text(
+                    entry.title, style = TenetType.bodyStrong.copy(textDecoration = if (struck) TextDecoration.LineThrough else null),
+                    color = if (struck) colors.inkMuted else colors.ink,
+                )
+                Text(
+                    listOfNotNull(entry.detail, entry.timeMs?.let { clockText(it) }).joinToString(" · "),
+                    style = small, color = colors.inkMuted,
+                )
+                val extra = listOfNotNull(entry.dueMs?.let { "Due ${clockText(it)}" }, entry.sealNo?.let { "Seal $it" })
+                if (extra.isNotEmpty()) Text(extra.joinToString(" · "), style = small, color = colors.inkMuted)
+                if (entry.matchCode.isNotEmpty()) Text("MATCH ${entry.matchCode}", style = TenetType.recordLabel, color = colors.ink)
+                SigLine(entry.sig, entry.keyWithdrawn)
+                when {
+                    entry.look == EntryLook.Overruled -> Patch("OVERRULED BY SUPERVISOR", colors.ink, colors.bg000)
+                    entry.look == EntryLook.Rejected -> {
+                        Patch("REJECTED BY SERVER", colors.onAlert, colors.alert)
+                        entry.reason?.let { Text(it, style = small, color = colors.alertText) }
+                    }
+                    entry.look == EntryLook.Orphan -> Text("Not linked to this camera's chain on this phone.", style = small, color = colors.inkMuted)
+                    entry.syncStatus == SyncMark.WAITING -> NotSyncedMark()
                 }
-                entry.look == EntryLook.Orphan -> Text("Not linked to this camera's chain on this phone.", style = small, color = colors.inkMuted)
-                entry.syncStatus == SyncMark.WAITING -> NotSyncedMark()
+            }
+            if (onClick != null) {
+                Icon(Icons.AutoMirrored.Sharp.ReceiptLong, contentDescription = "Open receipt", tint = colors.inkMuted, modifier = Modifier.size(24.dp))
             }
         }
     }
@@ -136,7 +159,7 @@ fun LocalForkCard(text: String, modifier: Modifier = Modifier) {
 
 /** Two records claim the same camera: the branches side by side under a red marker. */
 @Composable
-fun ForkBlock(branches: List<List<TimelineEntry>>, modifier: Modifier = Modifier) {
+fun ForkBlock(branches: List<List<TimelineEntry>>, modifier: Modifier = Modifier, onOpenRecord: ((handoverId: String) -> Unit)? = null) {
     val colors = Tenet.colors
     Column(modifier.fillMaxWidth().border(TenetDimens.strokeControl, colors.alert)) {
         Row(
@@ -150,7 +173,7 @@ fun ForkBlock(branches: List<List<TimelineEntry>>, modifier: Modifier = Modifier
         Row(Modifier.fillMaxWidth().padding(TenetDimens.space1), horizontalArrangement = Arrangement.spacedBy(TenetDimens.space1)) {
             branches.forEach { branch ->
                 Column(Modifier.weight(1f)) {
-                    branch.forEach { TimelineRow(it, compact = true) }
+                    branch.forEach { TimelineRow(it, compact = true, onClick = onOpenRecord?.let { open -> { open(it.id) } }) }
                 }
             }
         }

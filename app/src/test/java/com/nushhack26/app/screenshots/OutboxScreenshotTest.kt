@@ -17,7 +17,7 @@ import org.robolectric.annotation.GraphicsMode
 class OutboxScreenshotTest {
     private val lastSync = SampleSafety.at(14, 2)
     private val rows = listOf(
-        OutboxRowUi("op-1", "Handover · C-12 · Ravi → Wei Ming · signed 14:30", "Tried 2 times · queued 14:30", "Last error: Unable to resolve host"),
+        OutboxRowUi("op-1", "Handover · C-12 · Ravi → Wei Ming · signed 14:30", "Tried 2 times · queued 14:30", "Last error: Unable to resolve host", handoverId = "h-1"),
         OutboxRowUi("op-2", "Decision · C-12 · with Wei Ming · signed 14:34", "Not sent yet · queued 14:34"),
     )
 

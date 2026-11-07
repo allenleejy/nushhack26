@@ -51,11 +51,16 @@ fun TimelineScreen(
         factory = viewModelFactory { initializer { TimelineViewModel(container.custodyRepository, itemId) } },
     )
     val state by viewModel.state.collectAsStateWithLifecycle()
-    TimelineContent(state, onReportMissing = { onReportMissing(itemId) })
+    TimelineContent(state, onReportMissing = { onReportMissing(itemId) }, onOpenRecord = onOpenRecord)
 }
 
 @Composable
-fun TimelineContent(state: TimelineUiState, modifier: Modifier = Modifier, onReportMissing: () -> Unit = {}) {
+fun TimelineContent(
+    state: TimelineUiState,
+    modifier: Modifier = Modifier,
+    onReportMissing: () -> Unit = {},
+    onOpenRecord: (handoverId: String) -> Unit = {},
+) {
     val colors = Tenet.colors
     Column(modifier.fillMaxSize().background(colors.bg000)) {
         when (state) {
@@ -80,8 +85,8 @@ fun TimelineContent(state: TimelineUiState, modifier: Modifier = Modifier, onRep
                 itemsIndexed(state.nodes) { index, node ->
                     val last = index == state.nodes.lastIndex
                     when (node) {
-                        is TimelineNode.Record -> TimelineRow(node.entry, last = last)
-                        is TimelineNode.Fork -> ForkBlock(node.branches)
+                        is TimelineNode.Record -> TimelineRow(node.entry, last = last, onClick = { onOpenRecord(node.entry.id) })
+                        is TimelineNode.Fork -> ForkBlock(node.branches, onOpenRecord = onOpenRecord)
                         is TimelineNode.LocalFork -> LocalForkCard(node.text)
                         is TimelineNode.Resolution -> ResolutionRow(node)
                     }
