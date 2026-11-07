@@ -180,10 +180,12 @@ private fun RoleScaffold(container: AppContainer, identity: Identity) {
     val scope = rememberCoroutineScope()
     val reduce = LocalReduceMotion.current
     var receiveInFlow by remember { mutableStateOf(false) }
+    var receiveCameraShown by remember { mutableStateOf(false) }
     var receiveSession by rememberSaveable { mutableIntStateOf(0) }
 
     val onHome = destination?.hasRoute(HomeRoute::class) == true
     val currentTab = tabs[pagerState.currentPage]
+    val onReceiveCamera = receiveCameraShown && currentTab == TopLevelTab.Receive
     val receiving = onHome && receiveInFlow
     val inHandover = receiving || destination?.let {
         it.hasRoute(GiveRoute::class) || it.hasRoute(ReceiveRoute::class) || it.hasRoute(ReceiveRelayedRoute::class)
@@ -215,6 +217,7 @@ private fun RoleScaffold(container: AppContainer, identity: Identity) {
         },
         endReceive = ::endReceive,
         receiveFlowChanged = { receiveInFlow = it },
+        receiveCameraChanged = { receiveCameraShown = it },
     )
     // Back from another tab goes to the first tab; back mid-receive ends the receive.
     BackHandler(enabled = onHome && (receiveInFlow || pagerState.currentPage != startPage)) {
@@ -273,7 +276,8 @@ private fun RoleScaffold(container: AppContainer, identity: Identity) {
             AppNavHost(navController, container, modifier = Modifier.weight(1f)) {
                 HorizontalPager(
                     state = pagerState,
-                    userScrollEnabled = !receiveInFlow,
+                    // A drag on the scanner is never quite vertical; the pager mustn't take its sideways part.
+                    userScrollEnabled = !receiveInFlow && !onReceiveCamera,
                     key = { tabs[it].name },
                     modifier = Modifier.fillMaxSize(),
                 ) { page ->
@@ -283,6 +287,7 @@ private fun RoleScaffold(container: AppContainer, identity: Identity) {
                         actions,
                         active = onHome && pagerState.settledPage == page && !pagerState.isScrollInProgress,
                         receiveSession = receiveSession,
+                        cameraActive = onHome && pagerState.currentPage == page,
                     )
                 }
             }
