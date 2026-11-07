@@ -47,6 +47,7 @@ Only the publishable key goes in the app. Row-level security protects the data.
 | `maestro test .maestro/smoke.yaml` | The app opens: Enrol, Lock or the role's first tab, whichever applies. |
 | `maestro test .maestro/offline.yaml` | Airplane mode on shows the offline banner; off hides it. |
 | `maestro test .maestro/enrol-wrong-code.yaml` | A wrong enrolment code shows "doesn't match" (needs a sync-configured debug build). |
+| `record-demo.bat` | Records all three demo phones at once (scrcpy), one MKV each, to `Videos	enet-demo\<date_time>\`. Press a key to stop. |
 | `reset-demo.bat [reenrol]` | Resets the server to the start of the demo; `reenrol` also withdraws every phone. |
 | `./gradlew :app:assembleRelease -PversionCode=NN` | The release APK for round NN (build account only). |
 
