@@ -29,14 +29,16 @@ class SyncScheduler(context: Context) {
 
     /**
      * Sync as soon as there's a network: after each local change, when the network
-     * returns, and from "Sync now". A request made during a sync runs right after it.
+     * returns, when Tenet comes on screen, and from "Sync now". A new request replaces the
+     * one before it, so it never waits behind a failed sync's growing retry delay. Replacing
+     * a sync that's running is safe: the server skips ops it has already applied.
      */
     fun syncNow() {
         val request = OneTimeWorkRequestBuilder<SyncWorker>()
             .setConstraints(needsNetwork)
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_SECONDS, TimeUnit.SECONDS)
             .build()
-        workManager.enqueueUniqueWork(ONE_TIME_WORK, ExistingWorkPolicy.APPEND_OR_REPLACE, request)
+        workManager.enqueueUniqueWork(ONE_TIME_WORK, ExistingWorkPolicy.REPLACE, request)
     }
 
     companion object {
