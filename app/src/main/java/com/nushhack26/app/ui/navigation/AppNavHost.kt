@@ -46,6 +46,8 @@ class TabActions(
     val receiveFlowChanged: (Boolean) -> Unit,
     /** Open one handover as its custody receipt. */
     val openRecord: (String) -> Unit = {},
+    /** True while the RECEIVE tab shows a camera: the pager stops taking swipes so drags scroll the page. */
+    val receiveCameraChanged: (Boolean) -> Unit = {},
 )
 
 /**
@@ -100,9 +102,19 @@ fun AppNavHost(
     }
 }
 
-/** One page of the tab pager. [active] is true once the pager has settled on it. */
+/**
+ * One page of the tab pager. [active] is true once the pager has settled on it; [cameraActive]
+ * is true while the pager is on it at all, so a scanner isn't torn down by pager wobble.
+ */
 @Composable
-fun TabPage(tab: TopLevelTab, container: AppContainer, actions: TabActions, active: Boolean, receiveSession: Int) {
+fun TabPage(
+    tab: TopLevelTab,
+    container: AppContainer,
+    actions: TabActions,
+    active: Boolean,
+    receiveSession: Int,
+    cameraActive: Boolean = active,
+) {
     Screen {
         when (tab) {
             TopLevelTab.Custody -> MyCustodyScreen(container, onHandOver = actions.handOver, onReceive = actions.receive, onOpenItem = actions.openItem)
@@ -114,6 +126,8 @@ fun TabPage(tab: TopLevelTab, container: AppContainer, actions: TabActions, acti
                 active = active,
                 session = receiveSession,
                 onFlowChange = actions.receiveFlowChanged,
+                cameraActive = cameraActive,
+                onCameraShownChange = actions.receiveCameraChanged,
             )
             TopLevelTab.Outbox -> OutboxScreen(container, onOpenRecord = actions.openRecord)
             TopLevelTab.SupervisorItems -> StoreScreen(container, readOnly = true, onIssue = {}, onReceive = {}, onOpenItem = actions.openItem)

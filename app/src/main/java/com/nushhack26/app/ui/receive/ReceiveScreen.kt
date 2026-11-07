@@ -78,7 +78,9 @@ private val LINKED_STEPS = setOf(ReceiveStep.Checks, ReceiveStep.ScanSeal, Recei
 /**
  * R0–R5. As the RECEIVE tab ([asTab]): [active] is true only while the pager has settled on it,
  * a new [session] starts a fresh receive, and [onFlowChange] says when an offer has arrived (the
- * frame then hides the bottom bar and stops the swipe until [onDone]).
+ * frame then hides the bottom bar and stops the swipe until [onDone]). [cameraActive] switches
+ * the scanner's camera (true while the pager is on the tab, so a drag never restarts it), and
+ * [onCameraShownChange] says when a scanner is up, so the frame stops the swipe then too.
  */
 @Composable
 fun ReceiveScreen(
@@ -89,6 +91,8 @@ fun ReceiveScreen(
     active: Boolean = true,
     session: Int = 0,
     onFlowChange: (Boolean) -> Unit = {},
+    cameraActive: Boolean = active,
+    onCameraShownChange: (Boolean) -> Unit = {},
 ) {
     val viewModel: ReceiveViewModel = viewModel(
         key = if (asTab) "receive-tab-$session" else null,
@@ -128,8 +132,13 @@ fun ReceiveScreen(
         }
     }
     val shown = state.copy(
-        tapReady = tapReady && onR1, tapAvailability = availability, asTab = asTab, cameraOn = active, tapContact = tapContact || relayPulse,
+        tapReady = tapReady && onR1, tapAvailability = availability, asTab = asTab, cameraOn = cameraActive, tapContact = tapContact || relayPulse,
     )
+    val cameraShown = cameraActive && shown.showsScanner
+    DisposableEffect(cameraShown) {
+        onCameraShownChange(cameraShown)
+        onDispose { if (cameraShown) onCameraShownChange(false) }
+    }
     ReceiveContent(shown) { action ->
         when (action) {
             ReceiveAction.Accept -> scope.launch {
@@ -151,6 +160,14 @@ fun ReceiveScreen(
         }
     }
 }
+
+/** R1 in QR mode, or R3 before the right seal: the steps that draw [Scanner]. */
+private val ReceiveUiState.showsScanner: Boolean
+    get() = when (step) {
+        ReceiveStep.ScanOffer -> !rosterEmpty && scanningQr && !tapContact
+        ReceiveStep.ScanSeal -> seal?.matches != true
+        else -> false
+    }
 
 /** Ticks as each check line appears, rejects a refusal or a wrong seal, confirms a matching seal. Fires with animations off too. */
 @Composable
@@ -278,7 +295,7 @@ private fun StepPage(state: ReceiveUiState, onAction: (ReceiveAction) -> Unit) {
     }
 }
 
-/** The scanner, or its empty frame while the tab isn't settled, so no camera runs mid-swipe. */
+/** The scanner, or its empty frame while the pager is off the RECEIVE tab, so no camera runs there. */
 @Composable
 private fun Scanner(
     state: ReceiveUiState,

@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.SystemClock
 import android.provider.Settings
+import android.util.Log
 import android.util.Size
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -445,11 +446,13 @@ private fun CameraPreview(onCode: (String) -> Unit, torchOn: Boolean, modifier: 
             runCatching {
                 provider.unbindAll()
                 camera = provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis)
+                if (BuildConfig.DEBUG) Log.d(LOG_TAG, "camera bound")
             }
         }, mainExecutor)
 
         onDispose {
             runCatching { providerFuture.get().unbindAll() }
+            if (BuildConfig.DEBUG) Log.d(LOG_TAG, "camera unbound")
             scanner.close()
             analysisExecutor.shutdown()
             camera = null
@@ -463,6 +466,7 @@ private fun CameraPreview(onCode: (String) -> Unit, torchOn: Boolean, modifier: 
     AndroidView(factory = { previewView }, modifier = modifier.clipToBounds())
 }
 
+private const val LOG_TAG = "QrScanner"
 private const val REPEAT_AFTER_MS = 2_000L
 private const val LOCK_TO_CODE_MS = 250L
 private const val LOCK_HOLD_MS = 1_500L
