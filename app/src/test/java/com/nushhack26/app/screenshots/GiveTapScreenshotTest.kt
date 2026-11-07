@@ -18,6 +18,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -66,7 +67,7 @@ private val doneState = offerState.copy(
     done = DoneView(recordNo = 3, matchCode = "48 21 07", acceptedMs = now, synced = false, viaTap = true),
 )
 
-/** Card 18: G3 tap first, the QR fallback, and G5's parcel label. */
+/** Card 18: G3 tap first and the QR fallback. Card 29: G5's torn custody receipt. */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(application = Application::class, qualifiers = PHONE)
@@ -86,7 +87,7 @@ class GiveTapScreenshotTest {
     fun qrMode() = captureScreen("GiveTap_G3_qr_mode") { GiveContent(offerState, qrMode = true) }
 
     @Test
-    fun done() = captureScreen("GiveTap_G5_done") { GiveContent(doneState) }
+    fun done() = captureScreen("GiveTap_G5_done") { ReceiptStill { GiveContent(doneState) } }
 
     @Test
     @Config(qualifiers = "w360dp-h780dp-xxhdpi")
@@ -99,11 +100,11 @@ class GiveTapScreenshotTest {
     @Config(qualifiers = "w360dp-h780dp-xxhdpi")
     fun doneNarrowLargeText() {
         RuntimeEnvironment.setFontScale(1.3f)
-        captureScreen("GiveTap_G5_done_360dp_1.3x") { GiveContent(doneState) }
+        captureScreen("GiveTap_G5_done_360dp_1.3x") { ReceiptStill { GiveContent(doneState) } }
     }
 }
 
-/** G5 at 360dp and 1.3× text: the verify line scrolls clear of DONE instead of sitting under it. */
+/** G5 at 360dp and 1.3× text: the receipt and the sync line under it scroll clear of DONE. */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(application = Application::class, qualifiers = PHONE)
@@ -113,23 +114,24 @@ class GiveTapDoneScrollTest {
 
     @Test
     @Config(qualifiers = "w360dp-h780dp-xxhdpi")
-    fun verifyLineScrollsClearOfDone() {
+    fun receiptScrollsClearOfDone() {
         RuntimeEnvironment.setFontScale(1.3f)
         compose.setContent {
             TenetTheme {
                 Surface {
                     Column {
                         SyncStatusBar(SyncStatus())
-                        GiveContent(doneState)
+                        ReceiptStill { GiveContent(doneState) }
                     }
                 }
             }
         }
-        val verify = compose.onNodeWithText("VERIFY CODE", substring = true)
-        verify.performScrollTo()
-        val line = verify.getUnclippedBoundsInRoot()
+        compose.onNodeWithContentDescription("Verify code 482 107", substring = true).assertExists()
+        val sync = compose.onNodeWithText("Not synced yet")
+        sync.performScrollTo()
+        val line = sync.getUnclippedBoundsInRoot()
         val done = compose.onNodeWithText("Done", ignoreCase = true).getUnclippedBoundsInRoot()
-        assertTrue("verify line ${line.bottom} must end above DONE ${done.top}", line.bottom <= done.top)
+        assertTrue("sync line under the receipt ${line.bottom} must end above DONE ${done.top}", line.bottom <= done.top)
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/GiveTap_G5_done_360dp_1.3x_scrolled.png")
     }
 }

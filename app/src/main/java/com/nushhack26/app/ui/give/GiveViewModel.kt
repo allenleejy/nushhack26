@@ -28,6 +28,10 @@ import com.nushhack26.app.data.repo.IdentityRepository
 import com.nushhack26.app.data.repo.RelayOutcome
 import com.nushhack26.app.data.repo.RelayRepository
 import com.nushhack26.app.nearby.GiverTapEvent
+import com.nushhack26.app.ui.components.ReceiptContent
+import com.nushhack26.app.ui.components.ReceiptNumbers
+import com.nushhack26.app.ui.components.ReceiptParty
+import com.nushhack26.app.ui.components.ReceiptStamp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.coroutineScope
@@ -111,7 +115,8 @@ data class OfferView(
 )
 
 data class DoneView(
-    val recordNo: Int,
+    /** RECORD #n; null when a link of the chain is missing on this phone. */
+    val recordNo: Int?,
     val matchCode: String,
     val acceptedMs: Long,
     val synced: Boolean,
@@ -177,6 +182,33 @@ data class GiveUiState(
     val canReview: Boolean get() = selectedReceiver?.selectable == true && (!isIssue || due != null)
     val offerExpired: Boolean get() = offer != null && nowMs > offer.expiresMs
     val secondsLeft: Long get() = offer?.let { ((it.expiresMs - nowMs).coerceAtLeast(0) + 999) / 1_000 } ?: 0
+
+    /** G5's custody receipt: HELD BY the receiver's full name. */
+    val receipt: ReceiptContent?
+        get() {
+            val done = done ?: return null
+            val summary = summary ?: return null
+            return ReceiptContent(
+                recordNo = done.recordNo,
+                followsNo = done.recordNo?.takeIf { it > 1 }?.minus(1),
+                date = GiveViewModel.ddMMyyyy(done.acceptedMs),
+                signedTime = GiveViewModel.hhmm(done.acceptedMs),
+                itemName = item?.displayName ?: summary.itemCode,
+                itemCode = item?.code ?: summary.itemCode,
+                source = item?.let { "${it.sourceSerial} · ${it.isotope}" },
+                sealNo = summary.sealNo,
+                sealMatches = true,
+                from = ReceiptParty(summary.giverName),
+                to = ReceiptParty(summary.receiverName),
+                returnBy = summary.dueMs?.let(GiveViewModel::hhmm),
+                heldBy = summary.receiverName,
+                verifyCode = ReceiptNumbers.verifyCode(done.matchCode),
+            )
+        }
+
+    /** HANDED OVER / 13:02 / TO WEI MING. */
+    val stamp: ReceiptStamp?
+        get() = done?.let { ReceiptStamp("Handed over", GiveViewModel.hhmm(it.acceptedMs), "To $receiverFirstName") }
 }
 
 sealed interface GiveAction {
@@ -594,7 +626,7 @@ class GiveViewModel(
         val done = f.completed?.let { record ->
             val stored = d.chain.firstOrNull { it.id == record.id }
             DoneView(
-                recordNo = recordNumber(record, d.chain),
+                recordNo = ReceiptNumbers.recordNo(record, d.chain),
                 matchCode = Canonical.matchCode(record.recordHash),
                 acceptedMs = record.acceptedMs ?: now,
                 synced = stored != null && !stored.tamperHidden && (stored.syncStatus == SyncMark.SYNCED || stored.serverSeq != null),
@@ -660,19 +692,8 @@ class GiveViewModel(
             else -> "Custody transfer successful."
         }
 
-        /** The record's place in the chain, the register record being #1. */
-        fun recordNumber(record: HandoverEntity, chain: List<HandoverEntity>): Int {
-            val byId = chain.associateBy { it.id }
-            var n = 1
-            var prev = record.prevId
-            val seen = mutableSetOf<String>()
-            while (prev != null && seen.add(prev)) {
-                n++
-                prev = byId[prev]?.prevId
-            }
-            return n
-        }
-
         fun hhmm(ms: Long): String = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(ms))
+
+        fun ddMMyyyy(ms: Long): String = DateTimeFormatter.ofPattern("dd.MM.yyyy").withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(ms))
     }
 }
