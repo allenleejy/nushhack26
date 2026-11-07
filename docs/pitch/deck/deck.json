@@ -1,0 +1,18 @@
+{
+  "v": 4,
+  "createdOnFiles": {"v": 1, "at": "2026-11-07T10:00:00Z"},
+  "lists": "css",
+  "title": "Tenet Pitch Deck",
+  "order": ["cover", "problem", "why", "context", "keywords", "gap", "cases", "rule", "handover", "sync", "suddendev", "evaluation", "close", "demo"],
+  "sections": {
+    "problem": {"description": "The problem statement in general, why industrial radiography matters and how it’s done, then the brief in radiography terms and the gap in custody.", "start": "cover"},
+    "solution": {"description": "Tenet’s rule, how a handover works, and how sync rebuilds one checked chain.", "start": "rule"},
+    "proof": {"description": "Sudden Dev and the evaluation of how effective Tenet is.", "start": "suddendev"},
+    "demo": {"description": "The close, then the live demo after the 4:00 talk.", "start": "close"}
+  },
+  "faces": {
+    "space-mono": {"family": "Space Mono", "href": "https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap"},
+    "space-grotesk": {"family": "Space Grotesk", "href": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap"}
+  },
+  "designSystems": []
+}

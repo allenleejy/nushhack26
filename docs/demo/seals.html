@@ -4,25 +4,38 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Seal stickers</title>
-<!-- Printable seal codes for the demo (docs/spec.md section 8). Open in a browser and print at 100%. -->
+<!-- Printable seal codes for the demo (docs/spec.md section 8). One A4 page: open in a browser, print at 100% (no "fit to page"). -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-  :root { --ink: #111; --line: #999; --paper: #fff; }
-  body { margin: 16px; font-family: system-ui, sans-serif; color: var(--ink); background: var(--paper); }
-  h1 { font-size: 18px; margin: 0 0 4px; }
-  p { margin: 0 0 16px; font-size: 13px; }
-  .sheet { display: flex; flex-wrap: wrap; gap: 16px; }
-  .sticker { width: 62mm; border: 1px dashed var(--line); padding: 4mm; box-sizing: border-box; text-align: center; break-inside: avoid; }
-  .sticker .code { display: flex; justify-content: center; margin: 2mm 0; }
-  .sticker strong { display: block; font-size: 16px; }
-  .sticker span { display: block; font-size: 12px; }
-  @media print { p { display: none; } .sticker { border-color: #ccc; } }
+  :root { --ink: #111; --line: #999; --paper: #fff; --desk: #e5e5e5; }
+  @page { size: A4 portrait; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--desk); }
+  body { font-family: system-ui, sans-serif; color: var(--ink); }
+  .page { width: 210mm; height: 297mm; margin: 16px auto; padding: 14mm; background: var(--paper);
+          display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.15); }
+  h1 { font-size: 16pt; margin: 0 0 2mm; }
+  p { margin: 0 0 8mm; font-size: 10pt; }
+  .sheet { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 8mm; }
+  .sticker { border: 1px dashed var(--line); padding: 6mm; text-align: center; break-inside: avoid;
+             display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 3mm; }
+  .sticker .code img, .sticker .code canvas { width: 55mm !important; height: 55mm !important; }
+  .sticker strong { display: block; font-size: 14pt; }
+  .sticker span { display: block; font-size: 11pt; }
+  .sticker .note { font-size: 10pt; color: #555; min-height: 1.2em; }
+  @media print {
+    html, body { background: var(--paper); }
+    .page { margin: 0; box-shadow: none; }
+    .sticker { border-color: #bbb; }
+  }
 </style>
 </head>
 <body>
-<h1>Seal stickers · DUMMY · not real sources</h1>
-<p>C-12 has two copies: one for the prop camera, one for the cheat in the demo. Each code reads <code>CS1S:&lt;camera&gt;:&lt;seal&gt;</code> (docs/sync.md A.3).</p>
-<div class="sheet" id="sheet"></div>
+<div class="page">
+  <h1>Seal stickers · DUMMY · not real sources</h1>
+  <p>C-12 has two copies: one for the prop camera, one for the cheat in the demo. Each code reads <code>CS1S:&lt;camera&gt;:&lt;seal&gt;</code> (docs/sync.md A.3). Cut along the dashed lines.</p>
+  <div class="sheet" id="sheet"></div>
+</div>
 <script>
   const seals = [
     ["C-12", "S-40117", "IR-0457 · Ir-192", "on the camera"],
@@ -34,9 +47,9 @@
   for (const [camera, seal, source, note] of seals) {
     const div = document.createElement("div");
     div.className = "sticker";
-    div.innerHTML = `<strong>${camera} · seal ${seal}</strong><span>${source}</span><div class="code"></div><span>${note || "&nbsp;"}</span>`;
+    div.innerHTML = `<strong>${camera} · seal ${seal}</strong><span>${source}</span><div class="code"></div><span class="note">${note || "&nbsp;"}</span>`;
     sheet.appendChild(div);
-    new QRCode(div.querySelector(".code"), { text: `CS1S:${camera}:${seal}`, width: 160, height: 160, correctLevel: QRCode.CorrectLevel.M });
+    new QRCode(div.querySelector(".code"), { text: `CS1S:${camera}:${seal}`, width: 400, height: 400, correctLevel: QRCode.CorrectLevel.M });
   }
 </script>
 </body>
