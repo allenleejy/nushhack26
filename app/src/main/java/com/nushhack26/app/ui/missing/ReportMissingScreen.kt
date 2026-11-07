@@ -30,6 +30,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
@@ -97,8 +98,10 @@ fun ReportMissingContent(state: ReportMissingUiState, modifier: Modifier = Modif
 @Composable
 private fun Ready(state: ReportMissingUiState.Ready, onAction: (ReportMissingAction) -> Unit) {
     val sent = state.sent
+    // A fresh scroll for the confirmation, so it never opens part-way down the form.
+    val scroll = key(sent != null) { rememberScrollState() }
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(TenetDimens.space4),
+        Modifier.fillMaxSize().verticalScroll(scroll).padding(TenetDimens.space4),
         verticalArrangement = Arrangement.spacedBy(TenetDimens.space4),
     ) {
         if (sent != null) {
