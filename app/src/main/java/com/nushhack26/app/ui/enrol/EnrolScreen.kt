@@ -105,6 +105,7 @@ fun EnrolContent(state: EnrolUiState, modifier: Modifier = Modifier, onAction: (
                     keyboardType = KeyboardType.Ascii,
                     imeAction = ImeAction.Next,
                 ),
+                visualTransformation = StaffNoTransformation,
                 modifier = Modifier.testTag("staff_no"),
             )
             TenetTextField(

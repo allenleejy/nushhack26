@@ -19,6 +19,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 data class EnrolUiState(
+    /** Raw staff number: one letter plus up to 4 digits, no hyphen (`R2210`). The field draws the hyphen. */
     val staffNo: String = "",
     val code: String = "",
     val busy: Boolean = false,
@@ -30,10 +31,26 @@ data class EnrolUiState(
     /** "This phone was withdrawn by your safety officer…" after a withdrawal wiped it (docs/sync.md A.12). */
     val withdrawnNotice: String? = null,
 ) {
-    val canSubmit: Boolean get() = staffNo.isNotBlank() && code.length == CODE_LENGTH && enrolled == null
+    val canSubmit: Boolean get() = staffNo.length == STAFF_NO_LENGTH && code.length == CODE_LENGTH && enrolled == null
 }
 
 const val CODE_LENGTH = 6
+
+/** Raw staff number length: a letter plus 4 digits (`R2210`, drawn as `R-2210`). */
+const val STAFF_NO_LENGTH = 5
+
+/** Keeps a staff number as a letter plus up to 4 digits: `r2210`, `R-2210`, `r 2210` and `R22105` all give `R2210`. */
+internal fun normalizeStaffNo(input: String): String {
+    val cleaned = input.uppercase().filter { it in 'A'..'Z' || it in '0'..'9' }
+    val start = cleaned.indexOfFirst { it in 'A'..'Z' }
+    if (start < 0) return ""
+    val rest = cleaned.substring(start)
+    return rest.first() + rest.drop(1).filter { it in '0'..'9' }.take(4)
+}
+
+/** The server's stored shape (`R-2210`) for a complete raw staff number (`R2210`). */
+internal fun formatStaffNo(raw: String): String =
+    if (raw.length > 1) raw.first() + "-" + raw.drop(1) else raw
 
 sealed interface EnrolAction {
     data class StaffNoChanged(val value: String) : EnrolAction
@@ -56,7 +73,7 @@ class EnrolViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun onStaffNo(value: String) = _state.update {
-        it.copy(staffNo = value.uppercase().filter { c -> !c.isWhitespace() }.take(16), error = null, wrongCode = false)
+        it.copy(staffNo = normalizeStaffNo(value), error = null, wrongCode = false)
     }
 
     fun onCode(value: String) = _state.update {
@@ -67,7 +84,7 @@ class EnrolViewModel(private val container: AppContainer) : ViewModel() {
     fun createKeyAndEnrol(sign: suspend (title: String, subtitle: String) -> SignResult) {
         val current = _state.value
         if (current.busy || !current.canSubmit) return
-        val staffNo = current.staffNo.trim()
+        val staffNo = formatStaffNo(current.staffNo)
         val code = current.code
         if (!container.serverConfigured || !container.isOnline.value) {
             fail(NO_CONNECTION)

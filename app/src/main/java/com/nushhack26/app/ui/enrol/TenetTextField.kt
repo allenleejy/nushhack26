@@ -18,7 +18,11 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nushhack26.app.ui.theme.Tenet
@@ -41,6 +45,7 @@ fun TenetTextField(
     error: String? = null,
     enabled: Boolean = true,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
 ) {
     val colors = Tenet.colors
     val interaction = remember { MutableInteractionSource() }
@@ -73,6 +78,7 @@ fun TenetTextField(
             placeholder = placeholder?.let { { Text(it.uppercase(), style = valueStyle, color = colors.inkDisabled) } },
             isError = isError,
             keyboardOptions = keyboardOptions,
+            visualTransformation = visualTransformation,
             interactionSource = interaction,
             shape = RectangleShape,
             colors = OutlinedTextFieldDefaults.colors(
@@ -99,5 +105,22 @@ fun TenetTextField(
             )
         }
     }
+}
+
+/**
+ * Draws a staff number stored raw (`R2210`) as `R-2210`: the hyphen appears as soon as the
+ * letter is typed, and one backspace from `R-` removes the letter. Original offsets 0, 1, 2
+ * and 5 map to 0, 2, 3 and 6 in the transformed text, and back.
+ */
+internal val StaffNoTransformation = VisualTransformation { text ->
+    val raw = text.text
+    val transformed = if (raw.isEmpty()) raw else raw.first() + "-" + raw.drop(1)
+    TransformedText(
+        AnnotatedString(transformed),
+        object : OffsetMapping {
+            override fun originalToTransformed(offset: Int) = if (offset == 0) 0 else offset + 1
+            override fun transformedToOriginal(offset: Int) = if (offset <= 1) offset else offset - 1
+        },
+    )
 }
 
