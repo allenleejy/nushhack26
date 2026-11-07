@@ -392,7 +392,12 @@ private fun CameraPreview(onCode: (String) -> Unit, torchOn: Boolean, modifier: 
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val latestOnCode by rememberUpdatedState(onCode)
-    val previewView = remember { PreviewView(context).apply { scaleType = PreviewView.ScaleType.FILL_CENTER } }
+    val previewView = remember {
+        PreviewView(context).apply {
+            scaleType = PreviewView.ScaleType.FILL_CENTER
+            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+        }
+    }
     var camera by remember { mutableStateOf<Camera?>(null) }
 
     DisposableEffect(lifecycleOwner) {
@@ -455,7 +460,7 @@ private fun CameraPreview(onCode: (String) -> Unit, torchOn: Boolean, modifier: 
         camera?.cameraControl?.enableTorch(torchOn)
     }
 
-    AndroidView(factory = { previewView }, modifier = modifier)
+    AndroidView(factory = { previewView }, modifier = modifier.clipToBounds())
 }
 
 private const val REPEAT_AFTER_MS = 2_000L
