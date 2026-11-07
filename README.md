@@ -1,6 +1,6 @@
-# nushhack26
+# Tenet
 
-Our NUSH Hack 2026 app: a native Android app that lets safety personnel keep completing security processes offline, and syncs their changes correctly when the network returns. The product itself is still being specified in `docs/spec.md`; for now the app is the shell plus the offline and sync plumbing.
+Our NUSH Hack 2026 app: a native Android chain-of-custody app for industrial radiography cameras. Every time a camera changes hands, the giver and the receiver both sign the handover on their phones, by NFC tap or QR code, with or without a network. When phones reconnect, the server rebuilds one checked chain. The product is specified in `docs/spec.md` (the demo script is §2), and the record formats and sync rules are in `docs/sync.md`.
 
 - Kotlin, Jetpack Compose and Material 3, in one `app` module
 - Room holds the phone's copy of the data; every change goes through an outbox
@@ -23,9 +23,9 @@ You need JDK 17 or newer (Android Studio's `jbr` works) and the Android SDK with
 2. Start an emulator or plug in a phone with USB debugging on.
 3. `./gradlew :app:installDebug` (`.\gradlew.bat` in PowerShell).
 
-The debug build is `com.nushhack26.app.debug` ("NUSH Hack dev"), so it installs next to the release APK (`com.nushhack26.app`). Every build is signed with the committed `app/hack.keystore`, so new APKs install over old ones and keep the phone's data.
+The debug build is `com.nushhack26.app.debug` ("Tenet dev"), so it installs next to the release APK (`com.nushhack26.app`). Every build is signed with the committed `app/hack.keystore`, so new APKs install over old ones and keep the phone's data.
 
-Release APKs for the phones are on the repo's Releases page (`r01`, `r02`, …).
+Release APKs for the phones are on the repo's Releases page (`r01`, `r02`, …). The final demo build is `r15`.
 
 ## Configuration
 
@@ -67,14 +67,19 @@ Tap the version number on **Me** 5 times. It shows the build, the user id, the o
 ```
 app/src/main/java/com/nushhack26/app/
   App.kt, AppContainer.kt   start-up and wiring (no DI framework)
+  auth/                     app lock and offline unlock
+  crypto/                   signing keys, canonical records, offer checks, roster
+  nearby/                   NFC tap and the phone-to-phone link
+  alarm/                    the overdue alarm
   data/local/               Room database, entities, DAOs (outbox, sync_state)
-  data/remote/              Supabase client and session
+  data/remote/              Supabase client, session and the server row classes
   data/repo/                one repository per feature
-  sync/                     network monitor, sync worker and scheduler, sync status
+  sync/                     sync engine, worker and scheduler, on-screen auto-sync, network monitor
   ui/                       theme, shared components, navigation, one package per screen
 app/src/test/               Robolectric tests and Roborazzi screenshot tests
 .maestro/                   phone test flows
-supabase/                   migrations and seed data
+supabase/                   migrations, seed data and the demo reset
+design/                     the design export (read-only)
 cards/                      task cards for Devin
-docs/                       spec and sync protocol
+docs/                       spec, sync protocol, concept, setting, demo seal stickers
 ```
