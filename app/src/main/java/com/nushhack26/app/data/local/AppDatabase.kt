@@ -5,10 +5,13 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
- * The phone's copy of the data. Bump [version] whenever an entity changes: until the
- * freeze, migrations are destructive, so phones sync before installing a new APK.
+ * The phone's copy of the data. Bump [version] whenever an entity changes, and add a
+ * [Migration] for it: a destructive upgrade also wipes the identity, so every phone would
+ * have to enrol again. Destructive migration is only the fallback for a missing step.
  */
 @Database(
     entities = [
@@ -42,7 +45,20 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         fun create(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, "app.db")
+                .addMigrations(MIGRATION_4_5)
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
+
+        /**
+         * Camera names (card 24). Keeps the identity, the outbox and every record, so phones stay
+         * enrolled. The names arrive on the next pull, which starts again from 0: rows pulled
+         * before the app knew about names won't change on the server again.
+         */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `items` ADD COLUMN `name` TEXT NOT NULL DEFAULT ''")
+                db.execSQL("DELETE FROM `sync_state` WHERE `key` = '${SyncKeys.LAST_SERVER_SEQ}'")
+            }
+        }
     }
 }

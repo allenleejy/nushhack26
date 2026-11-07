@@ -119,7 +119,7 @@ Names only. Gradle reads them from `local.properties` (git-ignored) or, failing 
 
 - **The publishable key ends up inside the APK.** That's expected: row-level security protects the data. The Supabase secret key stays in the Supabase dashboard and the owner's password manager.
 - **The signing key `app/hack.keystore` is committed on purpose,** with its passwords in `app/build.gradle.kts`. Every build is signed with it, so a new APK always installs over the old one and keeps the phone's offline data.
-- **Local database changes:** until the freeze, a change to the Room tables bumps the database version and wipes the phone's local data (destructive migration). That's fine as long as the phone synced first, so Q syncs before installing each new APK. After the freeze, no table changes.
+- **Local database changes:** a change to the Room tables bumps the database version **and adds a `Migration`** in `AppDatabase` (for example `ALTER TABLE ... ADD COLUMN ... DEFAULT ...`). A destructive upgrade also wipes the phone's identity, so every phone would have to enrol again with its owner's fingerprint. Destructive migration stays only as the fallback. After the freeze, no table changes.
 
 ## Free-plan limits that matter
 
