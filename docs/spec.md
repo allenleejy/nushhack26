@@ -216,7 +216,7 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
 - **Waiting to sync:** "Not synced yet" on cards and receipts.
 
 ### G Hand over (`ui/give/`, one route with steps)
-- **G1 Choose.** The camera (preselected), and the receiver from the roster. A store officer sees radiographers ("Issue to"). A radiographer sees "Hand to a colleague" (radiographers) and "Return to store" (store officers). On issue only, the due time chips **+90 s**, **+5 min**, **17:00**, **19:00**.
+- **G1 Choose.** The camera (preselected), and the receiver from the roster. A store officer sees radiographers ("Issue to"). A radiographer sees "Hand to a colleague" (radiographers) and "Return to store" (store officers). On issue only, the due time chips **+90 s**, **+5 min** and **PICK A TIME**, which opens a sheet with two drum wheels (hours, minutes, 24-hour), a live readout ("18:45 · Today · in 3 h 20 min"; a time already passed means tomorrow), quick jumps +30 MIN, +1 H, +2 H, +4 H, and **SET RETURN TIME**. The chip then reads the time ("18:45", or "18:45 TOMORROW").
   - **Authorisation:** receivers who may not take the camera (`sync.md` A.8) stay in the list, greyed out and not selectable, with the reason: "Jun Lim · authorisation lapsed 03.11.2026".
   - **Empty:** "You don't hold this camera" (it isn't yours to give) / "No one on the roster can receive it. Sync once."
 - **G2 Review and sign.** The who-and-what card: giver → receiver with names and roles; "C-12 · sealed source IR-0457 (Ir-192) · seal S-40117"; due time. The primary button **Sign** with the line "Place your finger to sign this handover".

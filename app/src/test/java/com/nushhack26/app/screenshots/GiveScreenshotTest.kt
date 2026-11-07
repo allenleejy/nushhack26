@@ -6,7 +6,7 @@ import com.nushhack26.app.data.local.HandoverKind
 import com.nushhack26.app.data.local.ItemEntity
 import com.nushhack26.app.data.local.Roles
 import com.nushhack26.app.ui.give.DoneView
-import com.nushhack26.app.ui.give.DueChip
+import com.nushhack26.app.ui.give.DueChoice
 import com.nushhack26.app.ui.give.GiveContent
 import com.nushhack26.app.ui.give.GiveSnack
 import com.nushhack26.app.ui.give.GiveStep
@@ -66,7 +66,7 @@ class GiveScreenshotTest {
 
     @Test
     fun chooseIssue() = captureScreen("Give_G1_choose_issue") {
-        GiveContent(base.copy(isIssue = true, receivers = issueReceivers, selectedReceiverId = "p-ravi", due = DueChip.At1700))
+        GiveContent(base.copy(isIssue = true, receivers = issueReceivers, selectedReceiverId = "p-ravi", due = DueChoice.At(java.time.LocalTime.of(17, 0))))
     }
 
     @Test

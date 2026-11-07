@@ -6,6 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
@@ -15,19 +16,20 @@ class GiveLogicTest {
         ZonedDateTime.of(2026, 11, 6, hour, minute, 0, 0, zone).toInstant().toEpochMilli()
 
     @Test
-    fun dueChipsAddTimeOrPickTheNextClockTime() {
+    fun dueChoicesAddTimeOrPickTheNextClockTime() {
         val now = at(14)
-        assertEquals(now + 90_000, DueChip.Plus90s.dueMs(now, zone))
-        assertEquals(now + 300_000, DueChip.Plus5Min.dueMs(now, zone))
-        assertEquals(at(17), DueChip.At1700.dueMs(now, zone))
-        assertEquals(at(19), DueChip.At1900.dueMs(now, zone))
+        assertEquals(now + 90_000, DueChoice.Plus90s.dueMs(now, zone))
+        assertEquals(now + 300_000, DueChoice.Plus5Min.dueMs(now, zone))
+        assertEquals(at(17), DueChoice.At(LocalTime.of(17, 0)).dueMs(now, zone))
+        assertEquals(at(18, 45), DueChoice.At(LocalTime.of(18, 45)).dueMs(now, zone))
     }
 
     @Test
     fun aPassedClockTimeMeansTomorrow() {
         val now = at(18, 30)
-        assertEquals(at(17) + 86_400_000, DueChip.At1700.dueMs(now, zone))
-        assertEquals(at(19), DueChip.At1900.dueMs(now, zone))
+        assertEquals(at(17) + 86_400_000, DueChoice.At(LocalTime.of(17, 0)).dueMs(now, zone))
+        assertEquals(at(19), DueChoice.At(LocalTime.of(19, 0)).dueMs(now, zone))
+        assertEquals(at(18, 30) + 86_400_000, DueChoice.At(LocalTime.of(18, 30)).dueMs(now, zone))
     }
 
     @Test

@@ -52,6 +52,10 @@ import androidx.compose.material.icons.sharp.ContentCopy
 import androidx.compose.material.icons.sharp.Fingerprint
 import androidx.compose.material.icons.sharp.QrCodeScanner
 import androidx.compose.material.icons.sharp.Warning
+import com.nushhack26.app.ui.components.ReturnTimePicker
+import com.nushhack26.app.ui.components.ReturnTimeDefaults
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material.icons.sharp.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -343,23 +347,52 @@ private fun ChooseStep(state: GiveUiState, onAction: (GiveAction) -> Unit) {
     }
     if (state.isIssue) {
         SectionLabel("Return by")
+        var picking by rememberSaveable { mutableStateOf(false) }
+        val picked = state.due as? DueChoice.At
         FlowRow(horizontalArrangement = Arrangement.spacedBy(TenetDimens.space2), verticalArrangement = Arrangement.spacedBy(TenetDimens.space2)) {
-            DueChip.entries.forEach { chip ->
-                val selected = state.due == chip
-                Box(
-                    Modifier
-                        .heightIn(min = TenetDimens.targetMin)
-                        .background(if (selected) colors.signal else colors.bg100, ChipCutShape)
-                        .border(TenetDimens.strokeControl, if (selected) colors.signalEdge else colors.lineStrong, ChipCutShape)
-                        .clickable(role = Role.RadioButton) { onAction(GiveAction.SelectDue(chip)) }
-                        .padding(horizontal = TenetDimens.space4, vertical = TenetDimens.space3),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(chip.label.uppercase(), style = TenetType.label, color = if (selected) colors.onSignal else colors.ink)
-                }
-            }
+            DueChipBox("+90 s", state.due == DueChoice.Plus90s) { onAction(GiveAction.SelectDue(DueChoice.Plus90s)) }
+            DueChipBox("+5 min", state.due == DueChoice.Plus5Min) { onAction(GiveAction.SelectDue(DueChoice.Plus5Min)) }
+            DueChipBox(picked?.let { dueAtLabel(it) } ?: "Pick a time", picked != null, Icons.Sharp.Schedule) { picking = true }
+        }
+        if (picking) {
+            val nowMs = remember { System.currentTimeMillis() }
+            ReturnTimePicker(
+                initial = picked?.time ?: ReturnTimeDefaults.initial(nowMs),
+                nowMs = nowMs,
+                onConfirm = {
+                    onAction(GiveAction.SelectDue(DueChoice.At(it)))
+                    picking = false
+                },
+                onDismiss = { picking = false },
+            )
         }
     }
+}
+
+/** One due-time choice: a square chip with the cut corner, amber when selected. */
+@Composable
+private fun DueChipBox(label: String, selected: Boolean, icon: ImageVector? = null, onClick: () -> Unit) {
+    val colors = Tenet.colors
+    Row(
+        Modifier
+            .heightIn(min = TenetDimens.targetMin)
+            .background(if (selected) colors.signal else colors.bg100, ChipCutShape)
+            .border(TenetDimens.strokeControl, if (selected) colors.signalEdge else colors.lineStrong, ChipCutShape)
+            .clickable(role = Role.RadioButton, onClick = onClick)
+            .padding(horizontal = TenetDimens.space4, vertical = TenetDimens.space3),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(TenetDimens.space2),
+    ) {
+        val tint = if (selected) colors.onSignal else colors.ink
+        icon?.let { Icon(it, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp)) }
+        Text(label.uppercase(), style = TenetType.label, color = tint)
+    }
+}
+
+/** "18:45", or "18:45 TOMORROW" when that time has already passed today. */
+private fun dueAtLabel(due: DueChoice.At): String {
+    val now = java.time.LocalTime.now().withSecond(0).withNano(0)
+    return GiveViewModel.hhmm(due.dueMs(System.currentTimeMillis())) + if (!due.time.isAfter(now)) " tomorrow" else ""
 }
 
 /** The picker's rows: one section per group, people who may not receive greyed out with the reason. */

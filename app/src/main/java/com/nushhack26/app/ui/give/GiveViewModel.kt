@@ -70,22 +70,28 @@ fun relayStep(status: RelayStatus?, nullsInARow: Int): RelayStep = when (status?
     else -> RelayStep.Wait
 }
 
-/** The due-time chips (issue only). A clock time already passed today means tomorrow. */
-enum class DueChip(val label: String) {
-    Plus90s("+90 s"), Plus5Min("+5 min"), At1700("17:00"), At1900("19:00");
+/**
+ * When an issued camera is due back (issue only): two short timers for the demo, or a clock time
+ * picked on the wheel (card 31). A clock time already passed today, or this very minute, means tomorrow.
+ */
+sealed interface DueChoice {
+    fun dueMs(nowMs: Long, zone: ZoneId = ZoneId.systemDefault()): Long
 
-    fun dueMs(nowMs: Long, zone: ZoneId = ZoneId.systemDefault()): Long = when (this) {
-        Plus90s -> nowMs + 90_000
-        Plus5Min -> nowMs + 5 * 60_000
-        At1700 -> clock(nowMs, 17, zone)
-        At1900 -> clock(nowMs, 19, zone)
+    data object Plus90s : DueChoice {
+        override fun dueMs(nowMs: Long, zone: ZoneId) = nowMs + 90_000
     }
 
-    private fun clock(nowMs: Long, hour: Int, zone: ZoneId): Long {
-        val now = Instant.ofEpochMilli(nowMs).atZone(zone)
-        var at = ZonedDateTime.of(now.toLocalDate(), LocalTime.of(hour, 0), zone)
-        if (!at.isAfter(now)) at = at.plusDays(1)
-        return at.toInstant().toEpochMilli()
+    data object Plus5Min : DueChoice {
+        override fun dueMs(nowMs: Long, zone: ZoneId) = nowMs + 5 * 60_000
+    }
+
+    data class At(val time: LocalTime) : DueChoice {
+        override fun dueMs(nowMs: Long, zone: ZoneId): Long {
+            val now = Instant.ofEpochMilli(nowMs).atZone(zone)
+            var at = ZonedDateTime.of(now.toLocalDate(), time.withSecond(0).withNano(0), zone)
+            if (!at.isAfter(now)) at = at.plusDays(1)
+            return at.toInstant().toEpochMilli()
+        }
     }
 }
 
@@ -143,7 +149,7 @@ data class GiveUiState(
     val isIssue: Boolean = false,
     val receivers: List<ReceiverOption> = emptyList(),
     val selectedReceiverId: String? = null,
-    val due: DueChip? = null,
+    val due: DueChoice? = null,
     val pickerOpen: Boolean = false,
     val summary: HandoverSummary? = null,
     val leaseExpired: Boolean = false,
@@ -177,7 +183,7 @@ sealed interface GiveAction {
     data object OpenPicker : GiveAction
     data object ClosePicker : GiveAction
     data class SelectReceiver(val id: String) : GiveAction
-    data class SelectDue(val chip: DueChip) : GiveAction
+    data class SelectDue(val choice: DueChoice) : GiveAction
     data object Review : GiveAction
     data object BackToChoose : GiveAction
     data object Sign : GiveAction
@@ -215,7 +221,7 @@ private data class GiveData(
 private data class FlowState(
     val step: GiveStep = GiveStep.Choose,
     val selectedReceiverId: String? = null,
-    val due: DueChip? = null,
+    val due: DueChoice? = null,
     val pickerOpen: Boolean = false,
     val signing: Boolean = false,
     val leaseExpired: Boolean = false,
@@ -324,7 +330,7 @@ class GiveViewModel(
             GiveAction.OpenPicker -> flowState.update { it.copy(pickerOpen = true) }
             GiveAction.ClosePicker -> flowState.update { it.copy(pickerOpen = false) }
             is GiveAction.SelectReceiver -> flowState.update { it.copy(selectedReceiverId = action.id, pickerOpen = false) }
-            is GiveAction.SelectDue -> flowState.update { it.copy(due = action.chip) }
+            is GiveAction.SelectDue -> flowState.update { it.copy(due = action.choice) }
             GiveAction.Review -> if (state.value.canReview) {
                 viewModelScope.launch {
                     val expired = identity.leaseNow(clock()).expired

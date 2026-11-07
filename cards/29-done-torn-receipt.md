@@ -19,7 +19,8 @@ The design canvas **https://claude.ai/artifact/2B5tMaPVPTC3Ajzdb2BHhH**, boards 
 Rules:
 - Keep `ReceiptContent`, `ReceiptParty`, `ReceiptStamp`, `ReceiptStyle` and `CustodyReceipt`'s signature exactly as they are on `main`. Card 30 calls them in the same wave.
 - Don't edit `ReceiveScreenshotTest.kt` or `ReceiveTapScreenshotTest.kt`, because an open PR edits them. Put new Receive cases in `ReceiveReceiptScreenshotTest.kt`.
-- Don't edit `TapPulse.kt` (card 28) or `ReceiptNumbers.kt`. Keep ReceiveScreen's `role = TapRole.Receiver` and the `asTab`, `active`, `session` and `onFlowChange` contract with AppNavHost.
+- Keep G1's due row as it is on `main`: the +90 S, +5 MIN and PICK A TIME chips, `DueChoice`, and the `ReturnTimePicker` call. Card 31 builds the picker in the same wave.
+- Don't edit `TapPulse.kt` (card 28), `ReturnTimePicker.kt` (card 31) or `ReceiptNumbers.kt`. Keep ReceiveScreen's `role = TapRole.Receiver` and the `asTab`, `active`, `session` and `onFlowChange` contract with AppNavHost.
 
 ## Build
 
