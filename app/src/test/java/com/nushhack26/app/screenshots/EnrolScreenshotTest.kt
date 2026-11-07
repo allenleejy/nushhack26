@@ -20,22 +20,25 @@ class EnrolScreenshotTest {
     fun empty() = captureScreen("Enrol_empty") { EnrolContent(EnrolUiState()) }
 
     @Test
+    fun halfTyped() = captureScreen("Enrol_half_typed") { EnrolContent(EnrolUiState(staffNo = "R22")) }
+
+    @Test
     fun wrongCode() = captureScreen("Enrol_wrong_code") {
-        EnrolContent(EnrolUiState(staffNo = "R-2210", code = "000000", wrongCode = true, error = EnrolViewModel.wrongCodeText("R-2210")))
+        EnrolContent(EnrolUiState(staffNo = "R2210", code = "000000", wrongCode = true, error = EnrolViewModel.wrongCodeText("R-2210")))
     }
 
     @Test
     fun offline() = captureScreen("Enrol_offline", status = SyncStatus(isOnline = false)) {
-        EnrolContent(EnrolUiState(staffNo = "R-2210", code = "552917", error = EnrolViewModel.NO_CONNECTION))
+        EnrolContent(EnrolUiState(staffNo = "R2210", code = "552917", error = EnrolViewModel.NO_CONNECTION))
     }
 
     @Test
-    fun checking() = captureScreen("Enrol_checking") { EnrolContent(EnrolUiState(staffNo = "R-2210", code = "552917", busy = true)) }
+    fun checking() = captureScreen("Enrol_checking") { EnrolContent(EnrolUiState(staffNo = "R2210", code = "552917", busy = true)) }
 
     @Test
     fun enrolled() = captureScreen("Enrol_enrolled") {
         EnrolContent(
-            EnrolUiState(staffNo = "R-2210", code = "552917", enrolled = EnrolViewModel.enrolledLine("Ravi Kumar", "radiographer", "3F:A9:12:7C")),
+            EnrolUiState(staffNo = "R2210", code = "552917", enrolled = EnrolViewModel.enrolledLine("Ravi Kumar", "radiographer", "3F:A9:12:7C")),
         )
     }
 
@@ -44,7 +47,7 @@ class EnrolScreenshotTest {
     fun narrowLargeFont() {
         RuntimeEnvironment.setFontScale(1.3f)
         captureScreen("Enrol_narrow_1_3x") {
-            EnrolContent(EnrolUiState(staffNo = "R-2210", code = "552917", error = EnrolViewModel.LOCKED))
+            EnrolContent(EnrolUiState(staffNo = "R2210", code = "552917", error = EnrolViewModel.LOCKED))
         }
     }
 }
