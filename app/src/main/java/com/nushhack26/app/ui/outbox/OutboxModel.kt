@@ -14,6 +14,8 @@ data class OutboxRowUi(
     val title: String,
     val supporting: String,
     val error: String? = null,
+    /** Set on handover rows: tapping opens that record's receipt (card 30). */
+    val handoverId: String? = null,
 )
 
 data class OutboxUiState(
@@ -56,5 +58,6 @@ private fun describe(entry: OutboxEntry, data: OutboxData): OutboxRowUi {
         title = title,
         supporting = "$tries · queued ${formatTime(entry.createdAt)}",
         error = entry.lastError?.let { "Last error: $it" },
+        handoverId = entry.recordId.takeIf { entry.tableName == ServerTables.HANDOVERS },
     )
 }
