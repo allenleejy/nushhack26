@@ -77,6 +77,15 @@ class SafetyRepository(
         }
         requestSync()
     }
+
+    /** Saves a missing report with its outbox entry, in one transaction (card 32). */
+    suspend fun saveMissingReport(report: MissingReportEntity) {
+        db.withTransaction {
+            db.missingReportDao().insert(report.copy(syncStatus = SyncMark.WAITING))
+            db.outboxDao().enqueueInsert(ServerTables.MISSING_REPORTS, report.id, report.toPayload())
+        }
+        requestSync()
+    }
 }
 
 /** Both signatures on a handover, checked on this phone against the roster's keys. */
