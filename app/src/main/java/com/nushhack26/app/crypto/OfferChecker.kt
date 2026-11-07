@@ -148,7 +148,7 @@ object OfferChecker {
     private fun earlierHandover(offer: HandoverEntity, local: List<HandoverEntity>): HandoverEntity? =
         local.filter {
             it.id != offer.id && it.prevId != null && it.prevId == offer.prevId && it.itemId == offer.itemId &&
-                it.kind != HandoverKind.REGISTER && !it.hiddenByTamper && it.syncStatus != SyncMark.REJECTED
+                it.kind != HandoverKind.REGISTER && !it.tamperHidden && it.syncStatus != SyncMark.REJECTED
         }.minByOrNull { it.acceptedMs ?: Long.MAX_VALUE }
 
     private fun withdrawnText(name: String, atMs: Long): String =

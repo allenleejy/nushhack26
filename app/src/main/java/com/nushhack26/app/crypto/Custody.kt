@@ -40,7 +40,7 @@ fun deriveCustody(
     serverView: Boolean = false,
 ): CustodyState {
     val records = handovers.filter {
-        it.itemId == item.id && !it.hiddenByTamper && it.syncStatus != SyncMark.REJECTED &&
+        it.itemId == item.id && !it.tamperHidden && it.syncStatus != SyncMark.REJECTED &&
             it.status != ServerStatus.OVERRULED && it.status != ServerStatus.ORPHAN &&
             (!serverView || it.serverSeq != null)
     }.distinctBy { it.id }

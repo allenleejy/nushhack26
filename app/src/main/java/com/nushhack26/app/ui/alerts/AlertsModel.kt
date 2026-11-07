@@ -161,7 +161,7 @@ private fun overdueCard(itemId: String, itemCode: String, data: SafetyData, nowM
 /** Follows a branch's synced records to every record at its end. */
 private fun branchHeads(start: HandoverEntity, handovers: List<HandoverEntity>): List<HandoverEntity> {
     val synced = handovers.filter {
-        it.itemId == start.itemId && it.serverSeq != null && !it.hiddenByTamper &&
+        it.itemId == start.itemId && it.serverSeq != null && !it.tamperHidden &&
             it.status != ServerStatus.OVERRULED && it.status != ServerStatus.ORPHAN
     }
     val children = synced.groupBy { it.prevId }

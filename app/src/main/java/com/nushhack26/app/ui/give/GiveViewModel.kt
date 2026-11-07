@@ -591,7 +591,7 @@ class GiveViewModel(
                 recordNo = recordNumber(record, d.chain),
                 matchCode = Canonical.matchCode(record.recordHash),
                 acceptedMs = record.acceptedMs ?: now,
-                synced = stored != null && !stored.hiddenByTamper && (stored.syncStatus == SyncMark.SYNCED || stored.serverSeq != null),
+                synced = stored != null && !stored.tamperHidden && (stored.syncStatus == SyncMark.SYNCED || stored.serverSeq != null),
                 viaServer = f.viaServer,
                 viaTap = f.viaTap,
             )

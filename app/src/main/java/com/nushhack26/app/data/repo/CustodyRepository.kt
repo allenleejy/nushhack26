@@ -99,7 +99,7 @@ class CustodyRepository(private val db: AppDatabase) {
         }
 
         fun receiptsOf(handovers: List<HandoverEntity>, personId: String): List<HandoverEntity> = handovers
-            .filter { it.fromPersonId == personId && it.receiverSig != null && !it.hiddenByTamper }
+            .filter { it.fromPersonId == personId && it.receiverSig != null && !it.tamperHidden }
             .sortedByDescending { it.acceptedMs ?: it.offeredMs ?: 0 }
 
         fun heldDuesOf(

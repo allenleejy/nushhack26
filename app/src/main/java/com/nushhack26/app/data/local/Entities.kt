@@ -134,7 +134,14 @@ data class HandoverEntity(
     val origin: String = Origin.MINE,
     /** Demo only: the tampered phone hides handovers it gave (docs/sync.md A.5). */
     val hiddenByTamper: Boolean = false,
-)
+) {
+    /**
+     * Hidden only until the server has the record. The tampered phone fools itself while
+     * offline; once the receiver's phone delivers the record and this phone pulls it back,
+     * the server's copy counts, so a later return builds on the real chain.
+     */
+    val tamperHidden: Boolean get() = hiddenByTamper && serverSeq == null
+}
 
 /** Written only by the server; phones pull it. */
 @Entity(tableName = "alerts", indices = [Index("itemId")])

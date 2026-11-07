@@ -140,6 +140,8 @@ When `sync_state` has `tampered = true` and this phone completes a handover **as
 
 The phone then still computes itself as the holder and can sign a new offer from the old previous record. Its receivers' phones still deliver those records.
 
+A hidden record stops being hidden once it has a `server_seq` (`HandoverEntity.tamperHidden`): when the tampered phone reconnects and pulls the record the receiver delivered, the server's copy counts, so the phone sees the real chain again and a later return builds on it.
+
 ### A.6 Who holds a camera: `deriveCustody`
 
 `CustodyState.localFork` is true when the camera is Disputed and none of the fork's first branch records has a `server_seq` yet: this phone saw the fork before the server did. The timeline then shows the phone-side warning (spec T).

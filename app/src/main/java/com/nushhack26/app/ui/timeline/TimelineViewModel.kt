@@ -87,7 +87,7 @@ fun buildTimeline(chain: ItemChain): TimelineUiState {
     val item = chain.item ?: return TimelineUiState.NotFound
     val state = chain.state
     val roster = chain.roster
-    val records = chain.handovers.filter { !it.hiddenByTamper }
+    val records = chain.handovers.filter { !it.tamperHidden }
     val byId = records.associateBy { it.id }
     val children = records.filter { it.prevId != null }.groupBy { it.prevId }
     val nodes = mutableListOf<TimelineNode>()
