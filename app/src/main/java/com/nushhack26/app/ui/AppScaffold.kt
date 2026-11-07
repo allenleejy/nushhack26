@@ -39,6 +39,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -59,7 +60,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -121,6 +125,7 @@ fun AppScaffold(container: AppContainer) {
                 IdentityState.Loading -> Box(Modifier.fillMaxSize().background(Tenet.colors.bg000))
                 IdentityState.NotEnrolled -> EnrolFrame(container)
                 is IdentityState.Enrolled -> Box(Modifier.fillMaxSize()) {
+                    LivePullEffect(container)
                     key(state.identity.role) {
                         RoleScaffold(container, state.identity)
                     }
@@ -128,6 +133,15 @@ fun AppScaffold(container: AppContainer) {
                 }
             }
         }
+    }
+}
+
+/** Syncs every few seconds while Tenet is on screen, locked or not (sync/LivePull.kt). */
+@Composable
+private fun LivePullEffect(container: AppContainer) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) { container.livePull.run() }
     }
 }
 

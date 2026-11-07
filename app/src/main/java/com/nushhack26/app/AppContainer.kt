@@ -23,6 +23,7 @@ import com.nushhack26.app.data.repo.RelayRepository
 import com.nushhack26.app.data.repo.RevocationRepository
 import com.nushhack26.app.data.repo.SafetyRepository
 import com.nushhack26.app.nearby.TapLink
+import com.nushhack26.app.sync.LivePull
 import com.nushhack26.app.sync.NetworkMonitor
 import com.nushhack26.app.sync.SyncEngine
 import com.nushhack26.app.sync.SyncScheduler
@@ -78,6 +79,16 @@ class AppContainer(context: Context) {
     val custodyRepository by lazy { CustodyRepository(database) }
     val enrolRepository by lazy { EnrolRepository(database, identity, SupabaseEnrolApi(supabase), appLock, requestSync) }
     val safetyRepository by lazy { SafetyRepository(database, requestSync) }
+
+    /** Syncs every few seconds while Tenet is on screen, so other phones' records arrive by themselves. */
+    val livePull by lazy {
+        LivePull(
+            sync = { withContext(Dispatchers.IO) { syncEngine.run() } },
+            isOnline = isOnline,
+            enrolled = { identity.current() != null },
+            onNotEnrolled = { revocation.checkWithdrawn() },
+        )
+    }
 
     /** The online handover: the server carries the offer and acceptance strings (docs/sync.md A.10). */
     val offerRelay by lazy { RelayRepository(SupabaseOfferRelayApi(supabase), isOnline, identity, scope) }
