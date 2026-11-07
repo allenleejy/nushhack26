@@ -47,6 +47,7 @@ import com.nushhack26.app.ui.components.ParcelLabel
 import com.nushhack26.app.ui.components.TapOffPanel
 import com.nushhack26.app.ui.components.TapPhase
 import com.nushhack26.app.ui.components.TapPulse
+import com.nushhack26.app.ui.components.TapRole
 import com.nushhack26.app.ui.components.formatTime
 import com.nushhack26.app.ui.components.rememberHaptics
 import com.nushhack26.app.ui.theme.LocalReduceMotion
@@ -323,6 +324,7 @@ private fun ScanOfferBody(state: ReceiveUiState, onAction: (ReceiveAction) -> Un
             title = "HOLD TO THE GIVER'S PHONE",
             subtitle = "Back to back, until both buzz.",
             onFlooded = { onAction(ReceiveAction.Flooded) },
+            role = TapRole.Receiver,
         )
         else -> TapOffPanel(state.tapAvailability, onResume = { onAction(ReceiveAction.RefreshTap) })
     }

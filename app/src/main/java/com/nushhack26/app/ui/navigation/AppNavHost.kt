@@ -26,6 +26,7 @@ import com.nushhack26.app.ui.missing.ReportMissingScreen
 import com.nushhack26.app.ui.mycustody.MyCustodyScreen
 import com.nushhack26.app.ui.outbox.OutboxScreen
 import com.nushhack26.app.ui.receive.ReceiveScreen
+import com.nushhack26.app.ui.record.RecordScreen
 import com.nushhack26.app.ui.store.StoreScreen
 import com.nushhack26.app.ui.theme.LocalReduceMotion
 import com.nushhack26.app.ui.theme.Tenet
@@ -43,6 +44,8 @@ class TabActions(
     val endReceive: () -> Unit,
     /** True once an offer has arrived on the RECEIVE tab: the bar hides until it ends. */
     val receiveFlowChanged: (Boolean) -> Unit,
+    /** Open one handover as its custody receipt. */
+    val openRecord: (String) -> Unit = {},
 )
 
 /**
@@ -77,14 +80,17 @@ fun AppNavHost(
             Screen { StoreScreen(container, readOnly = false, onIssue = { navController.navigate(GiveRoute(it)) }, onReceive = { navController.navigate(ReceiveRoute) }, onOpenItem = openItem) }
         }
         composable<CamerasRoute> { Screen { StoreScreen(container, readOnly = true, onIssue = {}, onReceive = {}, onOpenItem = openItem) } }
-        composable<OutboxRoute> { Screen { OutboxScreen(container) } }
+        composable<OutboxRoute> { Screen { OutboxScreen(container, onOpenRecord = { navController.navigate(RecordRoute(it)) }) } }
         composable<ReceiveRoute> { Screen { ReceiveScreen(container, onDone = back) } }
         composable<GiveRoute> { entry -> Screen { GiveScreen(container, entry.toRoute<GiveRoute>().itemId, onDone = back) } }
         composable<ReceiveRelayedRoute> { entry ->
             Screen { ReceiveScreen(container, onDone = back, relayedOfferId = entry.toRoute<ReceiveRelayedRoute>().offerId) }
         }
         composable<TimelineRoute> { entry ->
-            Screen { TimelineScreen(container, entry.toRoute<TimelineRoute>().itemId, onReportMissing = { navController.navigate(ReportMissingRoute(it)) }) }
+            Screen { TimelineScreen(container, entry.toRoute<TimelineRoute>().itemId, onReportMissing = { navController.navigate(ReportMissingRoute(it)) }, onOpenRecord = { navController.navigate(RecordRoute(it)) }) }
+        }
+        composable<RecordRoute> { entry ->
+            Screen { RecordScreen(container, entry.toRoute<RecordRoute>().handoverId) }
         }
         composable<ForkRoute> { entry -> Screen { ForkScreen(container, entry.toRoute<ForkRoute>().alertId, onDone = back) } }
         composable<DailyRecordRoute> { Screen { DailyRecordScreen(container) } }
@@ -109,7 +115,7 @@ fun TabPage(tab: TopLevelTab, container: AppContainer, actions: TabActions, acti
                 session = receiveSession,
                 onFlowChange = actions.receiveFlowChanged,
             )
-            TopLevelTab.Outbox -> OutboxScreen(container)
+            TopLevelTab.Outbox -> OutboxScreen(container, onOpenRecord = actions.openRecord)
             TopLevelTab.SupervisorItems -> StoreScreen(container, readOnly = true, onIssue = {}, onReceive = {}, onOpenItem = actions.openItem)
             TopLevelTab.Alerts -> AlertsScreen(container, onOpenFork = actions.openFork, onOpenItem = actions.openItem)
             TopLevelTab.Records -> DailyRecordScreen(container)

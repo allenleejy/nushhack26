@@ -56,6 +56,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/** Which phone draws the tap moment: the giver's cube goes into an amber circle, the receiver's comes out of a cyan one (card 28). */
+enum class TapRole { Giver, Receiver }
+
 /** Where the tap stands, on either phone (card 20). */
 enum class TapPhase {
     /** Waiting for the other phone: the core breathes and square rings ripple out. */
@@ -107,6 +110,7 @@ fun TapPulse(
     subtitle: String?,
     modifier: Modifier = Modifier,
     onFlooded: () -> Unit = {},
+    role: TapRole = TapRole.Giver,
 ) {
     val colors = Tenet.colors
     val still = LocalInspectionMode.current || LocalReduceMotion.current || inRobolectric

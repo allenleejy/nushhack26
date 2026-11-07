@@ -91,6 +91,7 @@ import com.nushhack26.app.ui.navigation.ReportMissingRoute
 import com.nushhack26.app.ui.navigation.TabActions
 import com.nushhack26.app.ui.navigation.TabPage
 import com.nushhack26.app.ui.navigation.TimelineRoute
+import com.nushhack26.app.ui.navigation.RecordRoute
 import com.nushhack26.app.ui.navigation.TopLevelTab
 import com.nushhack26.app.ui.theme.LocalReduceMotion
 import com.nushhack26.app.ui.theme.Tenet
@@ -191,6 +192,7 @@ private fun RoleScaffold(container: AppContainer, identity: Identity) {
     }
     val actions = TabActions(
         openItem = { navController.navigate(TimelineRoute(it)) },
+        openRecord = { navController.navigate(RecordRoute(it)) },
         handOver = { navController.navigate(GiveRoute(it)) },
         openFork = { navController.navigate(ForkRoute(it)) },
         receive = {
@@ -402,6 +404,7 @@ private fun titleFor(destination: NavDestination?): String = when {
     destination.hasRoute(DailyRecordRoute::class) -> "Records"
     destination.hasRoute(DevicesRoute::class) -> "Devices"
     destination.hasRoute(ReportMissingRoute::class) -> "Report missing"
+    destination.hasRoute(RecordRoute::class) -> "Receipt"
     destination.hasRoute(MeRoute::class) -> "Me"
     destination.hasRoute(DebugRoute::class) -> "Debug"
     else -> APP_NAME

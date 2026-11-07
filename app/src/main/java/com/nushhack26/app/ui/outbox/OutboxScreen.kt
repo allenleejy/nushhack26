@@ -46,7 +46,11 @@ sealed interface OutboxAction {
 
 /** E4: what this phone still has to send (card 06). */
 @Composable
-fun OutboxScreen(container: AppContainer) {
+fun OutboxScreen(
+    container: AppContainer,
+    /** Card 30: a handover row opens its receipt. */
+    onOpenRecord: (handoverId: String) -> Unit = {},
+) {
     val viewModel: OutboxViewModel = viewModel(
         factory = viewModelFactory {
             initializer { OutboxViewModel(container.safetyRepository, container.syncStatus) { container.syncScheduler.syncNow() } }

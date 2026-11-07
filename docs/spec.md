@@ -56,7 +56,7 @@ Airplane mode on A and B cuts mobile data and Wi-Fi but leaves Bluetooth and NFC
    - Wait until A's and B's sync bars show "All synced". **Airplane mode on: A and B.** C stays online.
 2. **The return, offline (0:30–1:10).**
    - A (Siti) picks up her phone. Its screen went off, so Tenet locked itself: "LOCKED · SITI AMINAH · S-1021". **Unlock** → fingerprint → it opens, still in airplane mode. The presenter: "No network and no login server. Her fingerprint unlocks a key in the phone's secure chip, and the app checks that key against her enrolment."
-   - B (Ravi): My custody → Kestrel → **Hand over** → under "Return to store", **Siti Aminah** → **Sign** → fingerprint. B shows the pulsing tap target "HOLD TO SITI'S PHONE".
+   - B (Ravi): My custody → Kestrel → **Hand over** → under "Return to store", **Siti Aminah** → **Sign** → fingerprint. B shows the sealed cube in its amber circle: "HOLD TO SITI'S PHONE".
    - **The presenter invites a judge to photograph B's offer**: B → **SHOW QR CODE INSTEAD**, the judge snaps it, then **USE TAP INSTEAD**.
    - A (Siti): **RECEIVE** tab → Ravi holds B to A (**tap**). Both screens flash and buzz. A's checklist turns green with no network → Siti scans the seal → accept card → fingerprint. B moves to Done by itself over the phone-to-phone link. The presenter: "No network, no codes: one tap and two fingerprints." A's Store shows Kestrel "In store".
 3. **The cheat, caught on the spot (1:10–1:40).**
@@ -121,21 +121,26 @@ Designed for a 412×915 dp Android phone, portrait. Times on screen are phone ti
 - With the phone's "Remove animations" on, everything jumps to its end state, but the haptics still fire.
 - This overrides `design/brand.md`'s 150–200 ms for whole screens, and the Receipt README's single 150 ms stamp: the stamp now falls (see Done below).
 
-**The tap moment** (`ui/components/TapPulse.kt`, `Flood.kt`), the same on both phones. Square, never round.
-- Waiting: a 160 dp amber square with the contactless icon breathes (1.00 to 1.04, 1400 ms) and sends out square rings (to 1.8×, 1400 ms). "HOLD TO WEI MING'S PHONE" / "Back to back, until both buzz."
-- Contact: a punch (spring to 1.18), a click, the rings turn to 45°, "LINKING…", then the amber floods the whole screen (380 ms), thuds, holds 100 ms and shrinks up into the hazard band (240 ms), revealing the next step.
-- Linked (the giver, waiting on the receiver): the same square in cyan, calmer: "LINKED" / "Wei Ming is scanning the seal and signing."
+**The tap moment: the cube and the portal** (`ui/components/TapPulse.kt`, `SealedCube.kt`; design board "Hand over · the cube and the portal"). The camera is drawn as a sealed cube: equal sides, amber seal tape over the lid and down the front and back, the Class 7 diamond on the front. It turns slowly, a lap every 9 s.
+- Waiting: the cube sits in a glowing circle that breathes (0.94–1.05×, 2 s each way), amber on the giver's phone, cyan on the receiver's. "HOLD TO WEI MING'S PHONE" / "Back to back, until both buzz."
+- Contact on the giver: a click, the cube punches to 1.15×, then spins 2½ turns and shrinks into the circle with a growing blur (720 ms) as the circle opens to 1.3× and closes to nothing. A thud when the cube is gone.
+- Contact on the receiver: the circle opens, the cube grows out of it with 2½ turns as the blur clears (840 ms), lands with a thud and a small bounce, and the circle closes behind it. Then the checklist.
+- Linked (the giver, waiting on the receiver): the cube as a still dashed outline, with an amber line tracing its edge, 2.2 s a lap. "LINKED" / "Waiting for Wei Ming to scan the seal and sign."
+- Online plays the same: the cube goes into the giver's circle once the offer is sent, and comes out of the receiver's when they open it.
+- The circle is the one round thing in the app, as the stamp is the one tilted thing. The amber flood is gone.
 - When tap can't work: a panel says why (NFC IS OFF, BLUETOOTH IS OFF, NEARBY DEVICES NOT ALLOWED, NO NFC ON THIS PHONE) with one button to fix it. The QR button stays below.
 
 **The scanner** (`ui/components/QrScanner.kt`) is an instrument: a bezel with a header ("SCANNER · SEAL", a status light, SEARCHING / LOCKED / REJECTED, the torch), amber corner brackets, a scan line sweeping every 1800 ms and a hazard band at its foot. A good code closes the brackets in cyan with a tick; a wrong one flashes them orange with a reject buzz.
 
-**Done: the parcel label** (`ui/components/ParcelLabel.kt`), on both phones at the end of every handover: warning tape top and bottom, the camera's name and code, an empty cell where the stamp lands, and FROM, TO, SEAL and RETURN BY cells. The stamp (RECEIVED / 13:02 / FROM RAVI on the receiver, HANDED OVER / 13:02 / TO WEI MING on the giver) falls from 2.2× in 260 ms, lands with a thud and sends a 6 dp ripple through the cells. Under the label: the sync line, then "VERIFY CODE 482 107 · same on both phones" in small muted type, then DONE. Nobody has to read the code aloud: both phones have already checked both signatures.
+**The custody receipt** (`ui/components/CustodyReceipt.kt`; design boards "Done · torn receipt" and "Record receipt"). One handover set like a printed till roll in Space Mono capitals: TENET / CUSTODY RECEIPT, RECORD #5 · 07.11.2026, FOLLOWS #4 · SIGNED 13:02, 1 × KESTREL with its camera, source and "SEAL S-40117 … MATCHES", FROM, TO and RETURN BY on dot leaders, a double-ruled HELD BY total, the stamp, and VERIFY CODE 482 107.
+- **Done**, on both phones at the end of every handover: the receipt is torn off the roll at both ends, prints out from under the hazard band line by line (1.2 s), then the stamp (HANDED OVER / 13:02 / TO WEI MING on the giver, RECEIVED / 13:02 / FROM RAVI on the receiver, where HELD BY reads YOU) falls from 2.2× in 260 ms, lands with a thud and sends a 6 dp ripple through the receipt's sections. Under it: the sync line and DONE. Nobody has to read the code aloud: both phones have already checked both signatures.
+- **Record view** (`RecordRoute(handoverId)`, title "Receipt"), from a handover row on the timeline or in the outbox: the receipt feeds out of a printer slot (1.7 s), with each signer's key, how it was handed over when known, SIGNATURES 2 OF 2 VERIFIED, the COUNTERSIGNED stamp, a barcode and the record's SHA, and "Saved on this phone · not synced yet" (or "Synced").
 
 **Camera names.** Each camera has a name people say (`items.name`: Kestrel for C-12, Osprey for C-07, Heron for C-15). In titles, the name leads and the codes follow with their words: "KESTREL", then "CAMERA C-12 · SOURCE IR-0457 · SEAL S-40117". In sentences: "Kestrel (C-12)". With no name, the code alone.
 
 **Dates** read DD.MM.YYYY everywhere ("valid to 30.06.2027", "lapsed 03.11.2026"). Times stay 24-hour HH:mm.
 
-Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `Receive`, `Timeline(itemId)`, `Alerts`, `Fork(alertId)`, `Outbox`, `Me`, `Debug`, `DailyRecord`, `ReportMissing(itemId)`. Enrol and Lock aren't routes: `AppScaffold` shows Enrol until the phone has an identity, and Lock over the app while it's locked.
+Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `Receive`, `Timeline(itemId)`, `Alerts`, `Fork(alertId)`, `Outbox`, `Me`, `Debug`, `DailyRecord`, `ReportMissing(itemId)`, `Record(handoverId)`. Enrol and Lock aren't routes: `AppScaffold` shows Enrol until the phone has an identity, and Lock over the app while it's locked.
 
 ### E1 Enrol (`ui/enrol/`)
 - **Purpose:** link this phone to one person on the roster, proven by their enrolment code, and create its signing key. Needs the network once.
@@ -221,14 +226,14 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
   - **Accepted:** goes straight to G5 by itself.
   - **Declined:** "Wei Ming declined. Nothing was handed over." with **Choose someone else**.
   - **Lost the network:** "Lost the network. Show the QR instead." and G3 opens by itself.
-- **G3 Tap** (offline, the default; stepper CHOOSE · TAP). The tap moment above, with "For Wei Ming only · single use · valid for 0:58" and "KESTREL · C-12 → WEI MING" under it. At the bottom **SHOW QR CODE INSTEAD** and **CANCEL OFFER**. After the tap, LINKED in cyan until the acceptance arrives over the link, then G5 by itself.
+- **G3 Tap** (offline, the default; stepper CHOOSE · TAP). The tap moment above, with "For Wei Ming only · single use · valid for 0:58" and "KESTREL · C-12 → WEI MING" under it. At the bottom **SHOW QR CODE INSTEAD** and **CANCEL OFFER**. After the tap, the cube goes into the circle, then the traced outline and LINKED until the acceptance arrives over the link, then G5 by itself.
 - **G3 Offer QR** (the fallback, stepper CHOOSE · SHOW OFFER · SCAN ACCEPTANCE; **USE TAP INSTEAD** goes back). The same card with the QR inside it, the line **"For Wei Ming only · single use · valid for 0:58"** counting down, "Waiting for Wei Ming to accept", the primary button **Scan acceptance**, and the text button **Cancel offer**. The screen stays awake at full brightness.
   - **Expired:** "Offer expired. If Wei Ming already accepted, scan their code. Otherwise sign a new offer."
   - Debug builds: **Copy code**.
   - **Tap** (`sync.md` A.11, when NFC and Bluetooth are on): under the QR, "Or hold your phone to Wei Ming's" with a phone-to-phone icon. After the tap: "Tapped · waiting for Wei Ming to scan the seal and accept", and the phone moves to G5 by itself when the acceptance arrives.
 - **G4 Scan acceptance.** The viewfinder.
   - **Error:** "This isn't Wei Ming's acceptance of this offer." / "Not a handover code." / "Allow the camera to scan codes." with **Open settings**.
-- **G5 Done.** The parcel label stamped HANDED OVER / 13:02 / TO WEI MING, "Receipt saved · not synced yet" (or "synced"), and the small verify code.
+- **G5 Done.** The custody receipt stamped HANDED OVER / 13:02 / TO WEI MING, then "Not synced yet" (or "Synced") and DONE.
 
 ### R Receive (`ui/receive/`, one route with steps)
 - **R0 Incoming offer** (`ui/incoming/`, online only, `sync.md` A.10). A signal-yellow banner under the top bar on every screen except a handover: "**Siti Aminah is handing you C-12** · Scan its seal to accept" with **Open** and a countdown. The phone vibrates once when a new one arrives. Tapping it opens R2 for that offer (R1 is skipped).
@@ -256,7 +261,7 @@ Route names for `Routes.kt`: `Store`, `Cameras`, `MyCustody`, `Give(itemId)`, `R
   - **Online:** no QR. "Sent to Ravi", then Done. If the acceptance can't be sent: "Couldn't reach the server. Show this to Ravi instead." with the acceptance QR.
   - **Tapped:** no QR, straight to Done. If the link isn't up within 10 seconds: the acceptance QR with "Couldn't reach Siti's phone. Show this instead."
 
-- **Done** (every path): the parcel label stamped RECEIVED / 13:02 / FROM RAVI, the sync line, the small verify code, and **DONE**, which returns to the first tab.
+- **Done** (every path): the custody receipt stamped RECEIVED / 13:02 / FROM RAVI, the sync line, and **DONE**, which returns to the first tab.
 
 ### T Timeline (`ui/timeline/`)
 - **Purpose:** the custody chain of one camera.

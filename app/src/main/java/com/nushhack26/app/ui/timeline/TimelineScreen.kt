@@ -39,7 +39,13 @@ import com.nushhack26.app.ui.theme.TenetType
 
 /** T Timeline (docs/spec.md section 3): one camera's custody chain, oldest first. */
 @Composable
-fun TimelineScreen(container: AppContainer, itemId: String, onReportMissing: (itemId: String) -> Unit) {
+fun TimelineScreen(
+    container: AppContainer,
+    itemId: String,
+    onReportMissing: (itemId: String) -> Unit,
+    /** Card 30: a handover row opens its receipt. */
+    onOpenRecord: (handoverId: String) -> Unit = {},
+) {
     val viewModel: TimelineViewModel = viewModel(
         key = "timeline-$itemId",
         factory = viewModelFactory { initializer { TimelineViewModel(container.custodyRepository, itemId) } },

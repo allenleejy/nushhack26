@@ -35,6 +35,8 @@ import kotlin.reflect.KClass
 /** The safety officer's enrolled phones, where a lost one is withdrawn (docs/sync.md A.12). */
 @Serializable data object DevicesRoute
 @Serializable data class ReportMissingRoute(val itemId: String)
+/** One signed handover as a printed custody receipt, opened from a timeline row or the outbox (card 30). */
+@Serializable data class RecordRoute(val handoverId: String)
 
 /**
  * The three bottom tabs for each role (design/components/BottomNav), the pages of [HomeRoute].
