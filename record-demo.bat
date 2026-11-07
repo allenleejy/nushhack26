@@ -13,9 +13,10 @@ for /f %%t in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HHmm
 set "OUT=%USERPROFILE%\Videos\tenet-demo\%STAMP%"
 mkdir "%OUT%" 2>nul
 
-call :rec WKXC5DKNUCU87D7H siti "A - Siti - Redmi 13"
-call :rec 34685561460034M ravi "B - Ravi - vivo"
-call :rec r4lvf67ldmvctsei weiming "C - Wei Ming - Redmi 11"
+rem Each phone gets its own port range, and they start 2 s apart, so the three don't collide.
+call :rec WKXC5DKNUCU87D7H siti "A - Siti - Redmi 13" 27183:27189
+call :rec 34685561460034M ravi "B - Ravi - vivo" 27190:27196
+call :rec r4lvf67ldmvctsei weiming "C - Wei Ming - Redmi 11" 27197:27203
 
 echo.
 echo Recording to %OUT%
@@ -38,8 +39,10 @@ exit /b
 rem No ( ) blocks here: the phone names would close them early.
 adb -s %~1 get-state >nul 2>nul
 if errorlevel 1 goto :missing
-start "%~3" "%SCRCPY%" -s %~1 --record="%OUT%\%~2.mkv" --window-title="%~3" --window-height=720 --max-size=1080 --video-bit-rate=12M --no-audio-playback --stay-awake
+rem Each scrcpy runs in its own minimised console, with its log next to the video.
+start "%~3" /min cmd /c ""%SCRCPY%" -s %~1 --record="%OUT%\%~2.mkv" --window-title="%~3" --window-height=720 --max-size=1080 --video-bit-rate=12M --no-audio-playback --no-control --port=%~4 > "%OUT%\%~2.log" 2>&1"
 echo %~3: recording
+ping -n 3 127.0.0.1 >nul
 exit /b
 
 :missing
