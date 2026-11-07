@@ -33,7 +33,7 @@ class ReceiveScreenshotTest {
     private val green = listOf(
         CheckLine(true, "Signed by Siti Aminah · key on file"),
         CheckLine(true, "Siti Aminah holds C-12"),
-        CheckLine(true, "Made out to you"),
+        CheckLine(true, "Intended recipient"),
         CheckLine(true, "Valid for 0:41"),
         CheckLine(true, "Not used before"),
         CheckLine(true, "Authorised · radiographer · valid to 30 Jun 2027"),
@@ -75,7 +75,7 @@ class ReceiveScreenshotTest {
     @Test
     fun refusedLapsed() = captureScreen("Receive_R2_refused_lapsed") {
         val lines = green.toMutableList().apply {
-            this[2] = CheckLine(false, "Made out to Tan Wei Ming, not you")
+            this[2] = CheckLine(false, "Not intended recipient · for Tan Wei Ming")
             this[5] = CheckLine(false, "You aren't authorised to hold sealed sources (lapsed 3 Nov)")
         }
         ReceiveContent(base.copy(step = ReceiveStep.Checks, lines = lines, passed = false))

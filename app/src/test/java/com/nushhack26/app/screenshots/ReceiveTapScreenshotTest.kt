@@ -34,7 +34,7 @@ class ReceiveTapScreenshotTest {
     private val green = listOf(
         CheckLine(true, "Signed by Siti Aminah · key 3F:A9:12:7C"),
         CheckLine(true, "Siti Aminah holds C-12"),
-        CheckLine(true, "Made out to you"),
+        CheckLine(true, "Intended recipient"),
         CheckLine(true, "Valid for 0:41"),
         CheckLine(true, "Not used before"),
         CheckLine(true, "Authorised · radiographer · valid to 30.06.2027"),
